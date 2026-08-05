@@ -33,12 +33,14 @@ endif()
 # "core" presets. Requires a node executable to resolve the matching headers.
 if(COMP4050_BUILD_ADDON)
     find_program(NODE_EXECUTABLE node)
+
     if(NOT NODE_EXECUTABLE)
         message(WARNING "node not found on PATH; skipping the Node.js addon target")
     else()
         include(cmake/NodeAddon.cmake)
         comp4050_add_node_addon(solvers_addon src/addon.cpp)
         target_link_libraries(solvers_addon PRIVATE solvers_core)
+
         if(MSVC)
             target_compile_options(solvers_addon PRIVATE /W4)
         else()
