@@ -5,13 +5,15 @@
       "name": "Debug standalone (C++)",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/standalone/solvers.exe",
-      "args": ["21"],
+      "program": "${workspaceFolder}/build/cmake/solvers.exe",
+      "args": [
+        "21"
+      ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],
       "externalConsole": false,
-      "preLaunchTask": "build:standalone"
+      "preLaunchTask": "build:core"
     }
   ]
 }

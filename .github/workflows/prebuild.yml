@@ -13,6 +13,9 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+    defaults:
+      run:
+        working-directory: node
     steps:
       - uses: actions/checkout@v4
 
@@ -24,21 +27,31 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+          cache-dependency-path: node/pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build prebuilt binaries
+      - name: Build (CMake/Ninja)
+        run: pnpm build
+
+      - name: Snapshot prebuilt binary
         run: pnpm prebuild:binaries
 
       - name: Test
         run: pnpm test
 
+      - name: Standalone smoke test
+        shell: bash
+        run: |
+          BINARY=$([[ "$RUNNER_OS" == "Windows" ]] && echo "../build/cmake/solvers.exe" || echo "../build/cmake/solvers")
+          "$BINARY" 21
+
       - name: Upload prebuilds
         uses: actions/upload-artifact@v4
         with:
           name: prebuilds-${{ matrix.os }}
-          path: prebuilds/
+          path: node/prebuilds/
 
   commit:
     needs: prebuild
@@ -56,13 +69,13 @@ jobs:
 
       - name: Merge prebuilds
         run: |
-          mkdir -p prebuilds
-          cp -R artifacts/*/. prebuilds/
+          mkdir -p node/prebuilds
+          cp -R artifacts/*/. node/prebuilds/
 
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add prebuilds
+          git add -f node/prebuilds
           git diff --cached --quiet || git commit -m "chore: update prebuilt binaries [skip ci]"
           git push

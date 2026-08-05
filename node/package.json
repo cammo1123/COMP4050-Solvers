@@ -5,11 +5,10 @@
   "main": "index.cjs",
   "types": "index.d.cts",
   "scripts": {
-    "build": "node-gyp rebuild",
-    "build:standalone": "node scripts/build-standalone.mjs",
-    "compile-commands": "node scripts/generate-compile-commands.mjs",
-    "prebuild:binaries": "prebuildify --napi",
-    "install": "node-gyp-build",
+    "build": "node scripts/build.mjs",
+    "build:release": "node scripts/build.mjs release",
+    "build:core": "node scripts/build.mjs core",
+    "prebuild:binaries": "node scripts/prebuild.mjs",
     "format": "node scripts/format.mjs",
     "format:check": "node scripts/format.mjs --check",
     "test": "vitest run",
@@ -28,14 +27,11 @@
   },
   "type": "module",
   "dependencies": {
-    "node-addon-api": "^8.9.1",
     "node-gyp-build": "^4.8.1"
   },
   "devDependencies": {
     "@types/node": "^26.1.2",
     "@vitest/coverage-v8": "^4.1.10",
-    "node-gyp": "^13.0.1",
-    "prebuildify": "^6.0.1",
     "tsx": "^4.23.5",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"

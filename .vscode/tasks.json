@@ -2,10 +2,10 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "build:standalone",
+      "label": "build:core",
       "type": "shell",
       "command": "node",
-      "args": ["scripts/build-standalone.mjs"],
+      "args": ["node/scripts/build.mjs", "core"],
       "group": { "kind": "build", "isDefault": true },
       "problemMatcher": ["$gcc"],
       "options": {
