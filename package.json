@@ -5,6 +5,10 @@
   "main": "build/Release/addon.node",
   "scripts": {
     "build": "node-gyp rebuild",
+    "compile-commands": "node scripts/generate-compile-commands.mjs",
+    "postbuild": "node scripts/generate-compile-commands.mjs",
+    "format": "node scripts/format.mjs",
+    "format:check": "node scripts/format.mjs --check",
     "test": "tsx test/addon.test.cts",
     "typecheck": "tsc --noEmit",
     "dev": "tsx test/addon.test.cts"

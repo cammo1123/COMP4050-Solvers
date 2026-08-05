@@ -1,0 +1,32 @@
+# Based on the Google style guide with adjustments to match this
+# project's existing conventions (4-space indent, Allman braces).
+BasedOnStyle: Google
+Language: Cpp
+
+IndentWidth: 4
+ContinuationIndentWidth: 4
+AccessModifierOffset: -4
+ColumnLimit: 100
+
+# Braces go on their own line (function bodies, control statements, ...).
+BreakBeforeBraces: Allman
+
+# Keep trivial one-liners out unless they are empty (e.g. `{}`).
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+
+# References and pointers bind to the type name.
+PointerAlignment: Left
+ReferenceAlignment: Pointer
+
+# 1 space before trailing `//` comments.
+SpacesBeforeTrailingComments: 2
+
+# System headers first, then project headers, then other includes.
+SortIncludes: CaseSensitive
+IncludeCategories:
+  - Regex: '^<'
+    Priority: 1
+  - Regex: '^"'
+    Priority: 2
