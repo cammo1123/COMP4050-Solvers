@@ -1,0 +1,32 @@
+{
+  "name": "COMP4050-Solvers",
+  "version": "1.0.0",
+  "description": "",
+  "main": "build/Release/addon.node",
+  "scripts": {
+    "build": "node-gyp rebuild",
+    "test": "tsx test/addon.test.cts",
+    "typecheck": "tsc --noEmit",
+    "dev": "tsx test/addon.test.cts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^11.20.0",
+      "onFail": "download"
+    }
+  },
+  "type": "module",
+  "dependencies": {
+    "node-addon-api": "^8.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "node-gyp": "^13.0.1",
+    "tsx": "^4.23.5",
+    "typescript": "^7.0.2"
+  }
+}
