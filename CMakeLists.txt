@@ -12,9 +12,12 @@ endif()
 
 option(COMP4050_BUILD_ADDON "Build the Node.js N-API addon" ON)
 
+include(cmake/Deps.cmake)
+
 # Core solver logic, shared by the Node addon and the standalone binary.
 add_library(solvers_core STATIC src/solvers.cpp)
 target_include_directories(solvers_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_link_libraries(solvers_core PUBLIC nlohmann_json::nlohmann_json)
 
 # Standalone binary: plain main() entry point, no Node bindings.
 add_executable(solvers src/main.cpp)
