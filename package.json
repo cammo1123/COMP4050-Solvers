@@ -2,11 +2,14 @@
   "name": "COMP4050-Solvers",
   "version": "1.0.0",
   "description": "",
-  "main": "build/Release/addon.node",
+  "main": "index.cjs",
+  "types": "index.d.cts",
   "scripts": {
     "build": "node-gyp rebuild",
     "compile-commands": "node scripts/generate-compile-commands.mjs",
     "postbuild": "node scripts/generate-compile-commands.mjs",
+    "prebuild": "prebuildify --napi",
+    "install": "node-gyp-build",
     "format": "node scripts/format.mjs",
     "format:check": "node scripts/format.mjs --check",
     "test": "tsx test/addon.test.cts",
@@ -25,11 +28,13 @@
   },
   "type": "module",
   "dependencies": {
-    "node-addon-api": "^8.9.1"
+    "node-addon-api": "^8.9.1",
+    "node-gyp-build": "^4.8.1"
   },
   "devDependencies": {
     "@types/node": "^26.1.2",
     "node-gyp": "^13.0.1",
+    "prebuildify": "^6.0.1",
     "tsx": "^4.23.5",
     "typescript": "^7.0.2"
   }
