@@ -6,9 +6,6 @@
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build/cmake/solvers.exe",
-      "args": [
-        "21"
-      ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],

@@ -2,12 +2,95 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "cmake:configure:core",
+      "type": "process",
+      "command": "cmake",
+      "args": [
+        "--preset",
+        "core",
+        "-DCMAKE_MAKE_PROGRAM=ninja",
+        "-DCMAKE_CXX_COMPILER=clang-cl"
+      ],
+      "problemMatcher": [],
+      "hide": true,
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
       "label": "build:core",
-      "type": "shell",
-      "command": "node",
-      "args": ["node/scripts/build.mjs", "core"],
-      "group": { "kind": "build", "isDefault": true },
-      "problemMatcher": ["$gcc"],
+      "type": "process",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "core"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "dependsOn": [
+        "cmake:configure:core"
+      ],
+      "dependsOrder": "sequence",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "cmake:configure:node",
+      "type": "process",
+      "command": "cmake",
+      "args": [
+        "--preset",
+        "debug",
+        "-DCOMP4050_BUILD_ADDON=ON",
+        "-DCMAKE_MAKE_PROGRAM=ninja",
+        "-DCMAKE_CXX_COMPILER=clang-cl"
+      ],
+      "problemMatcher": [],
+      "hide": true,
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "cmake:build:addon",
+      "type": "process",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "debug"
+      ],
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "hide": true,
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "build:node",
+      "type": "process",
+      "command": "${env:ComSpec}",
+      "args": [
+        "/d",
+        "/c",
+        "if not exist node\\build\\Release mkdir node\\build\\Release && copy /y build\\cmake\\addon.node node\\build\\Release\\addon.node"
+      ],
+      "group": "build",
+      "problemMatcher": [],
+      "dependsOn": [
+        "cmake:configure:node",
+        "cmake:build:addon"
+      ],
+      "dependsOrder": "sequence",
       "options": {
         "cwd": "${workspaceFolder}"
       }
