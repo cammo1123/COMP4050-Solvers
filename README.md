@@ -27,6 +27,13 @@ pnpm compile-commands
 
 ## Test
 
+Tests use [Vitest](https://vitest.dev/).
+
 ```sh
-pnpm test
+pnpm test          # run the test suite once
+pnpm test:watch    # watch mode
 ```
+
+The suite covers native addon loading, the exported API surface, and the
+behaviour of `hello()`. `pnpm typecheck` runs the TypeScript checker over the
+tests as well.

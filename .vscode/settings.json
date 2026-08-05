@@ -5,11 +5,9 @@
     "--compile-commands-dir=build",
     "--background-index"
   ],
-
   // Avoid clashing with clangd if the Microsoft C/C++ extension is installed.
   "C_Cpp.intelliSenseEngine": "disabled",
   "C_Cpp.formatting": "disabled",
-
   // clangd (which honors .clang-format) is the formatter for C/C++ files.
   "editor.formatOnSave": true,
   "[c]": {
@@ -18,10 +16,9 @@
   "[cpp]": {
     "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
   },
-
   // Make sure gyp's .gypi files get basic syntax support.
   "files.associations": {
     "*.gyp": "json",
     "*.gypi": "json"
-  }
+  },
 }

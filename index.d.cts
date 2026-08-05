@@ -1,5 +1,6 @@
 declare const addon: {
-  hello(): string;
+	hello(): string;
+	sendJSON(num: number): number | null;
 };
 
 export = addon;
