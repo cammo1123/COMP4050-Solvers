@@ -33,7 +33,7 @@ describe("addon.hello()", () => {
 	});
 
 	it("fails on invalid input", () => {
-		const result = Reflect.apply(addon.sendJSON, null, ["anything"]);
-		expect(result).toBe(EXPECTED_GREETING);
+		const result = Reflect.apply(addon.sendJSON, null, [42]);
+		expect(result).toBe(84);
 	});
 });

@@ -1,32 +1,26 @@
-# Based on the Google style guide with adjustments to match this
-# project's existing conventions (4-space indent, Allman braces).
-BasedOnStyle: Google
-Language: Cpp
-
+---
+AlignEscapedNewlines: Left
+AlignTrailingComments:
+    Kind: Always
+    OverEmptyLines: 0
+BasedOnStyle: WebKit
+BraceWrapping:
+    AfterFunction: true
+BreakBeforeBraces: Custom
+BreakBeforeInheritanceComma: true
+BreakConstructorInitializers: BeforeComma
+IndentPPDirectives: AfterHash
+IndentRequiresClause: false
+InsertNewlineAtEOF: true
+LineEnding: LF
+NamespaceIndentation: None
+QualifierAlignment: Right
+RemoveSemicolon: true
+RequiresClausePosition: WithFollowing
+RequiresExpressionIndentation: OuterScope
+SpaceAfterTemplateKeyword: false
+WrapNamespaceBodyWithEmptyLines: Always
+UseTab: Always
+TabWidth: 4
 IndentWidth: 4
-ContinuationIndentWidth: 4
-AccessModifierOffset: -4
-ColumnLimit: 100
-
-# Braces go on their own line (function bodies, control statements, ...).
-BreakBeforeBraces: Allman
-
-# Keep trivial one-liners out unless they are empty (e.g. `{}`).
-AllowShortFunctionsOnASingleLine: Empty
-AllowShortIfStatementsOnASingleLine: Never
-AllowShortLoopsOnASingleLine: false
-
-# References and pointers bind to the type name.
-PointerAlignment: Left
-ReferenceAlignment: Pointer
-
-# 1 space before trailing `//` comments.
-SpacesBeforeTrailingComments: 2
-
-# System headers first, then project headers, then other includes.
-SortIncludes: CaseSensitive
-IncludeCategories:
-  - Regex: '^<'
-    Priority: 1
-  - Regex: '^"'
-    Priority: 2
+ColumnLimit: 0

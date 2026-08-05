@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug standalone (C++)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/standalone/solvers.exe",
+      "args": ["21"],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "preLaunchTask": "build:standalone"
+    }
+  ]
+}

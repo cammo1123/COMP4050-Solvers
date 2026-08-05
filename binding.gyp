@@ -2,7 +2,7 @@
   "targets": [
     {
       "target_name": "addon",
-      "sources": [ "src/addon.cpp" ],
+      "sources": [ "src/addon.cpp", "src/solvers.cpp" ],
       "include_dirs": [
         "<!@(node -p \"require('node-addon-api').include_dir\")"
       ],
