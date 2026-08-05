@@ -1,0 +1,13 @@
+{
+  "name": "COMP4050-Solvers",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.cjs",
+  "types": "node/index.d.cts",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "node-gyp-build": "^4.8.1"
+  }
+}
