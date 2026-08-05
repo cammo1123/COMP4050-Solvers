@@ -10,6 +10,91 @@
   `index.d.cts`, TypeScript types, Vitest tests, and the npm scripts that drive
   CMake. `node-gyp` is not used; CMake builds the addon directly.
 
+## Branching strategy
+
+Three branches matter:
+
+- `main` — **stable**. Never developed on directly. It only ever moves to a
+  commit that already exists on `dev` (a fast-forward).
+- `dev` — **development**. All feature work lands here. It must always be
+  **strictly ahead** of `main`: everything on `main` is also on `dev`, plus
+  more. It is never allowed to fall behind `main`.
+- `feature/*` — short-lived branches cut from `dev`, merged back into `dev`
+  via a pull request.
+
+### Rules
+
+1. **Only rebase.** Merge commits and squash merges are disabled; the only
+   merge button is "Rebase and merge". History stays linear.
+2. **Never commit directly to `main` or `dev`.** Everything goes through a
+   pull request into `dev`.
+3. **Pull requests target `dev`**, never `main`. `main` only ever receives
+   `dev` itself, and only occasionally (releases).
+4. **Never merge `main` into `dev`.** If `dev` is missing something that is on
+   `main`, the invariant was broken — fix it by re-applying that commit onto
+   `dev` (e.g. `git cherry-pick`), not by merging.
+5. **`dev` is always ahead.** After every `dev` → `main` promotion, immediately
+   add a commit on `dev` (e.g. a version bump) so it is strictly ahead again.
+
+### Day to day (feature → `dev`)
+
+```sh
+git checkout dev && git pull --rebase
+git checkout -b feature/my-change
+# ... work, commit ...
+git fetch origin && git rebase origin/dev
+git push -u origin feature/my-change
+```
+
+Open a pull request into `dev`, let CI (the `test` workflow) pass, then merge
+with **Rebase and merge**.
+
+### Promoting `dev` → `main` (occasional)
+
+Because `dev` is always ahead, the promotion is a **fast-forward**: `main`
+moves to exactly the commit `dev` points at, no new commits are created, and
+`dev` keeps its history.
+
+Do **not** use the "Rebase and merge" button for this. GitHub's rebase-and-merge
+rewrites commit SHAs even when a fast-forward is possible, which would leave
+`dev` "behind" `main` (two branches with equivalent but different commits).
+Fast-forward from the command line instead:
+
+```sh
+git checkout main
+git fetch origin
+git merge --ff-only origin/dev   # fails loudly if main is not behind dev
+git push origin main
+```
+
+Then restore the "dev is ahead" invariant immediately:
+
+```sh
+git checkout dev
+git commit --allow-empty -m "chore: dev is ahead of main"
+git push origin dev
+```
+
+### Enforcing it (GitHub settings)
+
+1. **Merge button** — Settings → General → Pull requests: uncheck "Allow merge
+   commits" and "Allow squash merging", check "Allow rebase merging". That makes
+   rebase the only merge method.
+2. **Protect `dev`** — Settings → Branches → rule for `dev`:
+   - Require a pull request before merging.
+   - Require status checks to pass before merging (the `test` workflow).
+   - Require branches to be up to date before merging.
+   - Block force pushes (never rewrite `dev` history).
+3. **Protect `main`** — the same rule for `main`, plus only a maintainer with
+   push rights runs the `--ff-only` promotion. Block force pushes.
+
+Working practices that keep the model intact:
+
+- Always `git pull --rebase`, never a plain `git pull` (it creates merge commits).
+- Delete a feature branch once its PR merges.
+- If a PR into `dev` is behind, rebase the feature branch onto the latest `dev`
+  again and force-push *it* — never open a PR from `dev` into the feature branch.
+
 ## Prerequisites
 
 - CMake >= 3.21 (for presets), Ninja, and a C++17 compiler.
@@ -84,3 +169,10 @@ pnpm test:watch    # watch mode
 
 The suite covers native addon loading, the exported API surface, and the
 behaviour of `hello()`.
+
+### CI
+
+The `test` workflow (`.github/workflows/test.yml`) installs deps, builds the
+addon with CMake/Ninja, and runs `pnpm test` on every pull request into `dev`
+or `main` and on every push to `dev`. Add it as a required status check on
+`dev` and `main` so nothing unreviewed or failing can merge.
