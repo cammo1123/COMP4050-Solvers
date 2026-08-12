@@ -83,7 +83,7 @@ pnpm test:watch    # watch mode
 pnpm typecheck     # TypeScript checker over src/ and tests
 ```
 
-The suite covers native addon loading, `hello()`, and the `solve()` binary
+The suite covers native addon loading, `info()`, and the `solve()` binary
 boundary: marshalling boxes across the FlatBuffers boundary, malformed-payload
 errors at the native layer, and the wrapper's TS-side checks.
 

@@ -56,9 +56,9 @@ pnpm clean
 
 ```ts
 import addon from "COMP4050-Solvers";
-// or: import { hello, solve } from "COMP4050-Solvers";
+// or: import { info, solve } from "COMP4050-Solvers";
 
-addon.hello();
+addon.info();
 
 addon.solve({
   boxes: [
