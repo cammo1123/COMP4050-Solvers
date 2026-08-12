@@ -20,6 +20,7 @@
   "scripts": {
     "build": "node scripts/generate.mjs && node scripts/build.mjs && pnpm build:ts",
     "build:core": "node scripts/build.mjs core",
+    "run:core": "node scripts/build.mjs core && node scripts/run-core.mjs",
     "build:ts": "tsc -p tsconfig.build.json",
     "prebuild:binaries": "node scripts/build.mjs --prebuild",
     "prepublishOnly": "pnpm run build",
