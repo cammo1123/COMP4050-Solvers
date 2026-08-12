@@ -2,12 +2,19 @@
   "name": "COMP4050-Solvers",
   "version": "1.0.0",
   "description": "",
-  "main": "index.cjs",
-  "types": "node/index.d.cts",
+  "main": "node/dist/addon.js",
+  "types": "node/dist/addon.d.ts",
+  "exports": {
+    ".": {
+      "types": "./node/dist/addon.d.ts",
+      "default": "./node/dist/addon.js"
+    }
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "flatbuffers": "25.9.23",
     "node-gyp-build": "^4.8.1"
   }
 }
