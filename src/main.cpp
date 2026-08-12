@@ -5,7 +5,7 @@
 
 int main(int argc, char** argv)
 {
-	std::cout << solvers::hello() << std::endl;
+	std::cout << solvers::info() << std::endl;
 
 	if (argc > 1) {
 		double value = std::strtod(argv[1], nullptr);

@@ -2,10 +2,8 @@ import { describe, expect, it } from "vitest";
 import * as flatbuffers from "flatbuffers";
 
 import addon from "../index.cjs";
-import { hello, solve } from "../src/addon.js";
+import { info, solve } from "../src/addon.js";
 import { BoxType, SolveRequest, SolveResponse } from "../src/gen/solver.js";
-
-const EXPECTED_GREETING = "Hello from the native C++ side!";
 
 // Encodes a request into a raw FlatBuffers Buffer using the generated code, so
 // the native boundary can be exercised directly (bypassing the wrapper).
@@ -94,12 +92,13 @@ describe("native solve(Buffer) boundary", () => {
 	});
 });
 
-describe("addon.hello() re-export", () => {
+describe("addon.info() re-export", () => {
 	it("still works through the wrapper", () => {
-		expect(hello()).toBe(EXPECTED_GREETING);
+		expect(info()).toMatch(/^COMP4050-Solvers 1\.0\.0 \((Debug|Release)\)$/m);
+		expect(info()).toMatch(/  git: [0-9a-f]{7,} \([^)]*\)/);
 	});
 
 	it("still works on the native export", () => {
-		expect(addon.hello()).toBe(EXPECTED_GREETING);
+		expect(addon.info()).toBe(info());
 	});
 });

@@ -7,8 +7,8 @@ export function solve(request: SolveRequest): SolveResponse {
 	return decodeResponse(native.solve(Buffer.from(encodeRequest(request))));
 }
 
-export function hello(): string {
-	return native.hello();
+export function info(): string {
+	return native.info();
 }
 
-export default { hello, solve };
+export default { info, solve };

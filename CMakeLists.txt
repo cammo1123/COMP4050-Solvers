@@ -11,8 +11,65 @@ endif()
 
 option(COMP4050_BUILD_ADDON "Build the Node.js N-API addon" ON)
 
+# ---- build info ----
+find_package(Git QUIET)
+
+set(BUILDINFO_PROJECT_NAME "${PROJECT_NAME}")
+set(BUILDINFO_PROJECT_VERSION "${PROJECT_VERSION}")
+set(BUILDINFO_PLATFORM "${CMAKE_SYSTEM_NAME}")
+set(BUILDINFO_GIT_HASH "unknown")
+set(BUILDINFO_GIT_BRANCH "unknown")
+set(BUILDINFO_GIT_DIRTY 0)
+set(BUILDINFO_BUILD_TIME "")
+
+if(GIT_FOUND)
+    execute_process(
+        COMMAND "${GIT_EXECUTABLE}" rev-parse --short HEAD
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        OUTPUT_VARIABLE BUILDINFO_GIT_HASH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE buildinfo_git_hash_result
+    )
+    execute_process(
+        COMMAND "${GIT_EXECUTABLE}" rev-parse --abbrev-ref HEAD
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        OUTPUT_VARIABLE BUILDINFO_GIT_BRANCH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE buildinfo_git_branch_result
+    )
+    execute_process(
+        COMMAND "${GIT_EXECUTABLE}" status --porcelain
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        OUTPUT_VARIABLE buildinfo_git_status
+    )
+
+    if(NOT buildinfo_git_hash_result EQUAL 0 OR NOT BUILDINFO_GIT_HASH)
+        set(BUILDINFO_GIT_HASH "unknown")
+    endif()
+    if(NOT buildinfo_git_branch_result EQUAL 0 OR NOT BUILDINFO_GIT_BRANCH)
+        set(BUILDINFO_GIT_BRANCH "unknown")
+    endif()
+    if(buildinfo_git_status)
+        set(BUILDINFO_GIT_DIRTY 1)
+    endif()
+endif()
+
+string(TIMESTAMP BUILDINFO_BUILD_TIME "%Y-%m-%d %H:%M:%S UTC" UTC)
+
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(BUILDINFO_ARCH "${CMAKE_SYSTEM_PROCESSOR} 64-bit")
+else()
+    set(BUILDINFO_ARCH "${CMAKE_SYSTEM_PROCESSOR} 32-bit")
+endif()
+
+set(BUILDINFO_COMPILER "${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
+
+if(NOT BUILDINFO_NODE_VERSION)
+    set(BUILDINFO_NODE_VERSION "none")
+endif()
+
 add_library(solvers_core STATIC src/solvers.cpp)
-target_include_directories(solvers_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(solvers_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(solvers src/main.cpp)
 target_link_libraries(solvers PRIVATE solvers_core)
@@ -56,6 +113,8 @@ if(COMP4050_BUILD_ADDON)
         if(NOT node_version_result EQUAL 0 OR NOT node_version OR NOT node_arch)
             message(FATAL_ERROR "Failed to query the Node.js version and architecture")
         endif()
+
+        set(BUILDINFO_NODE_VERSION "v${node_version}")
 
         set(node_dir "${CMAKE_BINARY_DIR}/node-v${node_version}")
         set(node_include "${node_dir}/node-v${node_version}/include/node")
@@ -145,3 +204,9 @@ if(COMP4050_BUILD_ADDON)
         endif()
     endif()
 endif()
+
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/buildinfo.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/buildinfo.h"
+    @ONLY
+)
