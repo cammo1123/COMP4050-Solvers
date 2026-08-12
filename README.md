@@ -46,6 +46,12 @@ pnpm build:core
 # binary: build/core/solvers (solvers.exe on Windows)
 ```
 
+Remove all generated bindings, build outputs, binaries, and local compiler cache:
+
+```sh
+pnpm clean
+```
+
 ## Usage
 
 ```ts
