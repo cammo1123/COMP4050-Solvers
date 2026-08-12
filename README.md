@@ -36,7 +36,7 @@ pnpm build
 Standalone CLI only (no addon; fetches the header-only FlatBuffers runtime):
 
 ```sh
-pnpm --dir node build:core
+pnpm build:core
 # binary: build/core/solvers (solvers.exe on Windows)
 ```
 

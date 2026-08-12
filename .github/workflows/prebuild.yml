@@ -13,21 +13,18 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-    defaults:
-      run:
-        working-directory: node
     steps:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 11.20.0
+          version: 11.21.0
 
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: node/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install
@@ -39,7 +36,7 @@ jobs:
           key: flatc-${{ runner.os }}-25.12.19
 
       - name: Install flatc (FlatBuffers compiler)
-        run: node scripts/generate.mjs --version
+        run: node node/scripts/generate.mjs --version
 
       - name: Build (CMake/Ninja)
         run: pnpm build
@@ -53,7 +50,7 @@ jobs:
       - name: Standalone smoke test
         shell: bash
         run: |
-          BINARY=$([[ "$RUNNER_OS" == "Windows" ]] && echo "../build/addon/solvers.exe" || echo "../build/addon/solvers")
+          BINARY=$([[ "$RUNNER_OS" == "Windows" ]] && echo "build/addon/solvers.exe" || echo "build/addon/solvers")
           "$BINARY" 21
 
       - name: Upload prebuilds

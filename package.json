@@ -10,18 +10,45 @@
 			"default": "./node/dist/addon.js"
 		}
 	},
+	"files": [
+		"node/dist",
+		"node/index.cjs",
+		"node/index.d.cts",
+		"node/build/Release/addon.node",
+		"node/prebuilds"
+	],
 	"scripts": {
-		"build": "pnpm --dir node build",
-		"build:core": "pnpm --dir node build:core",
-		"build:ts": "pnpm --dir node build:ts",
-		"run": "pnpm --dir node run:core",
-		"test": "pnpm --dir node test"
+		"build": "node node/scripts/generate.mjs && node node/scripts/build.mjs && pnpm build:ts",
+		"build:core": "node node/scripts/build.mjs core",
+		"build:ts": "tsc -p node/tsconfig.build.json",
+		"run:core": "node node/scripts/build.mjs core && node node/scripts/run-core.mjs",
+		"prebuild:binaries": "node node/scripts/build.mjs --prebuild",
+		"prepublishOnly": "pnpm run build",
+		"format": "node node/scripts/build.mjs format",
+		"test": "node node/scripts/build.mjs --if-needed && pnpm build:ts && vitest run --root node",
+		"test:watch": "node node/scripts/build.mjs --if-needed && pnpm build:ts && vitest --root node",
+		"typecheck": "tsc -p node/tsconfig.json"
+	},
+	"devEngines": {
+		"packageManager": {
+			"name": "pnpm",
+			"version": "^11.20.0",
+			"onFail": "download"
+		}
 	},
 	"keywords": [],
 	"author": "",
 	"license": "ISC",
+	"type": "module",
 	"dependencies": {
 		"flatbuffers": "25.9.23",
 		"node-gyp-build": "^4.8.1"
+	},
+	"devDependencies": {
+		"@types/node": "^26.1.2",
+		"@vitest/coverage-v8": "^4.1.10",
+		"tsx": "^4.23.5",
+		"typescript": "^7.0.2",
+		"vitest": "^4.1.10"
 	}
 }
