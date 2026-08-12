@@ -287,29 +287,6 @@ inline std::vector<uint8_t> encodeResponse(${response}T const& response)
   return file
 }
 
-function tsType (field) {
-  switch (field.kind) {
-    case 'scalar':
-      return field.scalar === 'bool' ? 'boolean' : 'number'
-    case 'vector-scalar':
-      return 'number[]'
-    case 'table':
-      return `${field.table}T | null`
-    case 'vector-table':
-      return `${field.table}T[]`
-  }
-}
-
-function tsInterface (name, fields, nestedOptional) {
-  const body = fields
-    .map((f) => {
-      const optional = f.kind !== 'scalar' && nestedOptional
-      return `\t${f.name}${optional ? '?' : ''}: ${tsType(f)};`
-    })
-    .join('\n')
-  return `export interface ${name} {\n${body}\n}`
-}
-
 function tsArg (prefix, field, schema) {
   const tables = schema.tables
   const access = `${prefix}.${field.name}`
@@ -345,25 +322,44 @@ function tsChecks (fields) {
   return out.join('\n')
 }
 
+function tsFieldType (field) {
+  switch (field.kind) {
+    case 'scalar':
+      return field.scalar === 'bool' ? 'boolean' : 'number'
+    case 'vector-scalar':
+      return 'number[]'
+    case 'table':
+      return `${field.table}T | null`
+    case 'vector-table':
+      return `${field.table}T[]`
+  }
+}
+
+function tsTypeExport (name, fields, className) {
+  if (className) {
+    return `export type ${name} = Omit<${className}, "pack">;`
+  }
+  const body = fields.map((f) => `\t${f.name}: ${tsFieldType(f)};`).join('\n')
+  return `export type ${name} = {\n${body}\n};`
+}
+
 function generateTs (schema) {
   const { request, response, tables } = schema
   const nested = collectNestedTables(schema)
   const requestFields = resolveTable(request, tables)
-  const responseFields = resolveTable(response, tables)
-
-  const interfaceTables = [...new Set([request, response, ...nested])].sort()
   const classTables = [...new Set([request, ...nested])].sort()
-
-  const interfaceName = (t) => (t === request || t === response ? t : `${t}T`)
 
   const valueImports = [
     ...classTables.map((t) => `\t${t}T as ${t}Object,`),
     `\t${response} as ${response}Message,`,
+    `\t${response}T as ${response}Object,`,
   ].join('\n')
 
-  const interfaces = interfaceTables
-    .map((t) => `${tsInterface(interfaceName(t), resolveTable(t, tables), t !== response)}\n`)
-    .join('\n')
+  const typeExports = [
+    ...nested.map((t) => tsTypeExport(`${t}T`, resolveTable(t, tables), `${t}Object`)),
+    tsTypeExport(request, requestFields),
+    tsTypeExport(response, resolveTable(response, tables)),
+  ].join('\n')
 
   const checks = tsChecks(requestFields)
   const constructorArgs = requestFields.map((f) => tsArg('request', f, schema)).join(',\n\t\t')
@@ -376,7 +372,8 @@ import {
 ${valueImports}
 } from "./myaddon.js";
 
-${interfaces}
+${typeExports}
+
 export function encodeRequest(request: ${request}): Uint8Array {
 ${checks}
 \tconst message = new ${request}Object(
@@ -390,7 +387,7 @@ ${checks}
 
 export function decodeResponse(bytes: Uint8Array): ${response} {
 \tconst message = ${response}Message.getRootAs${response}(new flatbuffers.ByteBuffer(bytes));
-\treturn message.unpack() as ${response};
+\treturn message.unpack();
 }
 `
   return file

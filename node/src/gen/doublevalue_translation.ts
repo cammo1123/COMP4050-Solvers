@@ -7,25 +7,19 @@ import {
 	DataT as DataObject,
 	DoubleValueRequestT as DoubleValueRequestObject,
 	DoubleValueResponse as DoubleValueResponseMessage,
+	DoubleValueResponseT as DoubleValueResponseObject,
 } from "./myaddon.js";
 
-export interface ConfigT {
-	keep: boolean;
-}
-
-export interface DataT {
-	id: number;
-}
-
-export interface DoubleValueRequest {
+export type ConfigT = Omit<ConfigObject, "pack">;
+export type DataT = Omit<DataObject, "pack">;
+export type DoubleValueRequest = {
 	version: number;
-	config?: ConfigT | null;
-	data?: DataT[];
-}
-
-export interface DoubleValueResponse {
+	config: ConfigT | null;
 	data: DataT[];
-}
+};
+export type DoubleValueResponse = {
+	data: DataT[];
+};
 
 export function encodeRequest(request: DoubleValueRequest): Uint8Array {
 	if (!Number.isInteger(request.version) || request.version < -32768 || request.version > 32767) {
@@ -47,5 +41,5 @@ export function encodeRequest(request: DoubleValueRequest): Uint8Array {
 
 export function decodeResponse(bytes: Uint8Array): DoubleValueResponse {
 	const message = DoubleValueResponseMessage.getRootAsDoubleValueResponse(new flatbuffers.ByteBuffer(bytes));
-	return message.unpack() as DoubleValueResponse;
+	return message.unpack();
 }
