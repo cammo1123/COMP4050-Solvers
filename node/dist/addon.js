@@ -1,9 +1,10 @@
 import native from "../index.cjs";
-import { decodeResponse, encodeRequest } from "./gen/doublevalue_translation.js";
-export function doubleValue(request) {
-    return decodeResponse(native.doubleValue(Buffer.from(encodeRequest(request))));
+import { decodeResponse, encodeRequest } from "./gen/solve_translation.js";
+export function solve(request) {
+    return decodeResponse(native.solve(Buffer.from(encodeRequest(request))));
 }
-export function hello() {
-    return native.hello();
+export function info() {
+    return native.info();
 }
+export default { info, solve };
 //# sourceMappingURL=addon.js.map
