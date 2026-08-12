@@ -12,7 +12,9 @@
 	},
 	"scripts": {
 		"build": "pnpm --dir node build",
+		"build:core": "pnpm --dir node build:core",
 		"build:ts": "pnpm --dir node build:ts",
+		"run": "pnpm --dir node run:core",
 		"test": "pnpm --dir node test"
 	},
 	"keywords": [],
