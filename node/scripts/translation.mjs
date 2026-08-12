@@ -34,7 +34,7 @@ const INT_RANGES = {
 	long: {
 		min: Number.MIN_SAFE_INTEGER,
 		max: Number.MAX_SAFE_INTEGER,
-		cppMin: '-9223372036854775807',
+		cppMin: '-9223372036854775808',
 		cppMax: '9223372036854775807',
 		label: 'int64',
 	},
@@ -174,8 +174,9 @@ function integerFields (fields) {
 
 function cppRangeCheck (requestName, field) {
 	const r = INT_RANGES[field.scalar]
+	const cppType = DOMAIN_SCALAR_TYPES[field.scalar]
 	return [
-		`\tint64_t const ${field.name} = out.${field.name};`,
+		`\t${cppType} const ${field.name} = out.${field.name};`,
 		`\tif (${field.name} < ${r.cppMin} || ${field.name} > ${r.cppMax}) {`,
 		`\t\terror = "${requestName} ${field.name} out of ${r.label} range";`,
 		'\t\treturn false;',
@@ -445,7 +446,8 @@ function cppFieldToDomain (field) {
 			return `\t${out} = ${access};`
 		case 'string':
 			if (field.optional) {
-				// FlatBuffers native tables store optional strings as empty strings.
+				// FlatBuffers T objects store optional strings as empty strings,
+				// so empty and absent are indistinguishable here.
 				return `\tif (!${access}.empty()) {\n\t\t${out} = ${access};\n\t}`
 			}
 			return `\t${out} = ${access};`

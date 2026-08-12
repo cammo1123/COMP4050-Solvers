@@ -24,9 +24,9 @@ int main(int argc, char* argv[])
 		ItemType item;
 		item.item_code = "HELLO";
 		item.item_reference = "HELLO";
-		item.width = i * 1;
-		item.length = i * 1;
-		item.depth = i * 1;
+		item.width = i;
+		item.length = i;
+		item.depth = i;
 		solve.items.push_back(std::move(item));
 	}
 
