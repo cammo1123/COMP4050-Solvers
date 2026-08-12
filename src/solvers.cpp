@@ -29,11 +29,6 @@ std::string info()
 	return out.str();
 }
 
-double doubleValue(double value)
-{
-	return value * 2;
-}
-
 SolveResponse solve(SolveRequest const& request)
 {
 	SolveResponse response;

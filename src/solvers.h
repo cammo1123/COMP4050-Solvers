@@ -8,8 +8,6 @@ namespace solvers {
 
 std::string info();
 
-double doubleValue(double value);
-
 fbs::domain::SolveResponse solve(fbs::domain::SolveRequest const& request);
 
 }
