@@ -1,0 +1,21 @@
+namespace myaddon;
+
+table Data {
+  id: double;
+}
+
+table Config {
+  keep: bool;
+}
+
+table DoubleValueRequest {
+  version: short;
+  config: Config;
+  data: [Data];
+}
+
+table DoubleValueResponse {
+  data: [Data];
+}
+
+root_type DoubleValueRequest;

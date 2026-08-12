@@ -32,6 +32,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Cache flatc
+        uses: actions/cache@v4
+        with:
+          path: node/.flatc
+          key: flatc-${{ runner.os }}-25.12.19
+
+      - name: Install flatc (FlatBuffers compiler)
+        run: node scripts/generate.mjs --version
+
       - name: Build (CMake/Ninja)
         run: pnpm build
 
@@ -44,7 +53,7 @@ jobs:
       - name: Standalone smoke test
         shell: bash
         run: |
-          BINARY=$([[ "$RUNNER_OS" == "Windows" ]] && echo "../build/cmake/solvers.exe" || echo "../build/cmake/solvers")
+          BINARY=$([[ "$RUNNER_OS" == "Windows" ]] && echo "../build/addon/solvers.exe" || echo "../build/addon/solvers")
           "$BINARY" 21
 
       - name: Upload prebuilds
