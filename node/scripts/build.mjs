@@ -110,14 +110,14 @@ function format (check) {
 }
 
 const first = args.find((a) => !a.startsWith('--'))
-if (first === 'format' || first === 'format:check') {
-  format(first === 'format:check')
+if (first === 'format') {
+  format(args.includes('--check'))
   process.exit(0)
 }
 
 const target = first ?? 'addon'
 if (!TARGETS.includes(target)) {
-  fail(`unknown target "${target}"; expected one of ${TARGETS.join(', ')} or format/format:check`)
+  fail(`unknown target "${target}"; expected one of ${TARGETS.join(', ')} or format [--check]`)
 }
 const buildType = args.includes('--release') ? 'Release' : 'Debug'
 if (!BUILD_TYPES.includes(buildType)) {

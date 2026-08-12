@@ -71,14 +71,13 @@ merge, rebase stale feature branches rather than merging `dev` into them.
 - **IntelliSense** — CMake exports `build/*/compile_commands.json`; clangd
   picks it up via `.clangd`.
 - **Formatting** — `.clang-format` defines the project style (tabs, Allman
-  braces). `pnpm --dir node format` applies it; `format:check` validates it.
+  braces). `pnpm format` applies it; `pnpm format --check` validates it.
 - **Debugging** — **Run > Start Debugging (F5)** rebuilds the standalone binary
   (`build:core`) and points the debugger at `build/core/solvers.exe`.
 
 ## Testing
 
 ```sh
-cd node
 pnpm test          # run the suite once (builds the addon on demand)
 pnpm test:watch    # watch mode
 pnpm typecheck     # TypeScript checker over src/ and tests
