@@ -1,7 +1,7 @@
 declare module "*.node" {
 	const addon: {
 		hello(): string;
-		sendJSON(num: number): number | null;
+		doubleValue(buf: Uint8Array): Buffer;
 	};
 	export default addon;
 }

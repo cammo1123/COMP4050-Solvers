@@ -5,14 +5,13 @@
   "main": "index.cjs",
   "types": "index.d.cts",
   "scripts": {
-    "build": "node scripts/build.mjs",
-    "build:release": "node scripts/build.mjs release",
+    "build": "node scripts/generate.mjs && node scripts/build.mjs",
     "build:core": "node scripts/build.mjs core",
-    "prebuild:binaries": "node scripts/prebuild.mjs",
-    "format": "node scripts/format.mjs",
-    "format:check": "node scripts/format.mjs --check",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "prebuild:binaries": "node scripts/build.mjs --prebuild",
+    "format": "node scripts/build.mjs format",
+    "format:check": "node scripts/build.mjs format:check",
+    "test": "node scripts/build.mjs --if-needed && vitest run",
+    "test:watch": "node scripts/build.mjs --if-needed && vitest",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [],
@@ -27,6 +26,7 @@
   },
   "type": "module",
   "dependencies": {
+    "flatbuffers": "25.9.23",
     "node-gyp-build": "^4.8.1"
   },
   "devDependencies": {

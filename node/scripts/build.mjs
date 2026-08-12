@@ -1,22 +1,8 @@
 #!/usr/bin/env node
-//
-// Builds the C++ targets via CMake (see CMakeLists.txt and CMakePresets.json).
-// Cross-platform:
-//   - POSIX: uses cmake/ninja from PATH.
-//   - Windows: also searches the Visual Studio install, where CMake and Ninja
-//     are bundled but often not on PATH. Prefers clang-cl when available,
-//     otherwise lets CMake pick the default toolchain.
-//
-// Usage: node scripts/build.mjs [preset]
-//   preset is one of: debug (default), release, core, core-release.
-//   The "core" presets build only the standalone binary and skip the Node
-//   addon (and its Node header download).
-//
-// After a build that includes the addon, addon.node is copied into
-// node/build/Release/ so the package can be loaded with node-gyp-build.
 
 import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -24,9 +10,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const nodeRoot = path.resolve(__dirname, '..')
 const repoRoot = path.resolve(nodeRoot, '..')
 
-const PRESETS = ['debug', 'release', 'core', 'core-release']
-const preset = PRESETS.includes(process.argv[2]) ? process.argv[2] : 'debug'
-const buildsAddon = !preset.startsWith('core')
+const TARGETS = ['addon', 'core']
+const BUILD_TYPES = ['Debug', 'Release']
+
+const args = process.argv.slice(2)
 
 const isWin = process.platform === 'win32'
 const pathVar = isWin ? 'Path' : 'PATH'
@@ -48,11 +35,8 @@ function findCMake () {
   const onPath = findOnPath('cmake')
   if (onPath) return onPath
   if (!isWin) return undefined
-  // Visual Studio bundles CMake under:
-  // <VS>\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe
   const programFilesX86 = process.env['ProgramFiles(x86)'] ?? ''
-  const editions = ['BuildTools', 'Community', 'Professional', 'Enterprise']
-  for (const edition of editions) {
+  for (const edition of ['BuildTools', 'Community', 'Professional', 'Enterprise']) {
     const candidate = path.join(
       programFilesX86,
       'Microsoft Visual Studio',
@@ -76,8 +60,6 @@ function findNinja (cmakePath) {
   const onPath = findOnPath('ninja')
   if (onPath) return onPath
   if (!isWin || !cmakePath) return undefined
-  // Bundled layout: <VS>\...\CMake\CMake\bin\cmake.exe and
-  // <VS>\...\CMake\Ninja\ninja.exe
   const candidates = [
     path.join(path.dirname(cmakePath), '..', '..', 'Ninja', 'ninja.exe'),
     path.join(path.dirname(cmakePath), '..', 'Ninja', 'ninja.exe')
@@ -89,8 +71,78 @@ function findClangCl () {
   if (!isWin) return undefined
   const onPath = findOnPath('clang-cl')
   if (onPath) return true
-  const candidate = path.join('C:\\Program Files', 'LLVM', 'bin', 'clang-cl.exe')
-  return fs.existsSync(candidate)
+  return fs.existsSync(path.join('C:\\Program Files', 'LLVM', 'bin', 'clang-cl.exe'))
+}
+
+function builtAddonPath (buildDir) {
+  return path.join(repoRoot, buildDir, 'addon.node')
+}
+
+function releaseAddonPath () {
+  return path.join(nodeRoot, 'build', 'Release', 'addon.node')
+}
+
+function prebuildAddonPath () {
+  return path.join(nodeRoot, 'prebuilds', `${os.platform()}-${os.arch()}`, 'addon.node')
+}
+
+function copyAddon (dest) {
+  fs.mkdirSync(path.dirname(dest), { recursive: true })
+  fs.copyFileSync(builtAddonPath('build/addon'), dest)
+  console.log(`[build] wrote ${dest}`)
+}
+
+function run (command, cmdArgs, options = {}) {
+  const result = spawnSync(command, cmdArgs, { cwd: repoRoot, ...options, stdio: 'inherit' })
+  if (result.error) fail(`failed to run ${command}: ${result.error.message}`)
+  if (result.status !== 0) fail(`${command} exited with code ${result.status}`)
+}
+
+function format (check) {
+  const clangFormat = findOnPath('clang-format')
+  if (!clangFormat) fail('clang-format not found on PATH')
+  const files = ['src/addon.cpp', 'src/main.cpp', 'src/solvers.cpp', 'src/solvers.h']
+  const flags = check ? ['--dry-run', '--Werror'] : ['-i']
+  for (const file of files) {
+    run(clangFormat, [...flags, file])
+  }
+  console.log(check ? '[build] formatting check passed' : '[build] formatted src/')
+}
+
+const first = args.find((a) => !a.startsWith('--'))
+if (first === 'format' || first === 'format:check') {
+  format(first === 'format:check')
+  process.exit(0)
+}
+
+const target = first ?? 'addon'
+if (!TARGETS.includes(target)) {
+  fail(`unknown target "${target}"; expected one of ${TARGETS.join(', ')} or format/format:check`)
+}
+const buildType = args.includes('--release') ? 'Release' : 'Debug'
+if (!BUILD_TYPES.includes(buildType)) {
+  fail(`unknown build type "${buildType}"`)
+}
+const ifNeeded = args.includes('--if-needed')
+const doPrebuild = args.includes('--prebuild')
+const buildDir = `build/${target}`
+const buildsAddon = target === 'addon'
+
+if (ifNeeded) {
+  const available = [releaseAddonPath(), prebuildAddonPath()].some((file) => fs.existsSync(file))
+  if (available) {
+    console.log('[build] addon.node already available; skipping build')
+    process.exit(0)
+  }
+  console.log('[build] no addon.node found; building before tests run')
+}
+
+if (doPrebuild && first === undefined) {
+  if (!fs.existsSync(builtAddonPath(buildDir))) {
+    fail('addon.node not found in build/addon. Run "pnpm build" first.')
+  }
+  copyAddon(prebuildAddonPath())
+  process.exit(0)
 }
 
 const cmake = findCMake()
@@ -104,7 +156,7 @@ if (!cmake) {
 
 const ninja = findNinja(cmake)
 if (!ninja) {
-  console.warn('[build] ninja not found; the Ninja preset requires it. Install ninja or add it to PATH.')
+  console.warn('[build] ninja not found; install ninja or add it to PATH.')
 }
 
 const env = { ...process.env }
@@ -113,33 +165,28 @@ if (ninja) {
   env[pathVar] = `${path.dirname(ninja)}${separator}${env[pathVar]}`
 }
 
-function run (args) {
-  const result = spawnSync(cmake, args, { cwd: repoRoot, env, stdio: 'inherit' })
-  if (result.error) fail(`failed to run cmake: ${result.error.message}`)
-  if (result.status !== 0) fail(`cmake exited with code ${result.status}`)
-}
+const configure = ['-S', repoRoot, '-B', buildDir]
+if (target === 'core') configure.push('-DCOMP4050_BUILD_ADDON=OFF')
+configure.push(`-DCMAKE_BUILD_TYPE=${buildType}`)
+if (ninja) configure.push('-G', 'Ninja', `-DCMAKE_MAKE_PROGRAM=${ninja}`)
+if (findClangCl()) configure.push('-DCMAKE_CXX_COMPILER=clang-cl')
 
-const configure = ['--preset', preset]
-if (ninja) {
-  configure.push('-DCMAKE_MAKE_PROGRAM=' + ninja)
-}
-if (findClangCl()) {
-  configure.push('-DCMAKE_CXX_COMPILER=clang-cl')
-}
+run(cmake, configure, { env })
+run(cmake, ['--build', buildDir], { env })
 
-run(configure)
-run(['--build', '--preset', preset])
-
-const binary = path.join(repoRoot, 'build', 'cmake', isWin ? 'solvers.exe' : 'solvers')
+const binary = path.join(repoRoot, buildDir, isWin ? 'solvers.exe' : 'solvers')
 console.log(`[build] wrote ${binary}`)
 
 if (buildsAddon) {
-  const built = path.join(repoRoot, 'build', 'cmake', 'addon.node')
-  if (!fs.existsSync(built)) {
-    fail(`addon.node was not produced by the "${preset}" preset.`)
+  if (!fs.existsSync(builtAddonPath(buildDir))) {
+    fail(`addon.node was not produced by the "${target}" target.`)
   }
-  const dest = path.join(nodeRoot, 'build', 'Release', 'addon.node')
-  fs.mkdirSync(path.dirname(dest), { recursive: true })
-  fs.copyFileSync(built, dest)
-  console.log(`[build] copied addon to ${dest}`)
+  copyAddon(releaseAddonPath())
+}
+
+if (doPrebuild) {
+  if (!fs.existsSync(builtAddonPath(buildDir))) {
+    fail(`addon.node was not produced by the "${target}" target.`)
+  }
+  copyAddon(prebuildAddonPath())
 }
