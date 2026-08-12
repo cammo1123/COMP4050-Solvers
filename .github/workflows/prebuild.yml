@@ -42,6 +42,7 @@ jobs:
         run: pnpm build:optimized
 
       - name: Snapshot prebuilt binary
+        shell: bash
         run: |
           rm -rf node/prebuilds
           pnpm prebuild:binaries
