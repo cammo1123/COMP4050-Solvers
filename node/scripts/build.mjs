@@ -4,11 +4,7 @@ import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const nodeRoot = path.resolve(__dirname, '..')
-const repoRoot = path.resolve(nodeRoot, '..')
+import { findOnPath, nodeRoot, repoRoot } from './shared.mjs'
 
 const TARGETS = ['addon', 'core']
 const BUILD_TYPES = ['Debug', 'Release']
@@ -23,22 +19,14 @@ function fail (message) {
   process.exit(1)
 }
 
-function findOnPath (name) {
-  const found = spawnSync(isWin ? 'where.exe' : 'which', [name], { encoding: 'utf8' })
-  if (found.status === 0 && found.stdout) {
-    return found.stdout.split(/\r?\n/)[0].trim()
-  }
-  return undefined
-}
-
 function findCMake () {
   const onPath = findOnPath('cmake')
   if (onPath) return onPath
   if (!isWin) return undefined
-  const programFilesX86 = process.env['ProgramFiles(x86)'] ?? ''
+  const programFiles = process.env.ProgramFiles ?? ''
   for (const edition of ['BuildTools', 'Community', 'Professional', 'Enterprise']) {
     const candidate = path.join(
-      programFilesX86,
+      programFiles,
       'Microsoft Visual Studio',
       '2022',
       edition,
@@ -102,7 +90,8 @@ function run (command, cmdArgs, options = {}) {
 function format (check) {
   const clangFormat = findOnPath('clang-format')
   if (!clangFormat) fail('clang-format not found on PATH')
-  const files = ['src/addon.cpp', 'src/main.cpp', 'src/solvers.cpp', 'src/solvers.h']
+  const srcDir = path.join(repoRoot, 'src')
+  const files = fs.readdirSync(srcDir).filter(f => f.endsWith('.cpp') || f.endsWith('.h')).map(f => path.join('src', f))
   const flags = check ? ['--dry-run', '--Werror'] : ['-i']
   for (const file of files) {
     run(clangFormat, [...flags, file])

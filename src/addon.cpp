@@ -49,7 +49,7 @@ protected:
 
 	void OnError(Napi::Error const& error) override
 	{
-		_deferred.Reject(Napi::TypeError::New(Env(), error.Message()).Value());
+		_deferred.Reject(Napi::Error::New(Env(), error.Message()).Value());
 	}
 
 private:
