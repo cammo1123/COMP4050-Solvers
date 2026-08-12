@@ -42,7 +42,9 @@ jobs:
         run: pnpm build:optimized
 
       - name: Snapshot prebuilt binary
-        run: pnpm prebuild:binaries
+        run: |
+          rm -rf node/prebuilds
+          pnpm prebuild:binaries
 
       - name: Test
         run: pnpm test
@@ -91,6 +93,7 @@ jobs:
 
       - name: Merge prebuilds
         run: |
+          rm -rf node/prebuilds
           mkdir -p node/prebuilds
           cp -R artifacts/*/. node/prebuilds/
 
