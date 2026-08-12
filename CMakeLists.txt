@@ -68,8 +68,57 @@ if(NOT BUILDINFO_NODE_VERSION)
     set(BUILDINFO_NODE_VERSION "none")
 endif()
 
-add_library(solvers_core STATIC src/solvers.cpp)
-target_include_directories(solvers_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
+function(comp4050_fetch_archive url dest)
+    set(archive "${dest}.tar.gz")
+
+    if(NOT EXISTS "${archive}")
+        file(DOWNLOAD "${url}" "${archive}")
+    endif()
+
+    file(ARCHIVE_EXTRACT INPUT "${archive}" DESTINATION "${dest}")
+endfunction()
+
+find_program(NODE_EXECUTABLE node)
+
+# The generated bindings from fbs/*.fbs define the boundary types shared by the
+# core, the CLI, and the addon, so the header-only FlatBuffers runtime and the
+# generated headers are required regardless of COMP4050_BUILD_ADDON.
+set(FLATBUFFERS_VERSION "25.12.19")
+set(flatbuffers_dir "${CMAKE_BINARY_DIR}/flatbuffers-${FLATBUFFERS_VERSION}")
+set(flatbuffers_include "${flatbuffers_dir}/flatbuffers-${FLATBUFFERS_VERSION}/include")
+
+if(NOT EXISTS "${flatbuffers_include}/flatbuffers/flatbuffers.h")
+    comp4050_fetch_archive(
+        "https://github.com/google/flatbuffers/archive/refs/tags/v${FLATBUFFERS_VERSION}.tar.gz"
+        "${flatbuffers_dir}"
+    )
+endif()
+
+set(GENERATED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/native/gen")
+file(GLOB SCHEMA_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/fbs/*.fbs")
+
+set(GENERATED_HEADERS)
+foreach(schema IN LISTS SCHEMA_FILES)
+    get_filename_component(schema_name "${schema}" NAME_WE)
+    list(APPEND GENERATED_HEADERS
+        "${GENERATED_DIR}/${schema_name}_generated.h"
+        "${GENERATED_DIR}/${schema_name}_translation_generated.h")
+endforeach()
+
+if(NODE_EXECUTABLE)
+    add_custom_command(
+        OUTPUT ${GENERATED_HEADERS}
+        COMMAND "${NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/generate.mjs"
+        DEPENDS
+        ${SCHEMA_FILES}
+        "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/generate.mjs"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        VERBATIM
+    )
+endif()
+
+add_library(solvers_core STATIC src/solvers.cpp ${GENERATED_HEADERS})
+target_include_directories(solvers_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR} ${GENERATED_DIR} ${flatbuffers_include})
 
 add_executable(solvers src/main.cpp)
 target_link_libraries(solvers PRIVATE solvers_core)
@@ -83,21 +132,9 @@ foreach(target solvers_core solvers)
 endforeach()
 
 if(COMP4050_BUILD_ADDON)
-    find_program(NODE_EXECUTABLE node)
-
     if(NOT NODE_EXECUTABLE)
         message(WARNING "node not found on PATH; skipping the Node.js addon target")
     else()
-        function(comp4050_fetch_archive url dest)
-            set(archive "${dest}.tar.gz")
-
-            if(NOT EXISTS "${archive}")
-                file(DOWNLOAD "${url}" "${archive}")
-            endif()
-
-            file(ARCHIVE_EXTRACT INPUT "${archive}" DESTINATION "${dest}")
-        endfunction()
-
         execute_process(
             COMMAND "${NODE_EXECUTABLE}" -p "process.versions.node"
             OUTPUT_VARIABLE node_version
@@ -153,38 +190,6 @@ if(COMP4050_BUILD_ADDON)
                 "${CMAKE_BINARY_DIR}"
             )
         endif()
-
-        set(FLATBUFFERS_VERSION "25.12.19")
-        set(flatbuffers_dir "${CMAKE_BINARY_DIR}/flatbuffers-${FLATBUFFERS_VERSION}")
-        set(flatbuffers_include "${flatbuffers_dir}/flatbuffers-${FLATBUFFERS_VERSION}/include")
-
-        if(NOT EXISTS "${flatbuffers_include}/flatbuffers/flatbuffers.h")
-            comp4050_fetch_archive(
-                "https://github.com/google/flatbuffers/archive/refs/tags/v${FLATBUFFERS_VERSION}.tar.gz"
-                "${flatbuffers_dir}"
-            )
-        endif()
-
-        set(GENERATED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/native/gen")
-        file(GLOB SCHEMA_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/fbs/*.fbs")
-
-        set(GENERATED_HEADERS)
-        foreach(schema IN LISTS SCHEMA_FILES)
-            get_filename_component(schema_name "${schema}" NAME_WE)
-            list(APPEND GENERATED_HEADERS
-                "${GENERATED_DIR}/${schema_name}_generated.h"
-                "${GENERATED_DIR}/${schema_name}_translation_generated.h")
-        endforeach()
-
-        add_custom_command(
-            OUTPUT ${GENERATED_HEADERS}
-            COMMAND "${NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/generate.mjs"
-            DEPENDS
-            ${SCHEMA_FILES}
-            "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/generate.mjs"
-            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-            VERBATIM
-        )
 
         add_library(solvers_addon MODULE src/addon.cpp ${GENERATED_HEADERS})
         target_include_directories(solvers_addon PRIVATE "${node_include}" "${napi_dir}" "${GENERATED_DIR}" "${flatbuffers_include}")

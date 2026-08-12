@@ -3,8 +3,9 @@ import native from "../index.cjs";
 import { decodeResponse, encodeRequest, type SolveRequest, type SolveResponse } from "./gen/solve_translation.js";
 export type { SolveRequest, SolveResponse } from "./gen/solve_translation.js";
 
-export function solve(request: SolveRequest): SolveResponse {
-	return decodeResponse(native.solve(Buffer.from(encodeRequest(request))));
+export async function solve(request: SolveRequest): Promise<SolveResponse> {
+	const bytes = await native.solve(Buffer.from(encodeRequest(request)));
+	return decodeResponse(bytes);
 }
 
 export function info(): string {
