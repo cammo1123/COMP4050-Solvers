@@ -1,5 +1,10 @@
-import { type DoubleValueRequest, type DoubleValueResponse } from "./gen/doublevalue_translation.js";
-export type { ConfigT, DataT, DoubleValueRequest, DoubleValueResponse } from "./gen/doublevalue_translation.js";
-export declare function doubleValue(request: DoubleValueRequest): DoubleValueResponse;
-export declare function hello(): string;
+import { type SolveRequest, type SolveResponse } from "./gen/solve_translation.js";
+export type { SolveRequest, SolveResponse } from "./gen/solve_translation.js";
+export declare function solve(request: SolveRequest): SolveResponse;
+export declare function info(): string;
+declare const _default: {
+    info: typeof info;
+    solve: typeof solve;
+};
+export default _default;
 //# sourceMappingURL=addon.d.ts.map
