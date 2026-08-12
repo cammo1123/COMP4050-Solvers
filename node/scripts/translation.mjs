@@ -169,7 +169,7 @@ function collectNestedTables (schema) {
 // Fields with integer scalars (excluding optional ones) need a runtime range
 // check, since flatbuffers itself won't reject out-of-range values.
 function integerFields (fields) {
-	return fields.filter((f) => INT_RANGES[f.scalar] && !f.optional)
+	return fields.filter((f) => f.kind === 'scalar' && INT_RANGES[f.scalar] && !f.optional)
 }
 
 function cppRangeCheck (requestName, field) {
