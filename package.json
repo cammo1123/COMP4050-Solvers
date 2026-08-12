@@ -22,6 +22,7 @@
 		"build:optimized": "node node/scripts/generate.mjs && node node/scripts/build.mjs --optimize && pnpm build:ts",
 		"build:core": "node node/scripts/build.mjs core",
 		"build:ts": "tsc -p node/tsconfig.build.json",
+		"clean": "node node/scripts/clean.mjs",
 		"run:core": "node node/scripts/build.mjs core && node node/scripts/run-core.mjs",
 		"prebuild:binaries": "node node/scripts/build.mjs --prebuild",
 		"prepublishOnly": "pnpm run build",
