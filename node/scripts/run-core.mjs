@@ -3,10 +3,7 @@
 import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const repoRoot = path.resolve(__dirname, '..', '..')
+import { repoRoot } from './shared.mjs'
 
 const binary = path.join(repoRoot, 'build', 'core', process.platform === 'win32' ? 'solvers.exe' : 'solvers')
 

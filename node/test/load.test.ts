@@ -7,4 +7,9 @@ describe("addon module", () => {
 		expect(addon).not.toBeNull();
 		expect(Array.isArray(addon)).toBe(false);
 	});
+
+	it("exports info and solve as functions", () => {
+		expect(addon.info).toBeTypeOf("function");
+		expect(addon.solve).toBeTypeOf("function");
+	});
 });

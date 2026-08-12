@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
-import { fail, nodeRoot, repoRoot } from './shared.mjs'
+import { fail, findOnPath, nodeRoot, repoRoot } from './shared.mjs'
 
 export const FLATC_VERSION = '25.12.19'
 
@@ -16,14 +16,6 @@ function run (command, args, options) {
 	const result = spawnSync(command, args, options)
 	if (result.error) return { status: -1, stdout: '', stderr: result.error.message }
 	return { status: result.status ?? -1, stdout: String(result.stdout ?? ''), stderr: String(result.stderr ?? '') }
-}
-
-function findOnPath (name) {
-	const probe = run(process.platform === 'win32' ? 'where.exe' : 'which', [name])
-	if (probe.status === 0 && probe.stdout) {
-		return probe.stdout.split(/\r?\n/)[0].trim()
-	}
-	return undefined
 }
 
 function isUsable (binary) {

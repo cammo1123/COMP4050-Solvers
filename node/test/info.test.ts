@@ -1,24 +1,19 @@
 import { describe, expect, it } from "vitest";
+import { createRequire } from "node:module";
 import addon from "../index.cjs";
 
-describe("addon.info()", () => {
-	it("returns a string", () => {
-		expect(addon.info()).toBeTypeOf("string");
-	});
+const require = createRequire(import.meta.url);
+const { version } = require("../../package.json");
 
+describe("addon.info()", () => {
 	it("describes the build", () => {
 		const info = addon.info();
-		expect(info).toMatch(/^COMP4050-Solvers 1\.0\.0 \((Debug|Release)\)$/m);
+		const escaped = version.replace(/\./g, "\\.");
+		expect(info).toMatch(new RegExp(`^COMP4050-Solvers ${escaped} \\((Debug|Release)\\)$`, "m"));
 		expect(info).toMatch(/  git: [0-9a-f]{7,} \([^)]*\)/);
 		expect(info).toMatch(/  built: \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} UTC/);
 		expect(info).toMatch(/  platform: /);
 		expect(info).toMatch(/  compiler: /);
-	});
-
-	it("returns a non-empty string", () => {
-		const info = addon.info();
-		expect(info.length).toBeGreaterThan(0);
-		expect(info.trim()).not.toBe("");
 	});
 
 	it("is deterministic across calls", () => {

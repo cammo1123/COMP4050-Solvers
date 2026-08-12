@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -13,4 +14,12 @@ export const FBS_DIR = path.join(repoRoot, 'fbs')
 export function fail (message) {
 	console.error(`[generate] ${message}`)
 	process.exit(1)
+}
+
+export function findOnPath (name) {
+	const found = spawnSync(process.platform === 'win32' ? 'where.exe' : 'which', [name], { encoding: 'utf8' })
+	if (found.status === 0 && found.stdout) {
+		return found.stdout.split(/\r?\n/)[0].trim()
+	}
+	return undefined
 }

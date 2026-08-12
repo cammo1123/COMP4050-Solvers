@@ -5,7 +5,7 @@
 
 using namespace fbs::domain;
 
-int main(int argc, char* argv[])
+int main()
 {
 	std::cout << solvers::info() << '\n';
 

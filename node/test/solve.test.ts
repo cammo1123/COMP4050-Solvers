@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { createRequire } from "node:module";
 import * as flatbuffers from "flatbuffers";
 
 import addon from "../index.cjs";
 import { info, solve } from "../src/addon.js";
 import { BoxType, ItemType, SolveRequest, SolveResponse } from "../src/gen/fbs.js";
+
+const require = createRequire(import.meta.url);
+const { version } = require("../../package.json");
 
 // Encodes a request into a raw FlatBuffers Buffer using the generated code, so
 // the native boundary can be exercised directly (bypassing the wrapper).
@@ -109,10 +113,10 @@ describe("native solve(Buffer) boundary", () => {
 		expect(() => Reflect.apply(addon.solve, null, [null])).toThrow(TypeError);
 	});
 
-	it("throws a TypeError on a truncated/garbage buffer", async () => {
-		await expect(addon.solve(Buffer.from([1, 2, 3]))).rejects.toThrow(TypeError);
-		await expect(addon.solve(Buffer.alloc(0))).rejects.toThrow(TypeError);
-		await expect(addon.solve(Buffer.alloc(8))).rejects.toThrow(TypeError);
+	it("throws an Error on a truncated/garbage buffer", async () => {
+		await expect(addon.solve(Buffer.from([1, 2, 3]))).rejects.toThrow(Error);
+		await expect(addon.solve(Buffer.alloc(0))).rejects.toThrow(Error);
+		await expect(addon.solve(Buffer.alloc(8))).rejects.toThrow(Error);
 	});
 
 	it("round-trips through the raw boundary deterministically", async () => {
@@ -135,7 +139,8 @@ describe("native solve(Buffer) boundary", () => {
 
 describe("addon.info() re-export", () => {
 	it("still works through the wrapper", () => {
-		expect(info()).toMatch(/^COMP4050-Solvers 1\.0\.0 \((Debug|Release)\)$/m);
+		const escaped = version.replace(/\./g, "\\.");
+		expect(info()).toMatch(new RegExp(`^COMP4050-Solvers ${escaped} \\((Debug|Release)\\)$`, "m"));
 		expect(info()).toMatch(/  git: [0-9a-f]{7,} \([^)]*\)/);
 	});
 

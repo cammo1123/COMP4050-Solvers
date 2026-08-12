@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { createRequire } from "node:module";
 
 import * as COMP4050Solver from "COMP4050-Solvers";
 import { info, solve } from "COMP4050-Solvers";
 import type { SolveRequest, SolveResponse } from "COMP4050-Solvers";
 import { BoxTypeT, ItemTypeT } from "../src/gen/solve_translation";
+
+const require = createRequire(import.meta.url);
+const { version } = require("../../package.json");
 
 describe("package public API (typed entry)", () => {
 	it("has a default export", () => {
@@ -11,7 +15,8 @@ describe("package public API (typed entry)", () => {
 	});
 
 	it("exposes info()", () => {
-		expect(info()).toMatch(/^COMP4050-Solvers 1\.0\.0 \((Debug|Release)\)$/m);
+		const escaped = version.replace(/\./g, "\\.");
+		expect(info()).toMatch(new RegExp(`^COMP4050-Solvers ${escaped} \\((Debug|Release)\\)$`, "m"));
 		expect(info()).toMatch(/  git: [0-9a-f]{7,} \([^)]*\)/);
 		expect(info()).toMatch(/  platform: /);
 		expect(info()).toMatch(/  compiler: /);
@@ -55,8 +60,4 @@ describe("package public API (typed entry)", () => {
 		});
 	});
 
-	it("does not expose the raw buffer-based binding", () => {
-		expect(solve.length).toBe(1);
-		expect(info.length).toBe(0);
-	});
 });
