@@ -1,0 +1,1 @@
+{"version":3,"file":"myaddon.js","sourceRoot":"","sources":["../../src/gen/myaddon.ts"],"names":[],"mappings":"AAAA,qEAAqE;AAErE,oIAAoI;AAEpI,OAAO,EAAE,MAAM,EAAE,OAAO,EAAE,MAAM,qBAAqB,CAAC;AACtD,OAAO,EAAE,IAAI,EAAE,KAAK,EAAE,MAAM,mBAAmB,CAAC;AAChD,OAAO,EAAE,kBAAkB,EAAE,mBAAmB,EAAE,MAAM,mCAAmC,CAAC;AAC5F,OAAO,EAAE,mBAAmB,EAAE,oBAAoB,EAAE,MAAM,oCAAoC,CAAC"}
