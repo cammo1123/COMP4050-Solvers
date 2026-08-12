@@ -1,0 +1,15 @@
+include "../types.fbs";
+
+namespace fbs;
+
+table SolveRequest {
+  boxes: [BoxType];
+  items: [ItemType];
+}
+
+table SolveResponse {
+  boxes: [BoxType];
+  items: [ItemType];
+}
+
+root_type SolveRequest;

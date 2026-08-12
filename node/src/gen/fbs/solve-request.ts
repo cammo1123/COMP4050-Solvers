@@ -4,8 +4,8 @@
 
 import * as flatbuffers from 'flatbuffers';
 
-import { BoxType, BoxTypeT } from '../solver/box-type.js';
-import { ItemType, ItemTypeT } from '../solver/item-type.js';
+import { BoxType, BoxTypeT } from '../fbs/box-type.js';
+import { ItemType, ItemTypeT } from '../fbs/item-type.js';
 
 
 export class SolveRequest implements flatbuffers.IUnpackableObject<SolveRequestT> {

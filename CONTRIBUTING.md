@@ -98,14 +98,21 @@ snapshots the built binaries.
 ## Generated code
 
 Bindings are generated, committed, and regenerated on `pnpm build` (or by CMake
-via `add_custom_command`) whenever a schema or generator changes. Each
-`*.fbs` dropped into `fbs/` is picked up automatically — no file names are
+via `add_custom_command`) whenever a schema or generator changes. Schemas under
+`fbs/` and `fbs/operations/` are picked up automatically - no file names are
 hardcoded anywhere.
 
-- `node/scripts/generate.mjs` runs flatc for C++ and TypeScript, then writes a
-  translation layer per schema: `native/gen/<name>_generated.h`,
-  `native/gen/<name>_translation_generated.h`, and
-  `node/src/gen/<name>_translation.ts`.
+- `fbs/types.fbs` contains shared tables and produces
+  `native/gen/types_generated.h` and `native/gen/types_domain_generated.h`.
+- Operation schemas under `fbs/operations/` produce their own
+  `<name>_generated.h`, `<name>_domain_generated.h`,
+  `<name>_translation_generated.h`, and TypeScript translation layer.
+- `node/scripts/generate.mjs` follows schema includes and runs flatc for both
+  the shared and operation schemas.
+- The domain header defines pure-C++ structs (no FlatBuffers types) for every
+  table, plus `toDomain`/`fromDomain` per type. The core and CLI only ever see
+  domain types; FlatBuffers stays at the addon boundary (`decodeRequest`,
+  `encodeResponse`).
 - The hand-written code (`node/src/addon.ts`, `src/addon.cpp`) only validates
   input and applies the domain transform; marshalling is entirely generated, so
   the schema cannot drift from the code.
