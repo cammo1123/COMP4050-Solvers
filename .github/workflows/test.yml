@@ -34,41 +34,18 @@ jobs:
       - name: Install flatc (FlatBuffers compiler)
         run: node node/scripts/generate.mjs --version
 
-      - name: Build addon (CMake/Ninja)
-        run: pnpm build
+      - name: Build addon (CMake/Ninja, max optimization)
+        run: pnpm build:optimized
 
       - name: Run node tests
         run: pnpm test
 
-  commit-dist:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
-    needs: test
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
         with:
-          version: 11.21.0
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Build dist (tsc)
-        run: pnpm build:ts
-
-      - name: Commit and push dist
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f node/dist
-          git diff --cached --quiet || git commit -m "chore: update dist [skip ci]"
-          git push
+          name: build-${{ runner.os }}
+          path: |
+            node/build/Release/addon.node
+            build/addon/solvers
+            build/addon/solvers.exe
+          if-no-files-found: ignore

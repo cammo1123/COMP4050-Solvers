@@ -119,12 +119,13 @@ const target = first ?? 'addon'
 if (!TARGETS.includes(target)) {
   fail(`unknown target "${target}"; expected one of ${TARGETS.join(', ')} or format [--check]`)
 }
-const buildType = args.includes('--release') ? 'Release' : 'Debug'
+const buildType = args.includes('--release') || args.includes('--optimize') ? 'Release' : 'Debug'
 if (!BUILD_TYPES.includes(buildType)) {
   fail(`unknown build type "${buildType}"`)
 }
 const ifNeeded = args.includes('--if-needed')
 const doPrebuild = args.includes('--prebuild')
+const optimize = args.includes('--optimize')
 const buildDir = `build/${target}`
 const buildsAddon = target === 'addon'
 
@@ -168,6 +169,7 @@ if (ninja) {
 const configure = ['-S', repoRoot, '-B', buildDir]
 if (target === 'core') configure.push('-DCOMP4050_BUILD_ADDON=OFF')
 configure.push(`-DCMAKE_BUILD_TYPE=${buildType}`)
+if (optimize) configure.push('-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON')
 if (ninja) configure.push('-G', 'Ninja', `-DCMAKE_MAKE_PROGRAM=${ninja}`)
 if (findClangCl()) configure.push('-DCMAKE_CXX_COMPILER=clang-cl')
 

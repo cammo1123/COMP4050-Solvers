@@ -19,6 +19,7 @@
 	],
 	"scripts": {
 		"build": "node node/scripts/generate.mjs && node node/scripts/build.mjs && pnpm build:ts",
+		"build:optimized": "node node/scripts/generate.mjs && node node/scripts/build.mjs --optimize && pnpm build:ts",
 		"build:core": "node node/scripts/build.mjs core",
 		"build:ts": "tsc -p node/tsconfig.build.json",
 		"run:core": "node node/scripts/build.mjs core && node node/scripts/run-core.mjs",
