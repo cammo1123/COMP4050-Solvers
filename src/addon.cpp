@@ -1,3 +1,4 @@
+#include "solve_domain_generated.h"
 #include "solve_generated.h"
 #include "solve_translation_generated.h"
 #include "solvers.h"
@@ -27,16 +28,18 @@ public:
 protected:
 	void Execute() override
 	{
-		solver::SolveRequestT request;
+		fbs::SolveRequestT request;
 		std::string error;
-		if (!solver::translation::decodeRequest(_request.data(), _request.size(), request, error)) {
+		if (!fbs::translation::decodeRequest(_request.data(), _request.size(), request, error)) {
 			SetError(error);
 			return;
 		}
 
-		solver::SolveResponseT const response = solvers::solve(request);
+		fbs::domain::SolveRequest const domain = fbs::domain::toDomain(request);
+		fbs::domain::SolveResponse const response = solvers::solve(domain);
+		fbs::SolveResponseT const encoded = fbs::domain::fromDomain(response);
 
-		_response = solver::translation::encodeResponse(response);
+		_response = fbs::translation::encodeResponse(encoded);
 	}
 
 	void OnOK() override

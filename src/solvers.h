@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "solve_generated.h"
+#include "solve_domain_generated.h"
 
 namespace solvers {
 
@@ -10,6 +10,6 @@ std::string info();
 
 double doubleValue(double value);
 
-solver::SolveResponseT solve(solver::SolveRequestT const& request);
+fbs::domain::SolveResponse solve(fbs::domain::SolveRequest const& request);
 
 }

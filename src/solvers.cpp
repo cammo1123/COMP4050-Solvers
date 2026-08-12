@@ -1,12 +1,10 @@
 #include "solvers.h"
 
-#include <chrono>
-#include <memory>
 #include <sstream>
-#include <thread>
 
 #include "buildinfo.h"
-#include "solve_generated.h"
+
+using namespace fbs::domain;
 
 namespace solvers {
 
@@ -36,21 +34,12 @@ double doubleValue(double value)
 	return value * 2;
 }
 
-solver::SolveResponseT solve(solver::SolveRequestT const& request)
+SolveResponse solve(SolveRequest const& request)
 {
-	std::this_thread::sleep_for(std::chrono::seconds(1));
+	SolveResponse response;
 
-	solver::SolveResponseT response;
-
-	response.boxes.reserve(request.boxes.size());
-	for (auto const& box : request.boxes) {
-		response.boxes.push_back(std::make_unique<solver::BoxTypeT>(*box));
-	}
-
-	response.items.reserve(request.items.size());
-	for (auto const& item : request.items) {
-		response.items.push_back(std::make_unique<solver::ItemTypeT>(*item));
-	}
+	response.boxes = request.boxes;
+	response.items = request.items;
 
 	return response;
 }

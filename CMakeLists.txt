@@ -95,13 +95,19 @@ if(NOT EXISTS "${flatbuffers_include}/flatbuffers/flatbuffers.h")
 endif()
 
 set(GENERATED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/native/gen")
-file(GLOB SCHEMA_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/fbs/*.fbs")
+file(GLOB_RECURSE SCHEMA_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/fbs/*.fbs")
+file(GLOB_RECURSE OPERATION_SCHEMA_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/fbs/operations/*.fbs")
 
 set(GENERATED_HEADERS)
 foreach(schema IN LISTS SCHEMA_FILES)
     get_filename_component(schema_name "${schema}" NAME_WE)
     list(APPEND GENERATED_HEADERS
         "${GENERATED_DIR}/${schema_name}_generated.h"
+        "${GENERATED_DIR}/${schema_name}_domain_generated.h")
+endforeach()
+foreach(schema IN LISTS OPERATION_SCHEMA_FILES)
+    get_filename_component(schema_name "${schema}" NAME_WE)
+    list(APPEND GENERATED_HEADERS
         "${GENERATED_DIR}/${schema_name}_translation_generated.h")
 endforeach()
 
@@ -112,6 +118,9 @@ if(NODE_EXECUTABLE)
         DEPENDS
         ${SCHEMA_FILES}
         "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/generate.mjs"
+        "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/generated.mjs"
+        "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/shared.mjs"
+        "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/translation.mjs"
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         VERBATIM
     )

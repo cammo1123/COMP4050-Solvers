@@ -3,7 +3,7 @@ import * as flatbuffers from "flatbuffers";
 
 import addon from "../index.cjs";
 import { info, solve } from "../src/addon.js";
-import { BoxType, SolveRequest, SolveResponse } from "../src/gen/solver.js";
+import { BoxType, SolveRequest, SolveResponse } from "../src/gen/fbs.js";
 
 // Encodes a request into a raw FlatBuffers Buffer using the generated code, so
 // the native boundary can be exercised directly (bypassing the wrapper).
