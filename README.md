@@ -33,7 +33,7 @@ and the header-only FlatBuffers runtime):
 pnpm build
 ```
 
-Standalone CLI only (no addon, no header downloads):
+Standalone CLI only (no addon; fetches the header-only FlatBuffers runtime):
 
 ```sh
 pnpm --dir node build:core

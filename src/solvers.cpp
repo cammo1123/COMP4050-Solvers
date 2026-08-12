@@ -1,6 +1,9 @@
 #include "solvers.h"
 
+#include <chrono>
+#include <memory>
 #include <sstream>
+#include <thread>
 
 #include "buildinfo.h"
 
@@ -30,6 +33,20 @@ std::string info()
 double doubleValue(double value)
 {
 	return value * 2;
+}
+
+solver::SolveResponseT solve(solver::SolveRequestT const& request)
+{
+	std::this_thread::sleep_for(std::chrono::seconds(1));
+
+	solver::SolveResponseT response;
+	response.boxes.reserve(request.boxes.size());
+
+	for (auto const& box : request.boxes) {
+		response.boxes.push_back(std::make_unique<solver::BoxTypeT>(*box));
+	}
+
+	return response;
 }
 
 }

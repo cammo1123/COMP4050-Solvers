@@ -5,7 +5,56 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
+
+namespace {
+
+class SolveWorker final : public Napi::AsyncWorker {
+public:
+	SolveWorker(Napi::Env env, std::vector<uint8_t> request)
+		: Napi::AsyncWorker(env, "solvers::solve")
+		, _request(std::move(request))
+		, _deferred(Napi::Promise::Deferred::New(env))
+	{
+	}
+
+	Napi::Promise Promise()
+	{
+		return _deferred.Promise();
+	}
+
+protected:
+	void Execute() override
+	{
+		solver::SolveRequestT request;
+		if (!solver::translation::decodeRequest(_request.data(), _request.size(), request, _error)) {
+			return;
+		}
+
+		solver::SolveResponseT const response = solvers::solve(request);
+
+		_response = solver::translation::encodeResponse(response);
+	}
+
+	void OnOK() override
+	{
+		_deferred.Resolve(Napi::Buffer<uint8_t>::Copy(Env(), _response.data(), _response.size()));
+	}
+
+	void OnError(Napi::Error const& error) override
+	{
+		_deferred.Reject(Napi::TypeError::New(Env(), error.Message()).Value());
+	}
+
+private:
+	std::vector<uint8_t> _request;
+	std::vector<uint8_t> _response;
+	std::string _error;
+	Napi::Promise::Deferred _deferred;
+};
+
+} // namespace
 
 Napi::Value info(Napi::CallbackInfo const& info)
 {
@@ -16,35 +65,16 @@ Napi::Value solve(Napi::CallbackInfo const& info)
 {
 	Napi::Env env = info.Env();
 	if (info.Length() < 1 || !info[0].IsBuffer()) {
-		Napi::TypeError::New(env, "solve expects a Buffer containing a FlatBuffers DoubleValueRequest").ThrowAsJavaScriptException();
+		Napi::TypeError::New(env, "solve expects a Buffer containing a FlatBuffers SolveRequest").ThrowAsJavaScriptException();
 		return env.Null();
 	}
 
 	Napi::Buffer<uint8_t> requestBytes = info[0].As<Napi::Buffer<uint8_t>>();
+	std::vector<uint8_t> request(requestBytes.Data(), requestBytes.Data() + requestBytes.Length());
 
-	solver::SolveRequestT request;
-	std::string error;
-	if (!solver::translation::decodeRequest(requestBytes.Data(), requestBytes.Length(), request, error)) {
-		Napi::TypeError::New(env, error).ThrowAsJavaScriptException();
-		return env.Null();
-	}
-
-	solver::SolveResponseT response;
-	for (auto const& item : request.boxes) {
-		auto value = std::make_unique<solver::BoxTypeT>();
-		value->reference = item->reference;
-		value->depth = item->depth;
-		value->width = item->width;
-		value->length = item->length;
-		value->box_weight = item->box_weight;
-		value->max_weight = item->max_weight;
-		value->maximum_boxes = item->maximum_boxes;
-		value->active = item->active;
-		response.boxes.push_back(std::move(value));
-	}
-
-	std::vector<uint8_t> const responseBytes = solver::translation::encodeResponse(response);
-	return Napi::Buffer<uint8_t>::Copy(env, responseBytes.data(), responseBytes.size());
+	auto* worker = new SolveWorker(env, std::move(request));
+	worker->Queue();
+	return worker->Promise();
 }
 
 Napi::Object Init(Napi::Env env, Napi::Object exports)
