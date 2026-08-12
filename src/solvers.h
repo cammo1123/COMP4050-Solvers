@@ -4,7 +4,7 @@
 
 namespace solvers {
 
-std::string hello();
+std::string info();
 
 double doubleValue(double value);
 

@@ -1,19 +1,20 @@
 import { describe, expect, it } from "vitest";
 
 import * as COMP4050Solver from "COMP4050-Solvers";
-import { solve, hello } from "COMP4050-Solvers";
+import { info, solve } from "COMP4050-Solvers";
 import type { SolveRequest, SolveResponse } from "COMP4050-Solvers";
 import { BoxTypeT } from "../src/gen/solve_translation";
-
-const EXPECTED_GREETING = "Hello from the native C++ side!";
 
 describe("package public API (typed entry)", () => {
 	it("has a default export", () => {
 		expect(COMP4050Solver).toHaveProperty(["default"]);
 	});
 
-	it("exposes hello()", () => {
-		expect(hello()).toBe(EXPECTED_GREETING);
+	it("exposes info()", () => {
+		expect(info()).toMatch(/^COMP4050-Solvers 1\.0\.0 \((Debug|Release)\)$/m);
+		expect(info()).toMatch(/  git: [0-9a-f]{7,} \([^)]*\)/);
+		expect(info()).toMatch(/  platform: /);
+		expect(info()).toMatch(/  compiler: /);
 	});
 
 	it("exposes a typed solve()", () => {
@@ -43,6 +44,6 @@ describe("package public API (typed entry)", () => {
 
 	it("does not expose the raw buffer-based binding", () => {
 		expect(solve.length).toBe(1);
-		expect(hello.length).toBe(0);
+		expect(info.length).toBe(0);
 	});
 });

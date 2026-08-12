@@ -7,9 +7,9 @@
 #include <string>
 #include <vector>
 
-Napi::Value hello(Napi::CallbackInfo const& info)
+Napi::Value info(Napi::CallbackInfo const& info)
 {
-	return Napi::String::New(info.Env(), solvers::hello());
+	return Napi::String::New(info.Env(), solvers::info());
 }
 
 Napi::Value solve(Napi::CallbackInfo const& info)
@@ -49,7 +49,7 @@ Napi::Value solve(Napi::CallbackInfo const& info)
 
 Napi::Object Init(Napi::Env env, Napi::Object exports)
 {
-	exports.Set(Napi::String::New(env, "hello"), Napi::Function::New(env, hello));
+	exports.Set(Napi::String::New(env, "info"), Napi::Function::New(env, info));
 	exports.Set(Napi::String::New(env, "solve"), Napi::Function::New(env, solve));
 	return exports;
 }

@@ -1,5 +1,5 @@
 declare const addon: {
-	hello(): string;
+	info(): string;
 	solve(buf: Uint8Array): Buffer;
 };
 
