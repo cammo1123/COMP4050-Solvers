@@ -2,7 +2,7 @@ name: prebuild
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
   workflow_dispatch:
 
@@ -38,8 +38,8 @@ jobs:
       - name: Install flatc (FlatBuffers compiler)
         run: node node/scripts/generate.mjs --version
 
-      - name: Build (CMake/Ninja)
-        run: pnpm build
+      - name: Build (CMake/Ninja, max optimization)
+        run: pnpm build:optimized
 
       - name: Snapshot prebuilt binary
         run: pnpm prebuild:binaries
@@ -61,12 +61,28 @@ jobs:
 
   commit:
     needs: prebuild
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.21.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build dist (tsc)
+        run: pnpm build:ts
 
       - name: Download prebuilds
         uses: actions/download-artifact@v4
@@ -78,10 +94,11 @@ jobs:
           mkdir -p node/prebuilds
           cp -R artifacts/*/. node/prebuilds/
 
-      - name: Commit and push
+      - name: Commit and push dist + prebuilds
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f node/prebuilds
-          git diff --cached --quiet || git commit -m "chore: update prebuilt binaries [skip ci]"
+          git add -f node/dist node/prebuilds
+          git diff --cached --quiet || git commit -m "chore: update dist and prebuilt binaries [skip ci]"
+          git pull --rebase
           git push

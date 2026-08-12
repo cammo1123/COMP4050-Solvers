@@ -33,6 +33,12 @@ and the header-only FlatBuffers runtime):
 pnpm build
 ```
 
+Release build with maximum optimizations (LTO; used by CI):
+
+```sh
+pnpm build:optimized
+```
+
 Standalone CLI only (no addon; fetches the header-only FlatBuffers runtime):
 
 ```sh
