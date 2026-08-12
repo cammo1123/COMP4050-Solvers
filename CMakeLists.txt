@@ -33,9 +33,11 @@ if(COMP4050_BUILD_ADDON)
     else()
         function(comp4050_fetch_archive url dest)
             set(archive "${dest}.tar.gz")
+
             if(NOT EXISTS "${archive}")
                 file(DOWNLOAD "${url}" "${archive}")
             endif()
+
             file(ARCHIVE_EXTRACT INPUT "${archive}" DESTINATION "${dest}")
         endfunction()
 
@@ -50,12 +52,14 @@ if(COMP4050_BUILD_ADDON)
             OUTPUT_VARIABLE node_arch
             OUTPUT_STRIP_TRAILING_WHITESPACE
         )
+
         if(NOT node_version_result EQUAL 0 OR NOT node_version OR NOT node_arch)
             message(FATAL_ERROR "Failed to query the Node.js version and architecture")
         endif()
 
         set(node_dir "${CMAKE_BINARY_DIR}/node-v${node_version}")
         set(node_include "${node_dir}/node-v${node_version}/include/node")
+
         if(NOT EXISTS "${node_include}/node_api.h")
             comp4050_fetch_archive(
                 "https://nodejs.org/download/release/v${node_version}/node-v${node_version}-headers.tar.gz"
@@ -64,13 +68,16 @@ if(COMP4050_BUILD_ADDON)
         endif()
 
         set(node_lib "")
+
         if(WIN32)
             if(node_arch STREQUAL "ia32")
                 set(win_arch "x86")
             else()
                 set(win_arch "${node_arch}")
             endif()
+
             set(node_lib "${node_dir}/win-${win_arch}/node.lib")
+
             if(NOT EXISTS "${node_lib}")
                 file(DOWNLOAD
                     "https://nodejs.org/download/release/v${node_version}/win-${win_arch}/node.lib"
@@ -80,6 +87,7 @@ if(COMP4050_BUILD_ADDON)
         endif()
 
         set(napi_dir "${CMAKE_BINARY_DIR}/node-addon-api-8.9.1")
+
         if(NOT EXISTS "${napi_dir}/napi.h")
             comp4050_fetch_archive(
                 "https://github.com/nodejs/node-addon-api/archive/refs/tags/v8.9.1.tar.gz"
@@ -90,6 +98,7 @@ if(COMP4050_BUILD_ADDON)
         set(FLATBUFFERS_VERSION "25.12.19")
         set(flatbuffers_dir "${CMAKE_BINARY_DIR}/flatbuffers-${FLATBUFFERS_VERSION}")
         set(flatbuffers_include "${flatbuffers_dir}/flatbuffers-${FLATBUFFERS_VERSION}/include")
+
         if(NOT EXISTS "${flatbuffers_include}/flatbuffers/flatbuffers.h")
             comp4050_fetch_archive(
                 "https://github.com/google/flatbuffers/archive/refs/tags/v${FLATBUFFERS_VERSION}.tar.gz"
@@ -98,27 +107,37 @@ if(COMP4050_BUILD_ADDON)
         endif()
 
         set(GENERATED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/native/gen")
-        set(GENERATED_HEADER "${GENERATED_DIR}/doublevalue_generated.h")
-        set(GENERATED_TRANSLATION "${GENERATED_DIR}/doublevalue_translation_generated.h")
+        file(GLOB SCHEMA_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/fbs/*.fbs")
+
+        set(GENERATED_HEADERS)
+        foreach(schema IN LISTS SCHEMA_FILES)
+            get_filename_component(schema_name "${schema}" NAME_WE)
+            list(APPEND GENERATED_HEADERS
+                "${GENERATED_DIR}/${schema_name}_generated.h"
+                "${GENERATED_DIR}/${schema_name}_translation_generated.h")
+        endforeach()
+
         add_custom_command(
-            OUTPUT "${GENERATED_HEADER}" "${GENERATED_TRANSLATION}"
+            OUTPUT ${GENERATED_HEADERS}
             COMMAND "${NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/generate.mjs"
             DEPENDS
-                "${CMAKE_CURRENT_SOURCE_DIR}/fbs/doublevalue.fbs"
-                "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/generate.mjs"
+            ${SCHEMA_FILES}
+            "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/generate.mjs"
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
             VERBATIM
         )
 
-        add_library(solvers_addon MODULE src/addon.cpp "${GENERATED_HEADER}" "${GENERATED_TRANSLATION}")
+        add_library(solvers_addon MODULE src/addon.cpp ${GENERATED_HEADERS})
         target_include_directories(solvers_addon PRIVATE "${node_include}" "${napi_dir}" "${GENERATED_DIR}" "${flatbuffers_include}")
         target_link_libraries(solvers_addon PRIVATE solvers_core)
         set_target_properties(solvers_addon PROPERTIES PREFIX "" OUTPUT_NAME "addon" SUFFIX ".node")
+
         if(WIN32)
             target_link_libraries(solvers_addon PRIVATE "${node_lib}")
         elseif(APPLE)
             target_link_options(solvers_addon PRIVATE "-undefined" "dynamic_lookup")
         endif()
+
         if(MSVC)
             target_compile_options(solvers_addon PRIVATE /W4)
         else()

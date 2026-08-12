@@ -1,0 +1,23 @@
+namespace solver;
+
+table BoxType {
+  reference: string;
+  width: float;
+  length: float;
+  depth: float;
+
+  max_weight: float = null;
+  box_weight: float = null;
+  active: bool = null;
+  maximum_boxes: int = null;
+}
+
+table SolveRequest {
+  boxes: [BoxType];
+}
+
+table SolveResponse {
+  boxes: [BoxType];
+}
+
+root_type SolveRequest;
