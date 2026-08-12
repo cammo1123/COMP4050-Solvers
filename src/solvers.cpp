@@ -6,6 +6,7 @@
 #include <thread>
 
 #include "buildinfo.h"
+#include "solve_generated.h"
 
 namespace solvers {
 
@@ -40,10 +41,15 @@ solver::SolveResponseT solve(solver::SolveRequestT const& request)
 	std::this_thread::sleep_for(std::chrono::seconds(1));
 
 	solver::SolveResponseT response;
-	response.boxes.reserve(request.boxes.size());
 
+	response.boxes.reserve(request.boxes.size());
 	for (auto const& box : request.boxes) {
 		response.boxes.push_back(std::make_unique<solver::BoxTypeT>(*box));
+	}
+
+	response.items.reserve(request.items.size());
+	for (auto const& item : request.items) {
+		response.items.push_back(std::make_unique<solver::ItemTypeT>(*item));
 	}
 
 	return response;

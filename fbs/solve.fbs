@@ -1,5 +1,7 @@
 namespace solver;
 
+attribute "optional";
+
 table BoxType {
   reference: string;
   width: float;
@@ -12,12 +14,24 @@ table BoxType {
   maximum_boxes: int = null;
 }
 
+table ItemType {
+  item_code: string;
+  item_reference: string;
+  width: int;
+  length: int;
+  depth: int;
+
+  box_group: string (optional);
+}
+
 table SolveRequest {
   boxes: [BoxType];
+  items: [ItemType];
 }
 
 table SolveResponse {
   boxes: [BoxType];
+  items: [ItemType];
 }
 
 root_type SolveRequest;

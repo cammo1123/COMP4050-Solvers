@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
 import * as flatbuffers from 'flatbuffers';
 import { BoxType } from '../solver/box-type.js';
+import { ItemType } from '../solver/item-type.js';
 export class SolveResponse {
     bb = null;
     bb_pos = 0;
@@ -25,8 +26,16 @@ export class SolveResponse {
         const offset = this.bb.__offset(this.bb_pos, 4);
         return offset ? this.bb.__vector_len(this.bb_pos + offset) : 0;
     }
+    items(index, obj) {
+        const offset = this.bb.__offset(this.bb_pos, 6);
+        return offset ? (obj || new ItemType()).__init(this.bb.__indirect(this.bb.__vector(this.bb_pos + offset) + index * 4), this.bb) : null;
+    }
+    itemsLength() {
+        const offset = this.bb.__offset(this.bb_pos, 6);
+        return offset ? this.bb.__vector_len(this.bb_pos + offset) : 0;
+    }
     static startSolveResponse(builder) {
-        builder.startObject(1);
+        builder.startObject(2);
     }
     static addBoxes(builder, boxesOffset) {
         builder.addFieldOffset(0, boxesOffset, 0);
@@ -41,30 +50,48 @@ export class SolveResponse {
     static startBoxesVector(builder, numElems) {
         builder.startVector(4, numElems, 4);
     }
+    static addItems(builder, itemsOffset) {
+        builder.addFieldOffset(1, itemsOffset, 0);
+    }
+    static createItemsVector(builder, data) {
+        builder.startVector(4, data.length, 4);
+        for (let i = data.length - 1; i >= 0; i--) {
+            builder.addOffset(data[i]);
+        }
+        return builder.endVector();
+    }
+    static startItemsVector(builder, numElems) {
+        builder.startVector(4, numElems, 4);
+    }
     static endSolveResponse(builder) {
         const offset = builder.endObject();
         return offset;
     }
-    static createSolveResponse(builder, boxesOffset) {
+    static createSolveResponse(builder, boxesOffset, itemsOffset) {
         SolveResponse.startSolveResponse(builder);
         SolveResponse.addBoxes(builder, boxesOffset);
+        SolveResponse.addItems(builder, itemsOffset);
         return SolveResponse.endSolveResponse(builder);
     }
     unpack() {
-        return new SolveResponseT(this.bb.createObjList(this.boxes.bind(this), this.boxesLength()));
+        return new SolveResponseT(this.bb.createObjList(this.boxes.bind(this), this.boxesLength()), this.bb.createObjList(this.items.bind(this), this.itemsLength()));
     }
     unpackTo(_o) {
         _o.boxes = this.bb.createObjList(this.boxes.bind(this), this.boxesLength());
+        _o.items = this.bb.createObjList(this.items.bind(this), this.itemsLength());
     }
 }
 export class SolveResponseT {
     boxes;
-    constructor(boxes = []) {
+    items;
+    constructor(boxes = [], items = []) {
         this.boxes = boxes;
+        this.items = items;
     }
     pack(builder) {
         const boxes = SolveResponse.createBoxesVector(builder, builder.createObjectOffsetList(this.boxes));
-        return SolveResponse.createSolveResponse(builder, boxes);
+        const items = SolveResponse.createItemsVector(builder, builder.createObjectOffsetList(this.items));
+        return SolveResponse.createSolveResponse(builder, boxes, items);
     }
 }
 //# sourceMappingURL=solve-response.js.map

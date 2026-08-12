@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import * as COMP4050Solver from "COMP4050-Solvers";
 import { info, solve } from "COMP4050-Solvers";
 import type { SolveRequest, SolveResponse } from "COMP4050-Solvers";
-import { BoxTypeT } from "../src/gen/solve_translation";
+import { BoxTypeT, ItemTypeT } from "../src/gen/solve_translation";
 
 describe("package public API (typed entry)", () => {
 	it("has a default export", () => {
@@ -17,17 +17,19 @@ describe("package public API (typed entry)", () => {
 		expect(info()).toMatch(/  compiler: /);
 	});
 
-	it("exposes a typed solve()", () => {
+	it("exposes a typed solve()", async () => {
 		const request: SolveRequest = {
 			boxes: [{ depth: 10, length: 10, width: 10, reference: "A" }],
+			items: [{ depth: 10, length: 10, width: 10, itemCode: "A", itemReference: "A" }],
 		};
-		const result: SolveResponse = solve(request);
+		const result: SolveResponse = await solve(request);
 		expect(result).toEqual({
 			boxes: [{ depth: 10, length: 10, width: 10, reference: "A" }],
+			items: [{ depth: 10, length: 10, width: 10, itemCode: "A", itemReference: "A" }],
 		});
 	});
 
-	it("accepts the nested table shapes as plain objects", () => {
+	it("accepts the nested table shapes as plain objects", async () => {
 		const boxes: BoxTypeT[] = [
 			{
 				depth: 10,
@@ -37,8 +39,19 @@ describe("package public API (typed entry)", () => {
 			},
 		];
 
-		expect(solve({ boxes })).toEqual({
+		const items: ItemTypeT[] = [
+			{
+				depth: 10,
+				length: 10,
+				width: 10,
+				itemCode: "A",
+				itemReference: "A",
+			},
+		];
+
+		expect(await solve({ boxes, items })).toEqual({
 			boxes: [{ depth: 10, length: 10, width: 10, reference: "A" }],
+			items: [{ depth: 10, length: 10, width: 10, itemCode: "A", itemReference: "A" }],
 		});
 	});
 

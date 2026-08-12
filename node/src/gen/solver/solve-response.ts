@@ -5,6 +5,7 @@
 import * as flatbuffers from 'flatbuffers';
 
 import { BoxType, BoxTypeT } from '../solver/box-type.js';
+import { ItemType, ItemTypeT } from '../solver/item-type.js';
 
 
 export class SolveResponse implements flatbuffers.IUnpackableObject<SolveResponseT> {
@@ -35,8 +36,18 @@ boxesLength():number {
   return offset ? this.bb!.__vector_len(this.bb_pos + offset) : 0;
 }
 
+items(index: number, obj?:ItemType):ItemType|null {
+  const offset = this.bb!.__offset(this.bb_pos, 6);
+  return offset ? (obj || new ItemType()).__init(this.bb!.__indirect(this.bb!.__vector(this.bb_pos + offset) + index * 4), this.bb!) : null;
+}
+
+itemsLength():number {
+  const offset = this.bb!.__offset(this.bb_pos, 6);
+  return offset ? this.bb!.__vector_len(this.bb_pos + offset) : 0;
+}
+
 static startSolveResponse(builder:flatbuffers.Builder) {
-  builder.startObject(1);
+  builder.startObject(2);
 }
 
 static addBoxes(builder:flatbuffers.Builder, boxesOffset:flatbuffers.Offset) {
@@ -55,40 +66,62 @@ static startBoxesVector(builder:flatbuffers.Builder, numElems:number) {
   builder.startVector(4, numElems, 4);
 }
 
+static addItems(builder:flatbuffers.Builder, itemsOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(1, itemsOffset, 0);
+}
+
+static createItemsVector(builder:flatbuffers.Builder, data:flatbuffers.Offset[]):flatbuffers.Offset {
+  builder.startVector(4, data.length, 4);
+  for (let i = data.length - 1; i >= 0; i--) {
+    builder.addOffset(data[i]!);
+  }
+  return builder.endVector();
+}
+
+static startItemsVector(builder:flatbuffers.Builder, numElems:number) {
+  builder.startVector(4, numElems, 4);
+}
+
 static endSolveResponse(builder:flatbuffers.Builder):flatbuffers.Offset {
   const offset = builder.endObject();
   return offset;
 }
 
-static createSolveResponse(builder:flatbuffers.Builder, boxesOffset:flatbuffers.Offset):flatbuffers.Offset {
+static createSolveResponse(builder:flatbuffers.Builder, boxesOffset:flatbuffers.Offset, itemsOffset:flatbuffers.Offset):flatbuffers.Offset {
   SolveResponse.startSolveResponse(builder);
   SolveResponse.addBoxes(builder, boxesOffset);
+  SolveResponse.addItems(builder, itemsOffset);
   return SolveResponse.endSolveResponse(builder);
 }
 
 unpack(): SolveResponseT {
   return new SolveResponseT(
-    this.bb!.createObjList<BoxType, BoxTypeT>(this.boxes.bind(this), this.boxesLength())
+    this.bb!.createObjList<BoxType, BoxTypeT>(this.boxes.bind(this), this.boxesLength()),
+    this.bb!.createObjList<ItemType, ItemTypeT>(this.items.bind(this), this.itemsLength())
   );
 }
 
 
 unpackTo(_o: SolveResponseT): void {
   _o.boxes = this.bb!.createObjList<BoxType, BoxTypeT>(this.boxes.bind(this), this.boxesLength());
+  _o.items = this.bb!.createObjList<ItemType, ItemTypeT>(this.items.bind(this), this.itemsLength());
 }
 }
 
 export class SolveResponseT implements flatbuffers.IGeneratedObject {
 constructor(
-  public boxes: (BoxTypeT)[] = []
+  public boxes: (BoxTypeT)[] = [],
+  public items: (ItemTypeT)[] = []
 ){}
 
 
 pack(builder:flatbuffers.Builder): flatbuffers.Offset {
   const boxes = SolveResponse.createBoxesVector(builder, builder.createObjectOffsetList(this.boxes));
+  const items = SolveResponse.createItemsVector(builder, builder.createObjectOffsetList(this.items));
 
   return SolveResponse.createSolveResponse(builder,
-    boxes
+    boxes,
+    items
   );
 }
 }

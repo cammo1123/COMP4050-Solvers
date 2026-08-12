@@ -28,7 +28,9 @@ protected:
 	void Execute() override
 	{
 		solver::SolveRequestT request;
-		if (!solver::translation::decodeRequest(_request.data(), _request.size(), request, _error)) {
+		std::string error;
+		if (!solver::translation::decodeRequest(_request.data(), _request.size(), request, error)) {
+			SetError(error);
 			return;
 		}
 
@@ -50,7 +52,6 @@ protected:
 private:
 	std::vector<uint8_t> _request;
 	std::vector<uint8_t> _response;
-	std::string _error;
 	Napi::Promise::Deferred _deferred;
 };
 
