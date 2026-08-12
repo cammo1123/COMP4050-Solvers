@@ -3,20 +3,29 @@ import * as flatbuffers from "flatbuffers";
 
 import addon from "../index.cjs";
 import { info, solve } from "../src/addon.js";
-import { BoxType, SolveRequest, SolveResponse } from "../src/gen/fbs.js";
+import { BoxType, ItemType, SolveRequest, SolveResponse } from "../src/gen/fbs.js";
 
 // Encodes a request into a raw FlatBuffers Buffer using the generated code, so
 // the native boundary can be exercised directly (bypassing the wrapper).
-function encodeRequest(references: string[]): Buffer {
+function encodeRequest(boxRefs: string[], itemRefs: string[] = []): Buffer {
 	const builder = new flatbuffers.Builder();
-	const dataOffsets = references.map((reference) => {
+
+	const boxOffsets = boxRefs.map((reference) => {
 		const referenceOffset = builder.createString(reference);
 		return BoxType.createBoxType(builder, referenceOffset, 100, 100, 100, null, null, null, null);
 	});
-	const dataVector = SolveRequest.createBoxesVector(builder, dataOffsets);
+	const boxesVector = SolveRequest.createBoxesVector(builder, boxOffsets);
+
+	const itemOffsets = itemRefs.map((reference) => {
+		const itemCodeOffset = builder.createString(reference);
+		const itemRefOffset = builder.createString(reference);
+		return ItemType.createItemType(builder, itemCodeOffset, itemRefOffset, 10, 10, 10, 0);
+	});
+	const itemsVector = SolveRequest.createItemsVector(builder, itemOffsets);
 
 	SolveRequest.startSolveRequest(builder);
-	SolveRequest.addBoxes(builder, dataVector);
+	SolveRequest.addBoxes(builder, boxesVector);
+	SolveRequest.addItems(builder, itemsVector);
 	const root = SolveRequest.endSolveRequest(builder);
 	builder.finish(root);
 
@@ -84,11 +93,14 @@ describe("solve() wrapper", () => {
 
 describe("native solve(Buffer) boundary", () => {
 	it("returns a Buffer when given a valid request Buffer", async () => {
-		const bytes = encodeRequest(["AAA"]);
+		const bytes = encodeRequest(["AAA"], ["item-aaa"]);
 		const result = await addon.solve(bytes);
 
 		expect(Buffer.isBuffer(result)).toBe(true);
-		expect(decodeResponse(result as Buffer).boxes[0].reference).toBe("AAA");
+		const decoded = decodeResponse(result as Buffer);
+		expect(decoded.boxes[0].reference).toBe("AAA");
+		expect(decoded.items[0].itemCode).toBe("item-aaa");
+		expect(decoded.items[0].itemReference).toBe("item-aaa");
 	});
 
 	it("throws a TypeError when the argument is not a Buffer", () => {
@@ -104,10 +116,20 @@ describe("native solve(Buffer) boundary", () => {
 	});
 
 	it("round-trips through the raw boundary deterministically", async () => {
-		const first = await addon.solve(encodeRequest(["AAA"]));
-		const second = await addon.solve(encodeRequest(["AAA"]));
+		const first = await addon.solve(encodeRequest(["AAA"], ["item-aaa"]));
+		const second = await addon.solve(encodeRequest(["AAA"], ["item-aaa"]));
 		expect(first.equals(second)).toBe(true);
-		expect(decodeResponse(first as Buffer).boxes[0].reference).toBe("AAA");
+		const decoded = decodeResponse(first as Buffer);
+		expect(decoded.boxes[0].reference).toBe("AAA");
+		expect(decoded.items[0].itemCode).toBe("item-aaa");
+	});
+
+	it("handles empty items list at the native boundary", async () => {
+		const bytes = encodeRequest(["AAA"], []);
+		const result = await addon.solve(bytes);
+		const decoded = decodeResponse(result as Buffer);
+		expect(decoded.boxes[0].reference).toBe("AAA");
+		expect(decoded.items).toEqual([]);
 	});
 });
 
