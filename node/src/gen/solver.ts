@@ -3,5 +3,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
 
 export { BoxType, BoxTypeT } from './solver/box-type.js';
+export { ItemType, ItemTypeT } from './solver/item-type.js';
 export { SolveRequest, SolveRequestT } from './solver/solve-request.js';
 export { SolveResponse, SolveResponseT } from './solver/solve-response.js';

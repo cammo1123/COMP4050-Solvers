@@ -28,13 +28,19 @@ function decodeResponse(bytes: Buffer) {
 }
 
 describe("solve() wrapper", () => {
-	it("echoes every box", () => {
-		const result = solve({
+	it("echoes every box", async () => {
+		const result = await solve({
 			boxes: [
 				{ depth: 100, length: 100, width: 100, reference: "AAA" },
 				{ depth: 100, length: 100, width: 100, reference: "BBB" },
 				{ depth: 100, length: 100, width: 100, reference: "CCC" },
 				{ depth: 100, length: 100, width: 100, reference: "DDD" },
+			],
+			items: [
+				{ depth: 100, length: 100, width: 100, itemReference: "AAA", itemCode: "AAA" },
+				{ depth: 100, length: 100, width: 100, itemReference: "BBB", itemCode: "BBB" },
+				{ depth: 100, length: 100, width: 100, itemReference: "CCC", itemCode: "CCC" },
+				{ depth: 100, length: 100, width: 100, itemReference: "DDD", itemCode: "DDD" },
 			],
 		});
 		expect(result).toEqual({
@@ -44,29 +50,42 @@ describe("solve() wrapper", () => {
 				{ depth: 100, length: 100, width: 100, reference: "CCC" },
 				{ depth: 100, length: 100, width: 100, reference: "DDD" },
 			],
+			items: [
+				{ depth: 100, length: 100, width: 100, itemReference: "AAA", itemCode: "AAA" },
+				{ depth: 100, length: 100, width: 100, itemReference: "BBB", itemCode: "BBB" },
+				{ depth: 100, length: 100, width: 100, itemReference: "CCC", itemCode: "CCC" },
+				{ depth: 100, length: 100, width: 100, itemReference: "DDD", itemCode: "DDD" },
+			],
 		});
 	});
 
-	it("handles an empty box list", () => {
-		expect(solve({ boxes: [] })).toEqual({ boxes: [] });
+	it("handles an empty box list", async () => {
+		expect(await solve({ boxes: [], items: [] })).toEqual({ boxes: [], items: [] });
 	});
 
-	it("omits unset optional fields instead of returning null", () => {
-		const result = solve({
+	it("omits unset optional fields instead of returning null", async () => {
+		const result = await solve({
 			boxes: [{ depth: 10, length: 10, width: 10, reference: "A" }],
+			items: [{ depth: 100, length: 100, width: 100, itemReference: "AAA", itemCode: "AAA" }],
 		});
-		expect(result).toEqual({ boxes: [{ depth: 10, length: 10, width: 10, reference: "A" }] });
+		expect(result).toEqual({
+			boxes: [{ depth: 10, length: 10, width: 10, reference: "A" }],
+			items: [{ depth: 100, length: 100, width: 100, itemReference: "AAA", itemCode: "AAA" }],
+		});
+
 		expect(result.boxes[0]).not.toHaveProperty("maxWeight");
 		expect(result.boxes[0]).not.toHaveProperty("boxWeight");
 		expect(result.boxes[0]).not.toHaveProperty("active");
 		expect(result.boxes[0]).not.toHaveProperty("maximumBoxes");
+
+		expect(result.items[0]).not.toHaveProperty("boxGroup");
 	});
 });
 
 describe("native solve(Buffer) boundary", () => {
-	it("returns a Buffer when given a valid request Buffer", () => {
+	it("returns a Buffer when given a valid request Buffer", async () => {
 		const bytes = encodeRequest(["AAA"]);
-		const result = addon.solve(bytes);
+		const result = await addon.solve(bytes);
 
 		expect(Buffer.isBuffer(result)).toBe(true);
 		expect(decodeResponse(result as Buffer).boxes[0].reference).toBe("AAA");
@@ -78,15 +97,15 @@ describe("native solve(Buffer) boundary", () => {
 		expect(() => Reflect.apply(addon.solve, null, [null])).toThrow(TypeError);
 	});
 
-	it("throws a TypeError on a truncated/garbage buffer", () => {
-		expect(() => addon.solve(Buffer.from([1, 2, 3]))).toThrow(TypeError);
-		expect(() => addon.solve(Buffer.alloc(0))).toThrow(TypeError);
-		expect(() => addon.solve(Buffer.alloc(8))).toThrow(TypeError);
+	it("throws a TypeError on a truncated/garbage buffer", async () => {
+		await expect(addon.solve(Buffer.from([1, 2, 3]))).rejects.toThrow(TypeError);
+		await expect(addon.solve(Buffer.alloc(0))).rejects.toThrow(TypeError);
+		await expect(addon.solve(Buffer.alloc(8))).rejects.toThrow(TypeError);
 	});
 
-	it("round-trips through the raw boundary deterministically", () => {
-		const first = addon.solve(encodeRequest(["AAA"]));
-		const second = addon.solve(encodeRequest(["AAA"]));
+	it("round-trips through the raw boundary deterministically", async () => {
+		const first = await addon.solve(encodeRequest(["AAA"]));
+		const second = await addon.solve(encodeRequest(["AAA"]));
 		expect(first.equals(second)).toBe(true);
 		expect(decodeResponse(first as Buffer).boxes[0].reference).toBe("AAA");
 	});

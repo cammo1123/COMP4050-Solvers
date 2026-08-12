@@ -4,6 +4,7 @@ import * as flatbuffers from "flatbuffers";
 
 import {
 	BoxTypeT as BoxTypeObject,
+	ItemTypeT as ItemTypeObject,
 	SolveRequestT as SolveRequestObject,
 	SolveResponse as SolveResponseMessage,
 	SolveResponseT as SolveResponseObject,
@@ -19,17 +20,28 @@ export type BoxTypeT = {
 	active?: boolean;
 	maximumBoxes?: number;
 };
+export type ItemTypeT = {
+	itemCode: string;
+	itemReference: string;
+	width: number;
+	length: number;
+	depth: number;
+	boxGroup?: string | Uint8Array;
+};
 export type SolveRequest = {
 	boxes: BoxTypeT[];
+	items: ItemTypeT[];
 };
 export type SolveResponse = {
 	boxes: BoxTypeT[];
+	items: ItemTypeT[];
 };
 
 export function encodeRequest(request: SolveRequest): Uint8Array {
 
 	const message = new SolveRequestObject(
-		(request.boxes ?? []).map((item) => new BoxTypeObject(item.reference, item.width, item.length, item.depth, item.maxWeight, item.boxWeight, item.active, item.maximumBoxes))
+		(request.boxes ?? []).map((item) => new BoxTypeObject(item.reference, item.width, item.length, item.depth, item.maxWeight, item.boxWeight, item.active, item.maximumBoxes)),
+		(request.items ?? []).map((item) => new ItemTypeObject(item.itemCode, item.itemReference, item.width, item.length, item.depth, item.boxGroup))
 	);
 
 	const builder = new flatbuffers.Builder();
@@ -41,6 +53,7 @@ export function decodeResponse(bytes: Uint8Array): SolveResponse {
 	const message = SolveResponseMessage.getRootAsSolveResponse(new flatbuffers.ByteBuffer(bytes));
 	const unpacked = message.unpack();
 	return {
-		boxes: (unpacked.boxes ?? []).map((item) => ({ reference: item.reference as string, width: item.width, length: item.length, depth: item.depth, ...(item.maxWeight !== null && item.maxWeight !== undefined ? { maxWeight: item.maxWeight } : {}), ...(item.boxWeight !== null && item.boxWeight !== undefined ? { boxWeight: item.boxWeight } : {}), ...(item.active !== null && item.active !== undefined ? { active: item.active } : {}), ...(item.maximumBoxes !== null && item.maximumBoxes !== undefined ? { maximumBoxes: item.maximumBoxes } : {}) }))
+		boxes: (unpacked.boxes ?? []).map((item) => ({ reference: item.reference as string, width: item.width, length: item.length, depth: item.depth, ...(item.maxWeight !== null && item.maxWeight !== undefined ? { maxWeight: item.maxWeight } : {}), ...(item.boxWeight !== null && item.boxWeight !== undefined ? { boxWeight: item.boxWeight } : {}), ...(item.active !== null && item.active !== undefined ? { active: item.active } : {}), ...(item.maximumBoxes !== null && item.maximumBoxes !== undefined ? { maximumBoxes: item.maximumBoxes } : {}) })),
+		items: (unpacked.items ?? []).map((item) => ({ itemCode: item.itemCode as string, itemReference: item.itemReference as string, width: item.width, length: item.length, depth: item.depth, ...(item.boxGroup !== null && item.boxGroup !== undefined ? { boxGroup: item.boxGroup } : {}) }))
 	};
 }
