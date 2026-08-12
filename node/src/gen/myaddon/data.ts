@@ -29,12 +29,23 @@ id():number {
   return offset ? this.bb!.readFloat64(this.bb_pos + offset) : 0.0;
 }
 
+name():string|null
+name(optionalEncoding:flatbuffers.Encoding):string|Uint8Array|null
+name(optionalEncoding?:any):string|Uint8Array|null {
+  const offset = this.bb!.__offset(this.bb_pos, 6);
+  return offset ? this.bb!.__string(this.bb_pos + offset, optionalEncoding) : null;
+}
+
 static startData(builder:flatbuffers.Builder) {
-  builder.startObject(1);
+  builder.startObject(2);
 }
 
 static addId(builder:flatbuffers.Builder, id:number) {
   builder.addFieldFloat64(0, id, 0.0);
+}
+
+static addName(builder:flatbuffers.Builder, nameOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(1, nameOffset, 0);
 }
 
 static endData(builder:flatbuffers.Builder):flatbuffers.Offset {
@@ -42,33 +53,40 @@ static endData(builder:flatbuffers.Builder):flatbuffers.Offset {
   return offset;
 }
 
-static createData(builder:flatbuffers.Builder, id:number):flatbuffers.Offset {
+static createData(builder:flatbuffers.Builder, id:number, nameOffset:flatbuffers.Offset):flatbuffers.Offset {
   Data.startData(builder);
   Data.addId(builder, id);
+  Data.addName(builder, nameOffset);
   return Data.endData(builder);
 }
 
 unpack(): DataT {
   return new DataT(
-    this.id()
+    this.id(),
+    this.name()
   );
 }
 
 
 unpackTo(_o: DataT): void {
   _o.id = this.id();
+  _o.name = this.name();
 }
 }
 
 export class DataT implements flatbuffers.IGeneratedObject {
 constructor(
-  public id: number = 0.0
+  public id: number = 0.0,
+  public name: string|Uint8Array|null = null
 ){}
 
 
 pack(builder:flatbuffers.Builder): flatbuffers.Offset {
+  const name = (this.name !== null ? builder.createString(this.name!) : 0);
+
   return Data.createData(builder,
-    this.id
+    this.id,
+    name
   );
 }
 }

@@ -22,14 +22,22 @@ describe("package public API (typed entry)", () => {
 			data: [{ id: 2.5 }, { id: -3 }],
 		};
 		const result: DoubleValueResponse = doubleValue(request);
-		expect(result).toEqual({ data: [{ id: 5 }, { id: -6 }] });
+		expect(result).toEqual({
+			data: [
+				{ id: 5, name: "ADDED" },
+				{ id: -6, name: "ADDED" },
+			],
+		});
 	});
 
 	it("accepts the nested table shapes as plain objects", () => {
 		const config: ConfigT = { keep: false };
 		const data: DataT[] = [{ id: 1 }, { id: 2 }];
 		expect(doubleValue({ version: 0, config, data })).toEqual({
-			data: [{ id: 2 }, { id: 4 }],
+			data: [
+				{ id: 2, name: "ADDED" },
+				{ id: 4, name: "ADDED" },
+			],
 		});
 	});
 

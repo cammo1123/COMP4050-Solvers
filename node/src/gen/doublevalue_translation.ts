@@ -10,8 +10,13 @@ import {
 	DoubleValueResponseT as DoubleValueResponseObject,
 } from "./myaddon.js";
 
-export type ConfigT = Omit<ConfigObject, "pack">;
-export type DataT = Omit<DataObject, "pack">;
+export type ConfigT = {
+	keep: boolean;
+};
+export type DataT = {
+	id: number;
+	name?: string | Uint8Array | null;
+};
 export type DoubleValueRequest = {
 	version: number;
 	config: ConfigT | null;
@@ -31,7 +36,7 @@ export function encodeRequest(request: DoubleValueRequest): Uint8Array {
 	const message = new DoubleValueRequestObject(
 		request.version,
 		request.config ? new ConfigObject(request.config.keep) : null,
-		(request.data ?? []).map((item) => new DataObject(item.id))
+		(request.data ?? []).map((item) => new DataObject(item.id, item.name))
 	);
 
 	const builder = new flatbuffers.Builder();
@@ -41,5 +46,8 @@ export function encodeRequest(request: DoubleValueRequest): Uint8Array {
 
 export function decodeResponse(bytes: Uint8Array): DoubleValueResponse {
 	const message = DoubleValueResponseMessage.getRootAsDoubleValueResponse(new flatbuffers.ByteBuffer(bytes));
-	return message.unpack();
+	const unpacked = message.unpack();
+	return {
+		data: (unpacked.data ?? []).map((item) => ({ id: item.id, name: item.name }))
+	};
 }

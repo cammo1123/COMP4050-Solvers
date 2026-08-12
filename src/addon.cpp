@@ -32,6 +32,7 @@ Napi::Value doubleValue(Napi::CallbackInfo const& info)
 	for (auto const& item : request.data) {
 		auto value = std::make_unique<myaddon::DataT>();
 		value->id = solvers::doubleValue(item->id);
+		value->name = item->name + "ADDED";
 		response.data.push_back(std::move(value));
 	}
 

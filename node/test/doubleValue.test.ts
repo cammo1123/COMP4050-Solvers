@@ -3,12 +3,7 @@ import * as flatbuffers from "flatbuffers";
 
 import addon from "../index.cjs";
 import { doubleValue, hello } from "../src/addon.js";
-import {
-	Config,
-	Data,
-	DoubleValueRequest,
-	DoubleValueResponse,
-} from "../src/gen/myaddon.js";
+import { Config, Data, DoubleValueRequest, DoubleValueResponse } from "../src/gen/myaddon.js";
 
 const EXPECTED_GREETING = "Hello from the native C++ side!";
 
@@ -16,7 +11,7 @@ const EXPECTED_GREETING = "Hello from the native C++ side!";
 // the native boundary can be exercised directly (bypassing the wrapper).
 function encodeRequest(version: number, keep: boolean, ids: number[]): Buffer {
 	const builder = new flatbuffers.Builder();
-	const dataOffsets = ids.map((id) => Data.createData(builder, id));
+	const dataOffsets = ids.map((id) => Data.createData(builder, id, 0));
 	const dataVector = DoubleValueRequest.createDataVector(builder, dataOffsets);
 	const configOffset = Config.createConfig(builder, keep);
 
@@ -31,9 +26,7 @@ function encodeRequest(version: number, keep: boolean, ids: number[]): Buffer {
 }
 
 function decodeResponse(bytes: Buffer) {
-	return DoubleValueResponse.getRootAsDoubleValueResponse(
-		new flatbuffers.ByteBuffer(bytes),
-	).unpack();
+	return DoubleValueResponse.getRootAsDoubleValueResponse(new flatbuffers.ByteBuffer(bytes)).unpack();
 }
 
 describe("doubleValue() wrapper", () => {
@@ -41,9 +34,19 @@ describe("doubleValue() wrapper", () => {
 		const result = doubleValue({
 			version: 7,
 			config: { keep: true },
-			data: [{ id: 1.5 }, { id: -2 }, { id: 0 }],
+			data: [
+				{ id: 1.5, name: "Box One" },
+				{ id: -2, name: "Box Two" },
+				{ id: 0, name: "Box Three" },
+			],
 		});
-		expect(result).toEqual({ data: [{ id: 3 }, { id: -4 }, { id: 0 }] });
+		expect(result).toEqual({
+			data: [
+				{ id: 3, name: "Box OneADDED" },
+				{ id: -4, name: "Box TwoADDED" },
+				{ id: 0, name: "Box ThreeADDED" },
+			],
+		});
 	});
 
 	it("handles an empty data list", () => {
@@ -53,7 +56,7 @@ describe("doubleValue() wrapper", () => {
 
 	it("accepts an omitted config", () => {
 		const result = doubleValue({ version: 0, config: null, data: [{ id: 10 }] });
-		expect(result).toEqual({ data: [{ id: 20 }] });
+		expect(result).toEqual({ data: [{ id: 20, name: "ADDED" }] });
 	});
 
 	it("accepts the int16 boundaries", () => {
@@ -76,9 +79,7 @@ describe("doubleValue() wrapper", () => {
 	});
 
 	it("throws a TypeError with a clear message", () => {
-		expect(() => doubleValue({ version: 99999, config: null, data: [] })).toThrow(
-			/version must be an integer in \[-32768, 32767\]/,
-		);
+		expect(() => doubleValue({ version: 99999, config: null, data: [] })).toThrow(/version must be an integer in \[-32768, 32767\]/);
 	});
 });
 

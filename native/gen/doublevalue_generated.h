@@ -34,21 +34,28 @@ struct DoubleValueResponseT;
 struct DataT : public ::flatbuffers::NativeTable {
   typedef Data TableType;
   double id = 0.0;
+  std::string name{};
 };
 
 struct Data FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef DataT NativeTableType;
   typedef DataBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_ID = 4
+    VT_ID = 4,
+    VT_NAME = 6
   };
   double id() const {
     return GetField<double>(VT_ID, 0.0);
+  }
+  const ::flatbuffers::String *name() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_NAME);
   }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<double>(verifier, VT_ID, 8) &&
+           VerifyOffset(verifier, VT_NAME) &&
+           verifier.VerifyString(name()) &&
            verifier.EndTable();
   }
   DataT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
@@ -63,6 +70,9 @@ struct DataBuilder {
   void add_id(double id) {
     fbb_.AddElement<double>(Data::VT_ID, id, 0.0);
   }
+  void add_name(::flatbuffers::Offset<::flatbuffers::String> name) {
+    fbb_.AddOffset(Data::VT_NAME, name);
+  }
   explicit DataBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -76,10 +86,23 @@ struct DataBuilder {
 
 inline ::flatbuffers::Offset<Data> CreateData(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    double id = 0.0) {
+    double id = 0.0,
+    ::flatbuffers::Offset<::flatbuffers::String> name = 0) {
   DataBuilder builder_(_fbb);
   builder_.add_id(id);
+  builder_.add_name(name);
   return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<Data> CreateDataDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    double id = 0.0,
+    const char *name = nullptr) {
+  auto name__ = name ? _fbb.CreateString(name) : 0;
+  return myaddon::CreateData(
+      _fbb,
+      id,
+      name__);
 }
 
 ::flatbuffers::Offset<Data> CreateData(::flatbuffers::FlatBufferBuilder &_fbb, const DataT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
@@ -310,6 +333,7 @@ inline void Data::UnPackTo(DataT *_o, const ::flatbuffers::resolver_function_t *
   (void)_o;
   (void)_resolver;
   { auto _e = id(); _o->id = _e; }
+  { auto _e = name(); if (_e) _o->name = _e->str(); }
 }
 
 inline ::flatbuffers::Offset<Data> CreateData(::flatbuffers::FlatBufferBuilder &_fbb, const DataT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
@@ -321,9 +345,11 @@ inline ::flatbuffers::Offset<Data> Data::Pack(::flatbuffers::FlatBufferBuilder &
   (void)_o;
   struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const DataT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
   auto _id = _o->id;
+  auto _name = _o->name.empty() ? 0 : _fbb.CreateString(_o->name);
   return myaddon::CreateData(
       _fbb,
-      _id);
+      _id,
+      _name);
 }
 
 inline ConfigT *Config::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
