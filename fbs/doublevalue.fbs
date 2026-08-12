@@ -2,6 +2,7 @@ namespace myaddon;
 
 table Data {
   id: double;
+  name: string;
 }
 
 table Config {
