@@ -70,8 +70,9 @@ function findNinja (cmakePath) {
 function findClangCl () {
   if (!isWin) return undefined
   const onPath = findOnPath('clang-cl')
-  if (onPath) return true
-  return fs.existsSync(path.join('C:\\Program Files', 'LLVM', 'bin', 'clang-cl.exe'))
+  if (onPath) return onPath
+  const candidate = path.join('C:\\Program Files', 'LLVM', 'bin', 'clang-cl.exe')
+  return fs.existsSync(candidate) ? candidate : undefined
 }
 
 function builtAddonPath (buildDir) {

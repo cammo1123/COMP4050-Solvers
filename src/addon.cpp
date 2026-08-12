@@ -60,20 +60,20 @@ private:
 
 } // namespace
 
-Napi::Value info(Napi::CallbackInfo const& info)
+Napi::Value info(Napi::CallbackInfo const& cbInfo)
 {
-	return Napi::String::New(info.Env(), solvers::info());
+	return Napi::String::New(cbInfo.Env(), solvers::info());
 }
 
-Napi::Value solve(Napi::CallbackInfo const& info)
+Napi::Value solve(Napi::CallbackInfo const& cbInfo)
 {
-	Napi::Env env = info.Env();
-	if (info.Length() < 1 || !info[0].IsBuffer()) {
+	Napi::Env env = cbInfo.Env();
+	if (cbInfo.Length() < 1 || !cbInfo[0].IsBuffer()) {
 		Napi::TypeError::New(env, "solve expects a Buffer containing a FlatBuffers SolveRequest").ThrowAsJavaScriptException();
 		return env.Null();
 	}
 
-	Napi::Buffer<uint8_t> requestBytes = info[0].As<Napi::Buffer<uint8_t>>();
+	Napi::Buffer<uint8_t> requestBytes = cbInfo[0].As<Napi::Buffer<uint8_t>>();
 	std::vector<uint8_t> request(requestBytes.Data(), requestBytes.Data() + requestBytes.Length());
 
 	auto* worker = new SolveWorker(env, std::move(request));

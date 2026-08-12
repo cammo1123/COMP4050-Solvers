@@ -4,7 +4,8 @@ import { decodeResponse, encodeRequest, type SolveRequest, type SolveResponse } 
 export type { SolveRequest, SolveResponse } from "./gen/solve_translation.js";
 
 export async function solve(request: SolveRequest): Promise<SolveResponse> {
-	const bytes = await native.solve(Buffer.from(encodeRequest(request)));
+	const encoded = encodeRequest(request);
+	const bytes = await native.solve(Buffer.from(encoded.buffer, encoded.byteOffset, encoded.byteLength));
 	return decodeResponse(bytes);
 }
 

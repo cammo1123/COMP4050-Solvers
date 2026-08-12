@@ -54,7 +54,7 @@ jobs:
         shell: bash
         run: |
           BINARY=$([[ "$RUNNER_OS" == "Windows" ]] && echo "build/addon/solvers.exe" || echo "build/addon/solvers")
-          "$BINARY" 21
+          "$BINARY"
 
       - name: Upload prebuilds
         uses: actions/upload-artifact@v4

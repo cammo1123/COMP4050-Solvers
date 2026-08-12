@@ -72,7 +72,12 @@ function(comp4050_fetch_archive url dest)
     set(archive "${dest}.tar.gz")
 
     if(NOT EXISTS "${archive}")
-        file(DOWNLOAD "${url}" "${archive}")
+        file(DOWNLOAD "${url}" "${archive}" STATUS download_status)
+        list(GET download_status 0 status_code)
+        if(NOT status_code EQUAL 0)
+            list(GET download_status 1 error_msg)
+            message(FATAL_ERROR "Failed to download ${url}: ${error_msg}")
+        endif()
     endif()
 
     file(ARCHIVE_EXTRACT INPUT "${archive}" DESTINATION "${dest}")
