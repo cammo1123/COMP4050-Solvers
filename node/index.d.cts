@@ -1,6 +1,6 @@
 declare const addon: {
 	hello(): string;
-	sendJSON(num: number): number | null;
+	doubleValue(buf: Uint8Array): Buffer;
 };
 
 export = addon;

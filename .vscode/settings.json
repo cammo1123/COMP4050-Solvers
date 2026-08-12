@@ -4,7 +4,7 @@
     "*.gypi": "json"
   },
   "clangd.arguments": [
-    "--compile-commands-dir=build/cmake",
+    "--compile-commands-dir=build/core",
     "--background-index"
   ],
   "C_Cpp.intelliSenseEngine": "disabled",

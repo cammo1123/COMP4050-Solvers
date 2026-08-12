@@ -1,4 +1,2 @@
-# Tells clangd where to find the compilation database exported by CMake
-# (CMAKE_EXPORT_COMPILE_COMMANDS, see CMakeLists.txt).
 CompileFlags:
-  CompilationDatabase: build/cmake
+  CompilationDatabase: build/core
