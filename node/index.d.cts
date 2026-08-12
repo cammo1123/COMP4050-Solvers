@@ -1,6 +1,6 @@
 declare const addon: {
 	hello(): string;
-	doubleValue(buf: Uint8Array): Buffer;
+	solve(buf: Uint8Array): Buffer;
 };
 
 export = addon;

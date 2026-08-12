@@ -1,4 +1,5 @@
-#include "doublevalue_translation_generated.h"
+#include "solve_generated.h"
+#include "solve_translation_generated.h"
 #include "solvers.h"
 #include <napi.h>
 
@@ -11,39 +12,45 @@ Napi::Value hello(Napi::CallbackInfo const& info)
 	return Napi::String::New(info.Env(), solvers::hello());
 }
 
-Napi::Value doubleValue(Napi::CallbackInfo const& info)
+Napi::Value solve(Napi::CallbackInfo const& info)
 {
 	Napi::Env env = info.Env();
 	if (info.Length() < 1 || !info[0].IsBuffer()) {
-		Napi::TypeError::New(env, "doubleValue expects a Buffer containing a FlatBuffers DoubleValueRequest").ThrowAsJavaScriptException();
+		Napi::TypeError::New(env, "solve expects a Buffer containing a FlatBuffers DoubleValueRequest").ThrowAsJavaScriptException();
 		return env.Null();
 	}
 
 	Napi::Buffer<uint8_t> requestBytes = info[0].As<Napi::Buffer<uint8_t>>();
 
-	myaddon::DoubleValueRequestT request;
+	solver::SolveRequestT request;
 	std::string error;
-	if (!myaddon::translation::decodeRequest(requestBytes.Data(), requestBytes.Length(), request, error)) {
+	if (!solver::translation::decodeRequest(requestBytes.Data(), requestBytes.Length(), request, error)) {
 		Napi::TypeError::New(env, error).ThrowAsJavaScriptException();
 		return env.Null();
 	}
 
-	myaddon::DoubleValueResponseT response;
-	for (auto const& item : request.data) {
-		auto value = std::make_unique<myaddon::DataT>();
-		value->id = solvers::doubleValue(item->id);
-		value->name = item->name + "ADDED";
-		response.data.push_back(std::move(value));
+	solver::SolveResponseT response;
+	for (auto const& item : request.boxes) {
+		auto value = std::make_unique<solver::BoxTypeT>();
+		value->reference = item->reference;
+		value->depth = item->depth;
+		value->width = item->width;
+		value->length = item->length;
+		value->box_weight = item->box_weight;
+		value->max_weight = item->max_weight;
+		value->maximum_boxes = item->maximum_boxes;
+		value->active = item->active;
+		response.boxes.push_back(std::move(value));
 	}
 
-	std::vector<uint8_t> const responseBytes = myaddon::translation::encodeResponse(response);
+	std::vector<uint8_t> const responseBytes = solver::translation::encodeResponse(response);
 	return Napi::Buffer<uint8_t>::Copy(env, responseBytes.data(), responseBytes.size());
 }
 
 Napi::Object Init(Napi::Env env, Napi::Object exports)
 {
 	exports.Set(Napi::String::New(env, "hello"), Napi::Function::New(env, hello));
-	exports.Set(Napi::String::New(env, "doubleValue"), Napi::Function::New(env, doubleValue));
+	exports.Set(Napi::String::New(env, "solve"), Napi::Function::New(env, solve));
 	return exports;
 }
 

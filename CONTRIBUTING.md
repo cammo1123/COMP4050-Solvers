@@ -1,0 +1,112 @@
+# Contributing
+
+## Branching strategy
+
+Three branches matter:
+
+- `main` — **stable**. Never developed on directly. It only ever moves to a
+  commit that already exists on `dev` (a fast-forward).
+- `dev` — **development**. All feature work lands here. It must always be
+  **strictly ahead** of `main`.
+- `feature/*` — short-lived branches cut from `dev`, merged back into `dev`
+  via a pull request.
+
+### Rules
+
+1. **Only rebase.** Merge commits and squash merges are disabled; history stays
+   linear.
+2. **Never commit directly to `main` or `dev`.** Everything goes through a pull
+   request into `dev`.
+3. **Pull requests target `dev`**, never `main`.
+4. **Never merge `main` into `dev`.** If `dev` is missing something on `main`,
+   re-apply it onto `dev` (e.g. `git cherry-pick`).
+5. **`dev` is always ahead.** After every `dev` → `main` promotion, immediately
+   add a commit on `dev` (e.g. a version bump).
+
+### Day to day (feature → `dev`)
+
+```sh
+git checkout dev && git pull --rebase
+git checkout -b feature/my-change
+# ... work, commit ...
+git fetch origin && git rebase origin/dev
+git push -u origin feature/my-change
+```
+
+Open a pull request into `dev`, let CI (the `test` workflow) pass, then merge
+with **Rebase and merge**.
+
+### Promoting `dev` → `main`
+
+`main` fast-forwards to exactly the commit `dev` points at — no new commits.
+
+```sh
+git checkout main
+git fetch origin
+git merge --ff-only origin/dev   # fails loudly if main is not behind dev
+git push origin main
+```
+
+Then restore the "dev is ahead" invariant:
+
+```sh
+git checkout dev
+git commit --allow-empty -m "chore: dev is ahead of main"
+git push origin dev
+```
+
+### Enforcing it (GitHub settings)
+
+1. Merge button — uncheck "Allow merge commits" and "Allow squash merging",
+   check "Allow rebase merging".
+2. Protect `dev` — require a PR, require status checks (the `test` workflow),
+   require up-to-date branches, block force pushes.
+3. Protect `main` — same rule; only a maintainer runs the `--ff-only` promotion.
+
+Working practices: always `git pull --rebase`, delete feature branches after
+merge, rebase stale feature branches rather than merging `dev` into them.
+
+## Development
+
+- **IntelliSense** — CMake exports `build/*/compile_commands.json`; clangd
+  picks it up via `.clangd`.
+- **Formatting** — `.clang-format` defines the project style (tabs, Allman
+  braces). `pnpm --dir node format` applies it; `format:check` validates it.
+- **Debugging** — **Run > Start Debugging (F5)** rebuilds the standalone binary
+  (`build:core`) and points the debugger at `build/core/solvers.exe`.
+
+## Testing
+
+```sh
+cd node
+pnpm test          # run the suite once (builds the addon on demand)
+pnpm test:watch    # watch mode
+pnpm typecheck     # TypeScript checker over src/ and tests
+```
+
+The suite covers native addon loading, `hello()`, and the `solve()` binary
+boundary: marshalling boxes across the FlatBuffers boundary, malformed-payload
+errors at the native layer, and the wrapper's TS-side checks.
+
+### CI
+
+The `test` workflow (`.github/workflows/test.yml`) installs deps, materialises
+`flatc` (cached under `node/.flatc/`), builds the addon with CMake/Ninja, and
+runs `pnpm test` on every pull request into `dev` or `main` and every push to
+`dev`. The `prebuild` workflow does the same across Ubuntu/macOS/Windows and
+snapshots the built binaries.
+
+## Generated code
+
+Bindings are generated, committed, and regenerated on `pnpm build` (or by CMake
+via `add_custom_command`) whenever a schema or generator changes. Each
+`*.fbs` dropped into `fbs/` is picked up automatically — no file names are
+hardcoded anywhere.
+
+- `node/scripts/generate.mjs` runs flatc for C++ and TypeScript, then writes a
+  translation layer per schema: `native/gen/<name>_generated.h`,
+  `native/gen/<name>_translation_generated.h`, and
+  `node/src/gen/<name>_translation.ts`.
+- The hand-written code (`node/src/addon.ts`, `src/addon.cpp`) only validates
+  input and applies the domain transform; marshalling is entirely generated, so
+  the schema cannot drift from the code.

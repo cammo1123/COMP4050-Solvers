@@ -1,48 +1,48 @@
 import { describe, expect, it } from "vitest";
 
-import { doubleValue, hello } from "COMP4050-Solvers";
-import type {
-	ConfigT,
-	DataT,
-	DoubleValueRequest,
-	DoubleValueResponse,
-} from "COMP4050-Solvers";
+import * as COMP4050Solver from "COMP4050-Solvers";
+import { solve, hello } from "COMP4050-Solvers";
+import type { SolveRequest, SolveResponse } from "COMP4050-Solvers";
+import { BoxTypeT } from "../src/gen/solve_translation";
 
 const EXPECTED_GREETING = "Hello from the native C++ side!";
 
 describe("package public API (typed entry)", () => {
+	it("has a default export", () => {
+		expect(COMP4050Solver).toHaveProperty(["default"]);
+	});
+
 	it("exposes hello()", () => {
 		expect(hello()).toBe(EXPECTED_GREETING);
 	});
 
-	it("exposes a typed doubleValue()", () => {
-		const request: DoubleValueRequest = {
-			version: 1,
-			config: { keep: true },
-			data: [{ id: 2.5 }, { id: -3 }],
+	it("exposes a typed solve()", () => {
+		const request: SolveRequest = {
+			boxes: [{ depth: 10, length: 10, width: 10, reference: "A" }],
 		};
-		const result: DoubleValueResponse = doubleValue(request);
+		const result: SolveResponse = solve(request);
 		expect(result).toEqual({
-			data: [
-				{ id: 5, name: "ADDED" },
-				{ id: -6, name: "ADDED" },
-			],
+			boxes: [{ depth: 10, length: 10, width: 10, reference: "A" }],
 		});
 	});
 
 	it("accepts the nested table shapes as plain objects", () => {
-		const config: ConfigT = { keep: false };
-		const data: DataT[] = [{ id: 1 }, { id: 2 }];
-		expect(doubleValue({ version: 0, config, data })).toEqual({
-			data: [
-				{ id: 2, name: "ADDED" },
-				{ id: 4, name: "ADDED" },
-			],
+		const boxes: BoxTypeT[] = [
+			{
+				depth: 10,
+				length: 10,
+				width: 10,
+				reference: "A",
+			},
+		];
+
+		expect(solve({ boxes })).toEqual({
+			boxes: [{ depth: 10, length: 10, width: 10, reference: "A" }],
 		});
 	});
 
 	it("does not expose the raw buffer-based binding", () => {
-		expect(doubleValue.length).toBe(1);
+		expect(solve.length).toBe(1);
 		expect(hello.length).toBe(0);
 	});
 });
