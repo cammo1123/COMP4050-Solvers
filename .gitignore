@@ -71,3 +71,4 @@ Testing/
 prebuilds
 node_modules
 node/.flatc/
+dist/
