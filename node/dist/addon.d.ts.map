@@ -1,0 +1,1 @@
+{"version":3,"file":"addon.d.ts","sourceRoot":"","sources":["../src/addon.ts"],"names":[],"mappings":"AAEA,OAAO,EAAiC,KAAK,kBAAkB,EAAE,KAAK,mBAAmB,EAAE,MAAM,kCAAkC,CAAC;AACpI,YAAY,EAAE,OAAO,EAAE,KAAK,EAAE,kBAAkB,EAAE,mBAAmB,EAAE,MAAM,kCAAkC,CAAC;AAEhH,wBAAgB,WAAW,CAAC,OAAO,EAAE,kBAAkB,GAAG,mBAAmB,CAE5E;AAED,wBAAgB,KAAK,IAAI,MAAM,CAE9B"}
