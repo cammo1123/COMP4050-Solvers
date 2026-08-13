@@ -1,0 +1,9 @@
+node/prebuilds/*/addon.node binary
+
+native/gen/*.h        text eol=lf
+node/src/gen/*.ts     text eol=lf
+node/dist/gen/*.ts    text eol=lf
+node/dist/gen/*.js    text eol=lf
+node/dist/gen/*.d.ts  text eol=lf
+node/dist/*.js        text eol=lf
+node/dist/*.d.ts      text eol=lf
