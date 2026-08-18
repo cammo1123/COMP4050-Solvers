@@ -20,6 +20,7 @@ table ItemType {
   width: int;
   length: int;
   depth: int;
+  weight: float;
 
   box_group: string (optional);
 }

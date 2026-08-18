@@ -53,15 +53,20 @@ depth():number {
   return offset ? this.bb!.readInt32(this.bb_pos + offset) : 0;
 }
 
+weight():number {
+  const offset = this.bb!.__offset(this.bb_pos, 14);
+  return offset ? this.bb!.readFloat32(this.bb_pos + offset) : 0.0;
+}
+
 boxGroup():string|null
 boxGroup(optionalEncoding:flatbuffers.Encoding):string|Uint8Array|null
 boxGroup(optionalEncoding?:any):string|Uint8Array|null {
-  const offset = this.bb!.__offset(this.bb_pos, 14);
+  const offset = this.bb!.__offset(this.bb_pos, 16);
   return offset ? this.bb!.__string(this.bb_pos + offset, optionalEncoding) : null;
 }
 
 static startItemType(builder:flatbuffers.Builder) {
-  builder.startObject(6);
+  builder.startObject(7);
 }
 
 static addItemCode(builder:flatbuffers.Builder, itemCodeOffset:flatbuffers.Offset) {
@@ -84,8 +89,12 @@ static addDepth(builder:flatbuffers.Builder, depth:number) {
   builder.addFieldInt32(4, depth, 0);
 }
 
+static addWeight(builder:flatbuffers.Builder, weight:number) {
+  builder.addFieldFloat32(5, weight, 0.0);
+}
+
 static addBoxGroup(builder:flatbuffers.Builder, boxGroupOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(5, boxGroupOffset, 0);
+  builder.addFieldOffset(6, boxGroupOffset, 0);
 }
 
 static endItemType(builder:flatbuffers.Builder):flatbuffers.Offset {
@@ -93,13 +102,14 @@ static endItemType(builder:flatbuffers.Builder):flatbuffers.Offset {
   return offset;
 }
 
-static createItemType(builder:flatbuffers.Builder, itemCodeOffset:flatbuffers.Offset, itemReferenceOffset:flatbuffers.Offset, width:number, length:number, depth:number, boxGroupOffset:flatbuffers.Offset):flatbuffers.Offset {
+static createItemType(builder:flatbuffers.Builder, itemCodeOffset:flatbuffers.Offset, itemReferenceOffset:flatbuffers.Offset, width:number, length:number, depth:number, weight:number, boxGroupOffset:flatbuffers.Offset):flatbuffers.Offset {
   ItemType.startItemType(builder);
   ItemType.addItemCode(builder, itemCodeOffset);
   ItemType.addItemReference(builder, itemReferenceOffset);
   ItemType.addWidth(builder, width);
   ItemType.addLength(builder, length);
   ItemType.addDepth(builder, depth);
+  ItemType.addWeight(builder, weight);
   ItemType.addBoxGroup(builder, boxGroupOffset);
   return ItemType.endItemType(builder);
 }
@@ -111,6 +121,7 @@ unpack(): ItemTypeT {
     this.width(),
     this.length(),
     this.depth(),
+    this.weight(),
     this.boxGroup()
   );
 }
@@ -122,6 +133,7 @@ unpackTo(_o: ItemTypeT): void {
   _o.width = this.width();
   _o.length = this.length();
   _o.depth = this.depth();
+  _o.weight = this.weight();
   _o.boxGroup = this.boxGroup();
 }
 }
@@ -133,6 +145,7 @@ constructor(
   public width: number = 0,
   public length: number = 0,
   public depth: number = 0,
+  public weight: number = 0.0,
   public boxGroup: string|Uint8Array|null = null
 ){}
 
@@ -148,6 +161,7 @@ pack(builder:flatbuffers.Builder): flatbuffers.Offset {
     this.width,
     this.length,
     this.depth,
+    this.weight,
     boxGroup
   );
 }

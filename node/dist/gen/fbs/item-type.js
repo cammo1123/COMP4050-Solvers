@@ -36,12 +36,16 @@ export class ItemType {
         const offset = this.bb.__offset(this.bb_pos, 12);
         return offset ? this.bb.readInt32(this.bb_pos + offset) : 0;
     }
-    boxGroup(optionalEncoding) {
+    weight() {
         const offset = this.bb.__offset(this.bb_pos, 14);
+        return offset ? this.bb.readFloat32(this.bb_pos + offset) : 0.0;
+    }
+    boxGroup(optionalEncoding) {
+        const offset = this.bb.__offset(this.bb_pos, 16);
         return offset ? this.bb.__string(this.bb_pos + offset, optionalEncoding) : null;
     }
     static startItemType(builder) {
-        builder.startObject(6);
+        builder.startObject(7);
     }
     static addItemCode(builder, itemCodeOffset) {
         builder.addFieldOffset(0, itemCodeOffset, 0);
@@ -58,25 +62,29 @@ export class ItemType {
     static addDepth(builder, depth) {
         builder.addFieldInt32(4, depth, 0);
     }
+    static addWeight(builder, weight) {
+        builder.addFieldFloat32(5, weight, 0.0);
+    }
     static addBoxGroup(builder, boxGroupOffset) {
-        builder.addFieldOffset(5, boxGroupOffset, 0);
+        builder.addFieldOffset(6, boxGroupOffset, 0);
     }
     static endItemType(builder) {
         const offset = builder.endObject();
         return offset;
     }
-    static createItemType(builder, itemCodeOffset, itemReferenceOffset, width, length, depth, boxGroupOffset) {
+    static createItemType(builder, itemCodeOffset, itemReferenceOffset, width, length, depth, weight, boxGroupOffset) {
         ItemType.startItemType(builder);
         ItemType.addItemCode(builder, itemCodeOffset);
         ItemType.addItemReference(builder, itemReferenceOffset);
         ItemType.addWidth(builder, width);
         ItemType.addLength(builder, length);
         ItemType.addDepth(builder, depth);
+        ItemType.addWeight(builder, weight);
         ItemType.addBoxGroup(builder, boxGroupOffset);
         return ItemType.endItemType(builder);
     }
     unpack() {
-        return new ItemTypeT(this.itemCode(), this.itemReference(), this.width(), this.length(), this.depth(), this.boxGroup());
+        return new ItemTypeT(this.itemCode(), this.itemReference(), this.width(), this.length(), this.depth(), this.weight(), this.boxGroup());
     }
     unpackTo(_o) {
         _o.itemCode = this.itemCode();
@@ -84,6 +92,7 @@ export class ItemType {
         _o.width = this.width();
         _o.length = this.length();
         _o.depth = this.depth();
+        _o.weight = this.weight();
         _o.boxGroup = this.boxGroup();
     }
 }
@@ -93,20 +102,22 @@ export class ItemTypeT {
     width;
     length;
     depth;
+    weight;
     boxGroup;
-    constructor(itemCode = null, itemReference = null, width = 0, length = 0, depth = 0, boxGroup = null) {
+    constructor(itemCode = null, itemReference = null, width = 0, length = 0, depth = 0, weight = 0.0, boxGroup = null) {
         this.itemCode = itemCode;
         this.itemReference = itemReference;
         this.width = width;
         this.length = length;
         this.depth = depth;
+        this.weight = weight;
         this.boxGroup = boxGroup;
     }
     pack(builder) {
         const itemCode = (this.itemCode !== null ? builder.createString(this.itemCode) : 0);
         const itemReference = (this.itemReference !== null ? builder.createString(this.itemReference) : 0);
         const boxGroup = (this.boxGroup !== null ? builder.createString(this.boxGroup) : 0);
-        return ItemType.createItemType(builder, itemCode, itemReference, this.width, this.length, this.depth, boxGroup);
+        return ItemType.createItemType(builder, itemCode, itemReference, this.width, this.length, this.depth, this.weight, boxGroup);
     }
 }
 //# sourceMappingURL=item-type.js.map

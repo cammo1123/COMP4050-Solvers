@@ -4,7 +4,7 @@
 
 import * as flatbuffers from 'flatbuffers';
 
-import { BoxType, BoxTypeT } from '../fbs/box-type.js';
+import { BoxResult, BoxResultT } from '../fbs/box-result.js';
 import { ItemType, ItemTypeT } from '../fbs/item-type.js';
 
 
@@ -26,22 +26,22 @@ static getSizePrefixedRootAsSolveResponse(bb:flatbuffers.ByteBuffer, obj?:SolveR
   return (obj || new SolveResponse()).__init(bb.readInt32(bb.position()) + bb.position(), bb);
 }
 
-boxes(index: number, obj?:BoxType):BoxType|null {
+results(index: number, obj?:BoxResult):BoxResult|null {
   const offset = this.bb!.__offset(this.bb_pos, 4);
-  return offset ? (obj || new BoxType()).__init(this.bb!.__indirect(this.bb!.__vector(this.bb_pos + offset) + index * 4), this.bb!) : null;
+  return offset ? (obj || new BoxResult()).__init(this.bb!.__indirect(this.bb!.__vector(this.bb_pos + offset) + index * 4), this.bb!) : null;
 }
 
-boxesLength():number {
+resultsLength():number {
   const offset = this.bb!.__offset(this.bb_pos, 4);
   return offset ? this.bb!.__vector_len(this.bb_pos + offset) : 0;
 }
 
-items(index: number, obj?:ItemType):ItemType|null {
+failed(index: number, obj?:ItemType):ItemType|null {
   const offset = this.bb!.__offset(this.bb_pos, 6);
   return offset ? (obj || new ItemType()).__init(this.bb!.__indirect(this.bb!.__vector(this.bb_pos + offset) + index * 4), this.bb!) : null;
 }
 
-itemsLength():number {
+failedLength():number {
   const offset = this.bb!.__offset(this.bb_pos, 6);
   return offset ? this.bb!.__vector_len(this.bb_pos + offset) : 0;
 }
@@ -50,11 +50,11 @@ static startSolveResponse(builder:flatbuffers.Builder) {
   builder.startObject(2);
 }
 
-static addBoxes(builder:flatbuffers.Builder, boxesOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(0, boxesOffset, 0);
+static addResults(builder:flatbuffers.Builder, resultsOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(0, resultsOffset, 0);
 }
 
-static createBoxesVector(builder:flatbuffers.Builder, data:flatbuffers.Offset[]):flatbuffers.Offset {
+static createResultsVector(builder:flatbuffers.Builder, data:flatbuffers.Offset[]):flatbuffers.Offset {
   builder.startVector(4, data.length, 4);
   for (let i = data.length - 1; i >= 0; i--) {
     builder.addOffset(data[i]!);
@@ -62,15 +62,15 @@ static createBoxesVector(builder:flatbuffers.Builder, data:flatbuffers.Offset[])
   return builder.endVector();
 }
 
-static startBoxesVector(builder:flatbuffers.Builder, numElems:number) {
+static startResultsVector(builder:flatbuffers.Builder, numElems:number) {
   builder.startVector(4, numElems, 4);
 }
 
-static addItems(builder:flatbuffers.Builder, itemsOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(1, itemsOffset, 0);
+static addFailed(builder:flatbuffers.Builder, failedOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(1, failedOffset, 0);
 }
 
-static createItemsVector(builder:flatbuffers.Builder, data:flatbuffers.Offset[]):flatbuffers.Offset {
+static createFailedVector(builder:flatbuffers.Builder, data:flatbuffers.Offset[]):flatbuffers.Offset {
   builder.startVector(4, data.length, 4);
   for (let i = data.length - 1; i >= 0; i--) {
     builder.addOffset(data[i]!);
@@ -78,7 +78,7 @@ static createItemsVector(builder:flatbuffers.Builder, data:flatbuffers.Offset[])
   return builder.endVector();
 }
 
-static startItemsVector(builder:flatbuffers.Builder, numElems:number) {
+static startFailedVector(builder:flatbuffers.Builder, numElems:number) {
   builder.startVector(4, numElems, 4);
 }
 
@@ -87,41 +87,41 @@ static endSolveResponse(builder:flatbuffers.Builder):flatbuffers.Offset {
   return offset;
 }
 
-static createSolveResponse(builder:flatbuffers.Builder, boxesOffset:flatbuffers.Offset, itemsOffset:flatbuffers.Offset):flatbuffers.Offset {
+static createSolveResponse(builder:flatbuffers.Builder, resultsOffset:flatbuffers.Offset, failedOffset:flatbuffers.Offset):flatbuffers.Offset {
   SolveResponse.startSolveResponse(builder);
-  SolveResponse.addBoxes(builder, boxesOffset);
-  SolveResponse.addItems(builder, itemsOffset);
+  SolveResponse.addResults(builder, resultsOffset);
+  SolveResponse.addFailed(builder, failedOffset);
   return SolveResponse.endSolveResponse(builder);
 }
 
 unpack(): SolveResponseT {
   return new SolveResponseT(
-    this.bb!.createObjList<BoxType, BoxTypeT>(this.boxes.bind(this), this.boxesLength()),
-    this.bb!.createObjList<ItemType, ItemTypeT>(this.items.bind(this), this.itemsLength())
+    this.bb!.createObjList<BoxResult, BoxResultT>(this.results.bind(this), this.resultsLength()),
+    this.bb!.createObjList<ItemType, ItemTypeT>(this.failed.bind(this), this.failedLength())
   );
 }
 
 
 unpackTo(_o: SolveResponseT): void {
-  _o.boxes = this.bb!.createObjList<BoxType, BoxTypeT>(this.boxes.bind(this), this.boxesLength());
-  _o.items = this.bb!.createObjList<ItemType, ItemTypeT>(this.items.bind(this), this.itemsLength());
+  _o.results = this.bb!.createObjList<BoxResult, BoxResultT>(this.results.bind(this), this.resultsLength());
+  _o.failed = this.bb!.createObjList<ItemType, ItemTypeT>(this.failed.bind(this), this.failedLength());
 }
 }
 
 export class SolveResponseT implements flatbuffers.IGeneratedObject {
 constructor(
-  public boxes: (BoxTypeT)[] = [],
-  public items: (ItemTypeT)[] = []
+  public results: (BoxResultT)[] = [],
+  public failed: (ItemTypeT)[] = []
 ){}
 
 
 pack(builder:flatbuffers.Builder): flatbuffers.Offset {
-  const boxes = SolveResponse.createBoxesVector(builder, builder.createObjectOffsetList(this.boxes));
-  const items = SolveResponse.createItemsVector(builder, builder.createObjectOffsetList(this.items));
+  const results = SolveResponse.createResultsVector(builder, builder.createObjectOffsetList(this.results));
+  const failed = SolveResponse.createFailedVector(builder, builder.createObjectOffsetList(this.failed));
 
   return SolveResponse.createSolveResponse(builder,
-    boxes,
-    items
+    results,
+    failed
   );
 }
 }

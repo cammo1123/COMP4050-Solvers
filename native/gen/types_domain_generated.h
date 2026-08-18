@@ -30,6 +30,7 @@ struct ItemType {
 	int32_t width = 0;
 	int32_t length = 0;
 	int32_t depth = 0;
+	float weight = 0.0f;
 	std::optional<std::string> box_group = std::nullopt;
 };
 
@@ -109,6 +110,8 @@ inline ItemType toDomain(fbs::ItemTypeT const& value)
 
 	out.depth = value.depth;
 
+	out.weight = value.weight;
+
 	if (!value.box_group.empty()) {
 		out.box_group = value.box_group;
 	}
@@ -129,6 +132,8 @@ inline fbs::ItemTypeT fromDomain(ItemType const& value)
 	out.length = value.length;
 
 	out.depth = value.depth;
+
+	out.weight = value.weight;
 
 	if (value.box_group.has_value()) {
 		out.box_group = *value.box_group;

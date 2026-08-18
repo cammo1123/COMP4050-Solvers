@@ -1,3 +1,7 @@
+export type BoxResultT = {
+    boxReference: string;
+    placements: ItemPlacementT[];
+};
 export type BoxTypeT = {
     reference: string;
     width: number;
@@ -8,21 +12,37 @@ export type BoxTypeT = {
     active?: boolean;
     maximumBoxes?: number;
 };
+export type ItemPlacementT = {
+    x: number;
+    y: number;
+    z: number;
+    width: number;
+    length: number;
+    depth: number;
+};
 export type ItemTypeT = {
     itemCode: string;
     itemReference: string;
     width: number;
     length: number;
     depth: number;
+    weight: number;
     boxGroup?: string | Uint8Array;
+};
+export type SolveOptionsT = {
+    maxBoxes?: number;
+    allowRotation?: boolean;
+    timeoutMs?: number;
+    strategy?: number;
 };
 export type SolveRequest = {
     boxes: BoxTypeT[];
     items: ItemTypeT[];
+    options?: SolveOptionsT | null;
 };
 export type SolveResponse = {
-    boxes: BoxTypeT[];
-    items: ItemTypeT[];
+    results: BoxResultT[];
+    failed: ItemTypeT[];
 };
 export declare function encodeRequest(request: SolveRequest): Uint8Array;
 export declare function decodeResponse(bytes: Uint8Array): SolveResponse;

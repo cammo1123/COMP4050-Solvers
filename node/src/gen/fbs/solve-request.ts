@@ -6,6 +6,7 @@ import * as flatbuffers from 'flatbuffers';
 
 import { BoxType, BoxTypeT } from '../fbs/box-type.js';
 import { ItemType, ItemTypeT } from '../fbs/item-type.js';
+import { SolveOptions, SolveOptionsT } from '../fbs/solve-options.js';
 
 
 export class SolveRequest implements flatbuffers.IUnpackableObject<SolveRequestT> {
@@ -46,8 +47,13 @@ itemsLength():number {
   return offset ? this.bb!.__vector_len(this.bb_pos + offset) : 0;
 }
 
+options(obj?:SolveOptions):SolveOptions|null {
+  const offset = this.bb!.__offset(this.bb_pos, 8);
+  return offset ? (obj || new SolveOptions()).__init(this.bb!.__indirect(this.bb_pos + offset), this.bb!) : null;
+}
+
 static startSolveRequest(builder:flatbuffers.Builder) {
-  builder.startObject(2);
+  builder.startObject(3);
 }
 
 static addBoxes(builder:flatbuffers.Builder, boxesOffset:flatbuffers.Offset) {
@@ -82,6 +88,10 @@ static startItemsVector(builder:flatbuffers.Builder, numElems:number) {
   builder.startVector(4, numElems, 4);
 }
 
+static addOptions(builder:flatbuffers.Builder, optionsOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(2, optionsOffset, 0);
+}
+
 static endSolveRequest(builder:flatbuffers.Builder):flatbuffers.Offset {
   const offset = builder.endObject();
   return offset;
@@ -95,17 +105,12 @@ static finishSizePrefixedSolveRequestBuffer(builder:flatbuffers.Builder, offset:
   builder.finish(offset, undefined, true);
 }
 
-static createSolveRequest(builder:flatbuffers.Builder, boxesOffset:flatbuffers.Offset, itemsOffset:flatbuffers.Offset):flatbuffers.Offset {
-  SolveRequest.startSolveRequest(builder);
-  SolveRequest.addBoxes(builder, boxesOffset);
-  SolveRequest.addItems(builder, itemsOffset);
-  return SolveRequest.endSolveRequest(builder);
-}
 
 unpack(): SolveRequestT {
   return new SolveRequestT(
     this.bb!.createObjList<BoxType, BoxTypeT>(this.boxes.bind(this), this.boxesLength()),
-    this.bb!.createObjList<ItemType, ItemTypeT>(this.items.bind(this), this.itemsLength())
+    this.bb!.createObjList<ItemType, ItemTypeT>(this.items.bind(this), this.itemsLength()),
+    (this.options() !== null ? this.options()!.unpack() : null)
   );
 }
 
@@ -113,23 +118,28 @@ unpack(): SolveRequestT {
 unpackTo(_o: SolveRequestT): void {
   _o.boxes = this.bb!.createObjList<BoxType, BoxTypeT>(this.boxes.bind(this), this.boxesLength());
   _o.items = this.bb!.createObjList<ItemType, ItemTypeT>(this.items.bind(this), this.itemsLength());
+  _o.options = (this.options() !== null ? this.options()!.unpack() : null);
 }
 }
 
 export class SolveRequestT implements flatbuffers.IGeneratedObject {
 constructor(
   public boxes: (BoxTypeT)[] = [],
-  public items: (ItemTypeT)[] = []
+  public items: (ItemTypeT)[] = [],
+  public options: SolveOptionsT|null = null
 ){}
 
 
 pack(builder:flatbuffers.Builder): flatbuffers.Offset {
   const boxes = SolveRequest.createBoxesVector(builder, builder.createObjectOffsetList(this.boxes));
   const items = SolveRequest.createItemsVector(builder, builder.createObjectOffsetList(this.items));
+  const options = (this.options !== null ? this.options!.pack(builder) : 0);
 
-  return SolveRequest.createSolveRequest(builder,
-    boxes,
-    items
-  );
+  SolveRequest.startSolveRequest(builder);
+  SolveRequest.addBoxes(builder, boxes);
+  SolveRequest.addItems(builder, items);
+  SolveRequest.addOptions(builder, options);
+
+  return SolveRequest.endSolveRequest(builder);
 }
 }

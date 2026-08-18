@@ -1,6 +1,9 @@
 import { type SolveRequest, type SolveResponse } from "./gen/solve_translation.js";
-export type { SolveRequest, SolveResponse } from "./gen/solve_translation.js";
-export declare function solve(request: SolveRequest): Promise<SolveResponse>;
+export type { SolveRequest, SolveResponse, BoxTypeT, ItemTypeT, SolveOptionsT } from "./gen/solve_translation.js";
+export type SolveInput = SolveRequest & {
+    onProgress?: (done: number, total: number) => void;
+};
+export declare function solve(input: SolveInput): Promise<SolveResponse>;
 export declare function info(): string;
 declare const _default: {
     info: typeof info;
