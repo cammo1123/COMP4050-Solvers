@@ -184,6 +184,7 @@ struct ItemTypeT : public ::flatbuffers::NativeTable {
   int32_t width = 0;
   int32_t length = 0;
   int32_t depth = 0;
+  float weight = 0.0f;
   std::string box_group{};
 };
 
@@ -196,7 +197,8 @@ struct ItemType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_WIDTH = 8,
     VT_LENGTH = 10,
     VT_DEPTH = 12,
-    VT_BOX_GROUP = 14
+    VT_WEIGHT = 14,
+    VT_BOX_GROUP = 16
   };
   const ::flatbuffers::String *item_code() const {
     return GetPointer<const ::flatbuffers::String *>(VT_ITEM_CODE);
@@ -213,6 +215,9 @@ struct ItemType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   int32_t depth() const {
     return GetField<int32_t>(VT_DEPTH, 0);
   }
+  float weight() const {
+    return GetField<float>(VT_WEIGHT, 0.0f);
+  }
   const ::flatbuffers::String *box_group() const {
     return GetPointer<const ::flatbuffers::String *>(VT_BOX_GROUP);
   }
@@ -226,6 +231,7 @@ struct ItemType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<int32_t>(verifier, VT_WIDTH, 4) &&
            VerifyField<int32_t>(verifier, VT_LENGTH, 4) &&
            VerifyField<int32_t>(verifier, VT_DEPTH, 4) &&
+           VerifyField<float>(verifier, VT_WEIGHT, 4) &&
            VerifyOffset(verifier, VT_BOX_GROUP) &&
            verifier.VerifyString(box_group()) &&
            verifier.EndTable();
@@ -254,6 +260,9 @@ struct ItemTypeBuilder {
   void add_depth(int32_t depth) {
     fbb_.AddElement<int32_t>(ItemType::VT_DEPTH, depth, 0);
   }
+  void add_weight(float weight) {
+    fbb_.AddElement<float>(ItemType::VT_WEIGHT, weight, 0.0f);
+  }
   void add_box_group(::flatbuffers::Offset<::flatbuffers::String> box_group) {
     fbb_.AddOffset(ItemType::VT_BOX_GROUP, box_group);
   }
@@ -275,9 +284,11 @@ inline ::flatbuffers::Offset<ItemType> CreateItemType(
     int32_t width = 0,
     int32_t length = 0,
     int32_t depth = 0,
+    float weight = 0.0f,
     ::flatbuffers::Offset<::flatbuffers::String> box_group = 0) {
   ItemTypeBuilder builder_(_fbb);
   builder_.add_box_group(box_group);
+  builder_.add_weight(weight);
   builder_.add_depth(depth);
   builder_.add_length(length);
   builder_.add_width(width);
@@ -293,6 +304,7 @@ inline ::flatbuffers::Offset<ItemType> CreateItemTypeDirect(
     int32_t width = 0,
     int32_t length = 0,
     int32_t depth = 0,
+    float weight = 0.0f,
     const char *box_group = nullptr) {
   auto item_code__ = item_code ? _fbb.CreateString(item_code) : 0;
   auto item_reference__ = item_reference ? _fbb.CreateString(item_reference) : 0;
@@ -304,6 +316,7 @@ inline ::flatbuffers::Offset<ItemType> CreateItemTypeDirect(
       width,
       length,
       depth,
+      weight,
       box_group__);
 }
 
@@ -370,6 +383,7 @@ inline void ItemType::UnPackTo(ItemTypeT *_o, const ::flatbuffers::resolver_func
   { auto _e = width(); _o->width = _e; }
   { auto _e = length(); _o->length = _e; }
   { auto _e = depth(); _o->depth = _e; }
+  { auto _e = weight(); _o->weight = _e; }
   { auto _e = box_group(); if (_e) _o->box_group = _e->str(); }
 }
 
@@ -386,6 +400,7 @@ inline ::flatbuffers::Offset<ItemType> ItemType::Pack(::flatbuffers::FlatBufferB
   auto _width = _o->width;
   auto _length = _o->length;
   auto _depth = _o->depth;
+  auto _weight = _o->weight;
   auto _box_group = _o->box_group.empty() ? 0 : _fbb.CreateString(_o->box_group);
   return fbs::CreateItemType(
       _fbb,
@@ -394,6 +409,7 @@ inline ::flatbuffers::Offset<ItemType> ItemType::Pack(::flatbuffers::FlatBufferB
       _width,
       _length,
       _depth,
+      _weight,
       _box_group);
 }
 

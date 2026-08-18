@@ -3,13 +3,20 @@
 import * as flatbuffers from "flatbuffers";
 
 import {
+	BoxResultT as BoxResultObject,
 	BoxTypeT as BoxTypeObject,
+	ItemPlacementT as ItemPlacementObject,
 	ItemTypeT as ItemTypeObject,
+	SolveOptionsT as SolveOptionsObject,
 	SolveRequestT as SolveRequestObject,
 	SolveResponse as SolveResponseMessage,
 	SolveResponseT as SolveResponseObject,
 } from "./fbs.js";
 
+export type BoxResultT = {
+	boxReference: string;
+	placements: ItemPlacementT[];
+};
 export type BoxTypeT = {
 	reference: string;
 	width: number;
@@ -20,28 +27,45 @@ export type BoxTypeT = {
 	active?: boolean;
 	maximumBoxes?: number;
 };
+export type ItemPlacementT = {
+	x: number;
+	y: number;
+	z: number;
+	width: number;
+	length: number;
+	depth: number;
+};
 export type ItemTypeT = {
 	itemCode: string;
 	itemReference: string;
 	width: number;
 	length: number;
 	depth: number;
+	weight: number;
 	boxGroup?: string | Uint8Array;
+};
+export type SolveOptionsT = {
+	maxBoxes?: number;
+	allowRotation?: boolean;
+	timeoutMs?: number;
+	strategy?: number;
 };
 export type SolveRequest = {
 	boxes: BoxTypeT[];
 	items: ItemTypeT[];
+	options?: SolveOptionsT | null;
 };
 export type SolveResponse = {
-	boxes: BoxTypeT[];
-	items: ItemTypeT[];
+	results: BoxResultT[];
+	failed: ItemTypeT[];
 };
 
 export function encodeRequest(request: SolveRequest): Uint8Array {
 
 	const message = new SolveRequestObject(
 		(request.boxes ?? []).map((item) => new BoxTypeObject(item.reference, item.width, item.length, item.depth, item.maxWeight, item.boxWeight, item.active, item.maximumBoxes)),
-		(request.items ?? []).map((item) => new ItemTypeObject(item.itemCode, item.itemReference, item.width, item.length, item.depth, item.boxGroup))
+		(request.items ?? []).map((item) => new ItemTypeObject(item.itemCode, item.itemReference, item.width, item.length, item.depth, item.weight, item.boxGroup)),
+		request.options ? new SolveOptionsObject(request.options.maxBoxes, request.options.allowRotation, request.options.timeoutMs, request.options.strategy) : null
 	);
 
 	const builder = new flatbuffers.Builder();
@@ -53,7 +77,7 @@ export function decodeResponse(bytes: Uint8Array): SolveResponse {
 	const message = SolveResponseMessage.getRootAsSolveResponse(new flatbuffers.ByteBuffer(bytes));
 	const unpacked = message.unpack();
 	return {
-		boxes: (unpacked.boxes ?? []).map((item) => ({ reference: item.reference as string, width: item.width, length: item.length, depth: item.depth, ...(item.maxWeight !== null && item.maxWeight !== undefined ? { maxWeight: item.maxWeight } : {}), ...(item.boxWeight !== null && item.boxWeight !== undefined ? { boxWeight: item.boxWeight } : {}), ...(item.active !== null && item.active !== undefined ? { active: item.active } : {}), ...(item.maximumBoxes !== null && item.maximumBoxes !== undefined ? { maximumBoxes: item.maximumBoxes } : {}) })),
-		items: (unpacked.items ?? []).map((item) => ({ itemCode: item.itemCode as string, itemReference: item.itemReference as string, width: item.width, length: item.length, depth: item.depth, ...(item.boxGroup !== null && item.boxGroup !== undefined ? { boxGroup: item.boxGroup } : {}) }))
+		results: (unpacked.results ?? []).map((item) => ({ boxReference: item.boxReference as string, placements: (item.placements ?? []).map((item) => ({ x: item.x, y: item.y, z: item.z, width: item.width, length: item.length, depth: item.depth })) })),
+		failed: (unpacked.failed ?? []).map((item) => ({ itemCode: item.itemCode as string, itemReference: item.itemReference as string, width: item.width, length: item.length, depth: item.depth, weight: item.weight, ...(item.boxGroup !== null && item.boxGroup !== undefined ? { boxGroup: item.boxGroup } : {}) }))
 	};
 }

@@ -1,11 +1,18 @@
 import native from "../index.cjs";
 
 import { decodeResponse, encodeRequest, type SolveRequest, type SolveResponse } from "./gen/solve_translation.js";
-export type { SolveRequest, SolveResponse } from "./gen/solve_translation.js";
+export type { SolveRequest, SolveResponse, BoxTypeT, ItemTypeT, SolveOptionsT } from "./gen/solve_translation.js";
 
-export async function solve(request: SolveRequest): Promise<SolveResponse> {
+export type SolveInput = SolveRequest & {
+	onProgress?: (done: number, total: number) => void;
+};
+
+export async function solve(input: SolveInput): Promise<SolveResponse> {
+	const { onProgress, ...request } = input;
 	const encoded = encodeRequest(request);
-	const bytes = await native.solve(Buffer.from(encoded.buffer, encoded.byteOffset, encoded.byteLength));
+
+	const buffer = Buffer.from(encoded.buffer, encoded.byteOffset, encoded.byteLength);
+	const bytes = onProgress ? await native.solve(buffer, onProgress) : await native.solve(buffer);
 	return decodeResponse(bytes);
 }
 

@@ -85,10 +85,13 @@ function parseFields (body) {
 	let m
 	while ((m = re.exec(body)) !== null) {
 		const tail = m[2].trim()
+		const defaultMatch = /(?:^|\s)=\s*(\S+)$/.exec(tail)
 		fields.push({
 			name: m[1],
 			type: tail.split(/\s+/)[0],
-			optional: /(?:\(optional\)|= null)$/.test(tail),
+			optional: /(?:\(optional\)|=\s*[^\s]+)$/.test(tail),
+			nullable: /(?:\(optional\)|=\s*null)$/.test(tail),
+			defaultValue: defaultMatch?.[1],
 		})
 	}
 	return fields
@@ -169,7 +172,7 @@ function collectNestedTables (schema) {
 // Fields with integer scalars (excluding optional ones) need a runtime range
 // check, since flatbuffers itself won't reject out-of-range values.
 function integerFields (fields) {
-	return fields.filter((f) => f.kind === 'scalar' && INT_RANGES[f.scalar] && !f.optional)
+	return fields.filter((f) => f.kind === 'scalar' && INT_RANGES[f.scalar] && !f.nullable)
 }
 
 function cppRangeCheck (requestName, field) {
@@ -378,7 +381,7 @@ export function decodeResponse(bytes: Uint8Array): ${response} {
 }
 
 function domainType (field) {
-	const optionalize = (type) => field.optional ? `std::optional<${type}>` : type
+	const optionalize = (type) => field.nullable ? `std::optional<${type}>` : type
 	switch (field.kind) {
 		case 'scalar':
 			return optionalize(DOMAIN_SCALAR_TYPES[field.scalar])
@@ -396,7 +399,11 @@ function domainType (field) {
 }
 
 function domainDefault (field) {
-	if (field.optional) return 'std::nullopt'
+	if (field.nullable) return 'std::nullopt'
+	if (field.defaultValue) {
+		if (field.defaultValue === 'true' || field.defaultValue === 'false') return field.defaultValue
+		return field.defaultValue
+	}
 	switch (field.kind) {
 		case 'scalar':
 			return DOMAIN_DEFAULTS[field.scalar]
@@ -440,12 +447,12 @@ function cppFieldToDomain (field) {
 	const out = `out.${field.name}`
 	switch (field.kind) {
 		case 'scalar':
-			if (field.optional) {
+			if (field.nullable) {
 				return `\tif (${access}.has_value()) {\n\t\t${out} = *${access};\n\t}`
 			}
 			return `\t${out} = ${access};`
 		case 'string':
-			if (field.optional) {
+			if (field.nullable) {
 				// FlatBuffers T objects store optional strings as empty strings,
 				// so empty and absent are indistinguishable here.
 				return `\tif (!${access}.empty()) {\n\t\t${out} = ${access};\n\t}`
@@ -472,7 +479,7 @@ function cppFieldFromDomain (field, namespace) {
 	switch (field.kind) {
 		case 'scalar':
 		case 'string':
-			if (field.optional) {
+			if (field.nullable) {
 				return `\tif (${access}.has_value()) {\n\t\t${out} = *${access};\n\t}`
 			}
 			return `\t${out} = ${access};`
@@ -480,7 +487,7 @@ function cppFieldFromDomain (field, namespace) {
 		case 'vector-string':
 			return `\t${out} = ${access};`
 		case 'table':
-			if (field.optional) {
+			if (field.nullable) {
 				return `\tif (${access}.has_value()) {\n\t\t${out} = std::make_unique<${namespace}::${field.table}T>(fromDomain(*${access}));\n\t}`
 			}
 			return `\t${out} = std::make_unique<${namespace}::${field.table}T>(fromDomain(${access}));`

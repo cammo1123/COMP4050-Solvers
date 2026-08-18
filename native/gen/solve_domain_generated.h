@@ -14,15 +14,79 @@
 namespace fbs {
 namespace domain {
 
+struct SolveOptions {
+	std::optional<int32_t> max_boxes = std::nullopt;
+	bool allow_rotation = true;
+	std::optional<int32_t> timeout_ms = std::nullopt;
+	std::optional<int8_t> strategy = std::nullopt;
+};
+
 struct SolveRequest {
 	std::vector<BoxType> boxes{};
 	std::vector<ItemType> items{};
+	std::optional<SolveOptions> options = std::nullopt;
+};
+
+struct ItemPlacement {
+	float x = 0.0f;
+	float y = 0.0f;
+	float z = 0.0f;
+	float width = 0.0f;
+	float length = 0.0f;
+	float depth = 0.0f;
+};
+
+struct BoxResult {
+	std::string box_reference{};
+	std::vector<ItemPlacement> placements{};
 };
 
 struct SolveResponse {
-	std::vector<BoxType> boxes{};
-	std::vector<ItemType> items{};
+	std::vector<BoxResult> results{};
+	std::vector<ItemType> failed{};
 };
+
+inline SolveOptions toDomain(fbs::SolveOptionsT const& value)
+{
+	SolveOptions out;
+
+	if (value.max_boxes.has_value()) {
+		out.max_boxes = *value.max_boxes;
+	}
+
+	out.allow_rotation = value.allow_rotation;
+
+	if (value.timeout_ms.has_value()) {
+		out.timeout_ms = *value.timeout_ms;
+	}
+
+	if (value.strategy.has_value()) {
+		out.strategy = *value.strategy;
+	}
+
+	return out;
+}
+
+inline fbs::SolveOptionsT fromDomain(SolveOptions const& value)
+{
+	fbs::SolveOptionsT out;
+
+	if (value.max_boxes.has_value()) {
+		out.max_boxes = *value.max_boxes;
+	}
+
+	out.allow_rotation = value.allow_rotation;
+
+	if (value.timeout_ms.has_value()) {
+		out.timeout_ms = *value.timeout_ms;
+	}
+
+	if (value.strategy.has_value()) {
+		out.strategy = *value.strategy;
+	}
+
+	return out;
+}
 
 inline SolveRequest toDomain(fbs::SolveRequestT const& value)
 {
@@ -36,6 +100,10 @@ inline SolveRequest toDomain(fbs::SolveRequestT const& value)
 	out.items.reserve(value.items.size());
 	for (auto const& item : value.items) {
 		out.items.push_back(toDomain(*item));
+	}
+
+	if (value.options) {
+		out.options = toDomain(*value.options);
 	}
 
 	return out;
@@ -55,6 +123,76 @@ inline fbs::SolveRequestT fromDomain(SolveRequest const& value)
 		out.items.push_back(std::make_unique<fbs::ItemTypeT>(fromDomain(item)));
 	}
 
+	if (value.options.has_value()) {
+		out.options = std::make_unique<fbs::SolveOptionsT>(fromDomain(*value.options));
+	}
+
+	return out;
+}
+
+inline ItemPlacement toDomain(fbs::ItemPlacementT const& value)
+{
+	ItemPlacement out;
+
+	out.x = value.x;
+
+	out.y = value.y;
+
+	out.z = value.z;
+
+	out.width = value.width;
+
+	out.length = value.length;
+
+	out.depth = value.depth;
+
+	return out;
+}
+
+inline fbs::ItemPlacementT fromDomain(ItemPlacement const& value)
+{
+	fbs::ItemPlacementT out;
+
+	out.x = value.x;
+
+	out.y = value.y;
+
+	out.z = value.z;
+
+	out.width = value.width;
+
+	out.length = value.length;
+
+	out.depth = value.depth;
+
+	return out;
+}
+
+inline BoxResult toDomain(fbs::BoxResultT const& value)
+{
+	BoxResult out;
+
+	out.box_reference = value.box_reference;
+
+	out.placements.reserve(value.placements.size());
+	for (auto const& item : value.placements) {
+		out.placements.push_back(toDomain(*item));
+	}
+
+	return out;
+}
+
+inline fbs::BoxResultT fromDomain(BoxResult const& value)
+{
+	fbs::BoxResultT out;
+
+	out.box_reference = value.box_reference;
+
+	out.placements.reserve(value.placements.size());
+	for (auto const& item : value.placements) {
+		out.placements.push_back(std::make_unique<fbs::ItemPlacementT>(fromDomain(item)));
+	}
+
 	return out;
 }
 
@@ -62,14 +200,14 @@ inline SolveResponse toDomain(fbs::SolveResponseT const& value)
 {
 	SolveResponse out;
 
-	out.boxes.reserve(value.boxes.size());
-	for (auto const& item : value.boxes) {
-		out.boxes.push_back(toDomain(*item));
+	out.results.reserve(value.results.size());
+	for (auto const& item : value.results) {
+		out.results.push_back(toDomain(*item));
 	}
 
-	out.items.reserve(value.items.size());
-	for (auto const& item : value.items) {
-		out.items.push_back(toDomain(*item));
+	out.failed.reserve(value.failed.size());
+	for (auto const& item : value.failed) {
+		out.failed.push_back(toDomain(*item));
 	}
 
 	return out;
@@ -79,14 +217,14 @@ inline fbs::SolveResponseT fromDomain(SolveResponse const& value)
 {
 	fbs::SolveResponseT out;
 
-	out.boxes.reserve(value.boxes.size());
-	for (auto const& item : value.boxes) {
-		out.boxes.push_back(std::make_unique<fbs::BoxTypeT>(fromDomain(item)));
+	out.results.reserve(value.results.size());
+	for (auto const& item : value.results) {
+		out.results.push_back(std::make_unique<fbs::BoxResultT>(fromDomain(item)));
 	}
 
-	out.items.reserve(value.items.size());
-	for (auto const& item : value.items) {
-		out.items.push_back(std::make_unique<fbs::ItemTypeT>(fromDomain(item)));
+	out.failed.reserve(value.failed.size());
+	for (auto const& item : value.failed) {
+		out.failed.push_back(std::make_unique<fbs::ItemTypeT>(fromDomain(item)));
 	}
 
 	return out;

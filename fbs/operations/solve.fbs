@@ -2,14 +2,38 @@ include "../types.fbs";
 
 namespace fbs;
 
+attribute "optional";
+
 table SolveRequest {
   boxes: [BoxType];
   items: [ItemType];
+  options: SolveOptions (optional);
+}
+
+table SolveOptions {
+  max_boxes: int = null;
+  allow_rotation: bool = true;
+  timeout_ms: int = null;
+  strategy: byte = null;
+}
+
+table ItemPlacement {
+  x: float;
+  y: float;
+  z: float;
+  width: float;
+  length: float;
+  depth: float;
+}
+
+table BoxResult {
+  box_reference: string;
+  placements: [ItemPlacement];
 }
 
 table SolveResponse {
-  boxes: [BoxType];
-  items: [ItemType];
+  results: [BoxResult];
+  failed: [ItemType];
 }
 
 root_type SolveRequest;
