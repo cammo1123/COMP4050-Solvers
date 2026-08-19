@@ -135,6 +135,21 @@ describe("packing invariants", () => {
 		expect(result.results[0].placements.find((item) => item.itemCode === "top")).toMatchObject({ y: 5 });
 	});
 
+	it("fills an internal pocket between packed items", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 10, length: 10, depth: 10 }],
+			items: [
+				{ itemCode: "left", itemReference: "left", width: 4, length: 10, depth: 10, weight: 1, rotationPolicy: RotationPolicy.Never },
+				{ itemCode: "right", itemReference: "right", width: 4, length: 10, depth: 10, weight: 1, rotationPolicy: RotationPolicy.Never },
+				{ itemCode: "pocket", itemReference: "pocket", width: 2, length: 10, depth: 10, weight: 1, rotationPolicy: RotationPolicy.Never },
+			],
+		});
+
+		expect(result.failed).toHaveLength(0);
+		expect(result.results[0].placements).toHaveLength(3);
+		assertLegalPlacements(result);
+	});
+
 	it("accepts partial support when the item center is supported", async () => {
 		const result = await solve({
 			boxes: [{ reference: "A", width: 20, length: 10, depth: 12 }],
@@ -158,6 +173,16 @@ describe("packing invariants", () => {
 			options: { maxBoxes: 1 },
 		});
 		expect(result.failed.map((item) => item.itemCode)).toEqual(["overhang"]);
+	});
+
+	it("allows an unstable orientation when no stable orientation fits", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 1, length: 10, depth: 10 }],
+			items: [{ itemCode: "tall", itemReference: "tall", width: 1, length: 10, depth: 9, weight: 1, rotationPolicy: RotationPolicy.Never }],
+		});
+
+		expect(result.failed).toHaveLength(0);
+		expect(result.results[0].placements).toHaveLength(1);
 	});
 
 	it("keeps flat rotation on the Y axis", async () => {

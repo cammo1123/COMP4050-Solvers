@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <cmath>
 #include <limits>
 
 namespace packing {
@@ -23,6 +24,12 @@ bool valid_rotation(Item const& item, Dimensions dimensions)
 {
 	for (auto allowed : orientations(item.dimensions, item.rotation)) if (allowed == dimensions) return true;
 	return false;
+}
+
+bool intrinsically_stable(Dimensions dimensions, Dimensions box_dimensions)
+{
+	return std::atan(static_cast<double>(std::min(dimensions.width, dimensions.length)) / (dimensions.height == 0 ? 1 : dimensions.height)) > 0.261 ||
+		dimensions.height == box_dimensions.height;
 }
 
 bool supported(PackedBox const& box, PackedItem const& item)
@@ -151,7 +158,11 @@ std::optional<PackedItem> place(Box const& box, Dimensions box_dimensions, Item 
 	float weight, Clock::time_point deadline)
 {
 	PackedBox state{box, box_dimensions, placed, weight};
-	for (auto dimensions : orientations(item.dimensions, item.rotation)) {
+	auto possible_orientations = orientations(item.dimensions, item.rotation);
+	const auto has_stable_orientation = std::any_of(possible_orientations.begin(), possible_orientations.end(),
+		[&](auto dimensions) { return intrinsically_stable(dimensions, box_dimensions); });
+	for (auto dimensions : possible_orientations) {
+		if (has_stable_orientation && !intrinsically_stable(dimensions, box_dimensions)) continue;
 		for (auto const& space : VoidFinder::find(box_dimensions, placed)) {
 			if (Clock::now() >= deadline) return std::nullopt;
 			std::array<std::vector<uint32_t>, 3> coordinates{{{space.x}, {space.y}, {space.z}}};
