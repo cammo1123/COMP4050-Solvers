@@ -17,6 +17,7 @@ export type BoxResultT = {
 	boxReference: string;
 	placements: ItemPlacementT[];
 };
+
 export type BoxTypeT = {
 	reference: string;
 	width: number;
@@ -27,6 +28,7 @@ export type BoxTypeT = {
 	active?: boolean;
 	maximumBoxes?: number;
 };
+
 export type ItemPlacementT = {
 	x: number;
 	y: number;
@@ -35,6 +37,7 @@ export type ItemPlacementT = {
 	length: number;
 	depth: number;
 };
+
 export type ItemTypeT = {
 	itemCode: string;
 	itemReference: string;
@@ -44,17 +47,20 @@ export type ItemTypeT = {
 	weight: number;
 	boxGroup?: string | Uint8Array;
 };
+
 export type SolveOptionsT = {
 	maxBoxes?: number;
 	allowRotation?: boolean;
 	timeoutMs?: number;
 	strategy?: number;
 };
+
 export type SolveRequest = {
 	boxes: BoxTypeT[];
 	items: ItemTypeT[];
 	options?: SolveOptionsT | null;
 };
+
 export type SolveResponse = {
 	results: BoxResultT[];
 	failed: ItemTypeT[];
