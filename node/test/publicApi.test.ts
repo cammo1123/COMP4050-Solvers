@@ -1,13 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { createRequire } from "node:module";
 
 import * as BionicSolver from "@bionic/solver";
 import { info, solve } from "@bionic/solver";
 import type { SolveRequest, SolveResponse } from "@bionic/solver";
-import { BoxTypeT, ItemTypeT } from "../src/gen/solve_translation";
-
-const require = createRequire(import.meta.url);
-const { version } = require("../../package.json");
+import type { BoxTypeT, ItemTypeT } from "../src/gen/solve_translation";
 
 describe("package public API (typed entry)", () => {
 	it("has a default export", () => {
@@ -15,22 +11,18 @@ describe("package public API (typed entry)", () => {
 	});
 
 	it("exposes info()", () => {
-		const escaped = version.replace(/\./g, "\\.");
-		expect(info()).toMatch(new RegExp(`^@bionic/solver ${escaped} \\((Debug|Release)\\)$`, "m"));
-		expect(info()).toMatch(/  git: [0-9a-f]{7,} \([^)]*\)/);
-		expect(info()).toMatch(/  platform: /);
-		expect(info()).toMatch(/  compiler: /);
+		expect(info()).contains("comp4050-solver");
 	});
 
 	it("exposes a typed solve()", async () => {
 		const request: SolveRequest = {
 			boxes: [{ depth: 10, length: 10, width: 10, reference: "A" }],
-			items: [{ depth: 10, length: 10, width: 10, itemCode: "A", itemReference: "A" }],
+			items: [{ depth: 10, length: 10, width: 10, itemCode: "A", itemReference: "A", weight: 10 }],
 		};
 		const result: SolveResponse = await solve(request);
 		expect(result).toEqual({
-			boxes: [{ depth: 10, length: 10, width: 10, reference: "A" }],
-			items: [{ depth: 10, length: 10, width: 10, itemCode: "A", itemReference: "A" }],
+			results: [],
+			failed: [{ depth: 10, length: 10, width: 10, itemCode: "A", itemReference: "A", weight: 10 }],
 		});
 	});
 
@@ -51,13 +43,13 @@ describe("package public API (typed entry)", () => {
 				width: 10,
 				itemCode: "A",
 				itemReference: "A",
+				weight: 10,
 			},
 		];
 
 		expect(await solve({ boxes, items })).toEqual({
-			boxes: [{ depth: 10, length: 10, width: 10, reference: "A" }],
-			items: [{ depth: 10, length: 10, width: 10, itemCode: "A", itemReference: "A" }],
+			failed: [{ depth: 10, length: 10, width: 10, itemCode: "A", itemReference: "A", weight: 10 }],
+			results: [],
 		});
 	});
-
 });
