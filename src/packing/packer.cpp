@@ -47,7 +47,8 @@ std::optional<PackedItem> place(Box const& box, Dimensions box_dimensions, Item 
 	return std::nullopt;
 }
 
-std::optional<PackedBox> try_box(Box const& box, std::vector<Item> const& items, bool allow_rotation, Clock::time_point deadline)
+std::optional<PackedBox> try_box(Box const& box, std::vector<Item> const& items, bool allow_rotation, Clock::time_point deadline,
+	ProgressCallback progress)
 {
 	std::vector<Dimensions> box_orientations{{box.dimensions}, {box.dimensions.length, box.dimensions.height, box.dimensions.width}};
 	std::optional<PackedBox> best;
@@ -80,6 +81,7 @@ std::optional<PackedBox> try_box(Box const& box, std::vector<Item> const& items,
 				candidate.total_weight = original_weight;
 			}
 			for (auto index : group_indices) considered[index] = true;
+			if (progress) progress(candidate.items.size(), items.size());
 		}
 		if (!best || candidate.items.size() > best->items.size() || (candidate.items.size() == best->items.size() && candidate.used_volume() > best->used_volume())) best = candidate;
 	}
@@ -164,7 +166,7 @@ Result pack_ordered(std::vector<Box> boxes, std::vector<Item> items, Options opt
 		size_t best_box = 0;
 		for (size_t i = 0; i < boxes.size(); ++i) {
 			if (!boxes[i].active || (boxes[i].quantity && used[i] >= boxes[i].quantity)) continue;
-			auto candidate = try_box(boxes[i], remaining, options.allow_rotation, deadline);
+			auto candidate = try_box(boxes[i], remaining, options.allow_rotation, deadline, progress);
 			if (!candidate) continue;
 			bool better = !best;
 			if (best && options.strategy == Strategy::Utilization) {
@@ -209,7 +211,7 @@ Result pack(std::vector<Box> boxes, std::vector<Item> items, Options options, Pr
 	bool has_best = false;
 	auto consider = [&](std::vector<Item> const& order) {
 		if (Clock::now() >= deadline) return;
-		auto candidate = pack_ordered(boxes, order, options, deadline, nullptr);
+		auto candidate = pack_ordered(boxes, order, options, deadline, progress);
 		size_t packed = order.size() - candidate.failed.size();
 		if (!has_best || packed > best_packed || (packed == best_packed && candidate.boxes.size() < best.boxes.size())) {
 			best_packed = packed;

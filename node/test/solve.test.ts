@@ -160,6 +160,18 @@ describe("packing invariants", () => {
 		expect(result.failed.map((item) => item.itemCode)).toEqual(["two"]);
 	});
 
+	it("reports progress while evaluating an unpackable item", async () => {
+		const progress: Array<[number, number]> = [];
+		const result = await solve({
+			boxes: [{ reference: "A", width: 10, length: 10, depth: 10 }],
+			items: [{ itemCode: "oversized", itemReference: "oversized", width: 11, length: 10, depth: 10, weight: 1, rotationPolicy: 0 }],
+			onProgress: (done, total) => progress.push([done, total]),
+		});
+		expect(result.failed).toHaveLength(1);
+		expect(progress.length).toBeGreaterThan(2);
+		expect(progress.every(([done, total]) => done >= 0 && done <= total && total === 1)).toBe(true);
+	});
+
 	it("packs linked items atomically", async () => {
 		const result = await solve({
 			boxes: [{ reference: "A", width: 10, length: 10, depth: 10 }],
