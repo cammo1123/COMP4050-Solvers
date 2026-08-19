@@ -29,6 +29,9 @@ table BoxType {
   box_weight: float = null;
   active: bool = null;
   maximum_boxes: uint = null;
+  outer_width: uint = null;
+  outer_length: uint = null;
+  outer_depth: uint = null;
 }
 
 table ItemType {

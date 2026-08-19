@@ -4,6 +4,9 @@ export type BoxResultT = {
     placements: ItemPlacementT[];
     totalWeight?: number;
     utilization?: number;
+    outerWidth?: number;
+    outerLength?: number;
+    outerDepth?: number;
 };
 export type BoxTypeT = {
     reference: string;
@@ -14,6 +17,9 @@ export type BoxTypeT = {
     boxWeight?: number;
     active?: boolean;
     maximumBoxes?: number;
+    outerWidth?: number;
+    outerLength?: number;
+    outerDepth?: number;
 };
 export type ItemPlacementT = {
     itemCode: string;

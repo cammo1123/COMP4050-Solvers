@@ -43,6 +43,9 @@ table BoxResult {
   placements: [ItemPlacement];
   total_weight: float = null;
   utilization: float = null;
+  outer_width: uint = null;
+  outer_length: uint = null;
+  outer_depth: uint = null;
 }
 
 table SolveResponse {

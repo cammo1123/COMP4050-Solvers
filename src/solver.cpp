@@ -29,8 +29,17 @@ SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
 {
 	std::vector<packing::Box> boxes;
 	for (auto const& source : request.boxes) {
-		boxes.push_back({source.reference, {source.width, source.depth, source.length}, source.box_weight.value_or(0),
-			source.max_weight.value_or(0), source.maximum_boxes.value_or(0), source.active.value_or(true)});
+		packing::Box box;
+		box.reference = source.reference;
+		box.dimensions = {source.width, source.depth, source.length};
+		if (source.outer_width && source.outer_length && source.outer_depth) {
+			box.outer_dimensions = packing::Dimensions{*source.outer_width, *source.outer_depth, *source.outer_length};
+		}
+		box.empty_weight = source.box_weight.value_or(0);
+		box.max_weight = source.max_weight.value_or(0);
+		box.quantity = source.maximum_boxes.value_or(0);
+		box.active = source.active.value_or(true);
+		boxes.push_back(std::move(box));
 	}
 	std::vector<packing::Item> items;
 	for (auto const& source : request.items) {
@@ -75,6 +84,11 @@ SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
 		result.box_reference = source.box.reference;
 		result.total_weight = source.total_weight;
 		result.utilization = source.dimensions.volume() == 0 ? 0.0f : static_cast<float>(source.used_volume()) / source.dimensions.volume();
+		if (source.box.outer_dimensions) {
+			result.outer_width = source.box.outer_dimensions->width;
+			result.outer_length = source.box.outer_dimensions->length;
+			result.outer_depth = source.box.outer_dimensions->height;
+		}
 		for (auto const& item : source.items) {
 			result.placements.push_back({item.item.code, item.item.reference, item.x, item.y, item.z,
 				item.dimensions.width, item.dimensions.length, item.dimensions.height});

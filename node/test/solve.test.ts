@@ -12,7 +12,7 @@ function encodeRequest(boxRefs: string[], itemRefs: string[] = []): Buffer {
 
 	const boxOffsets = boxRefs.map((reference) => {
 		const referenceOffset = builder.createString(reference);
-		return BoxType.createBoxType(builder, referenceOffset, 100, 100, 100, null, null, null, null);
+		return BoxType.createBoxType(builder, referenceOffset, 100, 100, 100, null, null, null, null, null, null, null);
 	});
 	const boxesVector = SolveRequest.createBoxesVector(builder, boxOffsets);
 
@@ -206,6 +206,14 @@ describe("packing invariants", () => {
 		expect(result.results[0].placements.every((item) => item.itemCode === "small")).toBe(true);
 		expect(result.failed).toHaveLength(1);
 		expect(result.failed[0].itemCode).toBe("large");
+	});
+
+	it("preserves optional outer box dimensions separately from packing bounds", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 10, length: 10, depth: 10, outerWidth: 12, outerLength: 14, outerDepth: 13 }],
+			items: [{ itemCode: "item", itemReference: "item", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: RotationPolicy.Never }],
+		});
+		expect(result.results[0]).toMatchObject({ outerWidth: 12, outerLength: 14, outerDepth: 13 });
 	});
 
 	it("reports progress while evaluating an unpackable item", async () => {

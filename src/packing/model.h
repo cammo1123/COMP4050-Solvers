@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -39,6 +40,7 @@ struct Item {
 struct Box {
 	std::string reference;
 	Dimensions dimensions;
+	std::optional<Dimensions> outer_dimensions;
 	float empty_weight = 0;
 	float max_weight = 0;
 	uint32_t quantity = 0;

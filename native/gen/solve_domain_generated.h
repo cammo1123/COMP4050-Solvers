@@ -48,6 +48,9 @@ struct BoxResult {
 	std::vector<ItemPlacement> placements{};
 	std::optional<float> total_weight = std::nullopt;
 	std::optional<float> utilization = std::nullopt;
+	std::optional<uint32_t> outer_width = std::nullopt;
+	std::optional<uint32_t> outer_length = std::nullopt;
+	std::optional<uint32_t> outer_depth = std::nullopt;
 };
 
 struct SolveResponse {
@@ -244,6 +247,18 @@ inline BoxResult toDomain(fbs::BoxResultT const& value)
 		out.utilization = *value.utilization;
 	}
 
+	if (value.outer_width.has_value()) {
+		out.outer_width = *value.outer_width;
+	}
+
+	if (value.outer_length.has_value()) {
+		out.outer_length = *value.outer_length;
+	}
+
+	if (value.outer_depth.has_value()) {
+		out.outer_depth = *value.outer_depth;
+	}
+
 	return out;
 }
 
@@ -264,6 +279,18 @@ inline fbs::BoxResultT fromDomain(BoxResult const& value)
 
 	if (value.utilization.has_value()) {
 		out.utilization = *value.utilization;
+	}
+
+	if (value.outer_width.has_value()) {
+		out.outer_width = *value.outer_width;
+	}
+
+	if (value.outer_length.has_value()) {
+		out.outer_length = *value.outer_length;
+	}
+
+	if (value.outer_depth.has_value()) {
+		out.outer_depth = *value.outer_depth;
 	}
 
 	return out;

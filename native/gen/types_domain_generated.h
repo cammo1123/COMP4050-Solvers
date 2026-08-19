@@ -33,6 +33,9 @@ struct BoxType {
 	std::optional<float> box_weight = std::nullopt;
 	std::optional<bool> active = std::nullopt;
 	std::optional<uint32_t> maximum_boxes = std::nullopt;
+	std::optional<uint32_t> outer_width = std::nullopt;
+	std::optional<uint32_t> outer_length = std::nullopt;
+	std::optional<uint32_t> outer_depth = std::nullopt;
 };
 
 struct ItemType {
@@ -155,6 +158,18 @@ inline BoxType toDomain(fbs::BoxTypeT const& value)
 		out.maximum_boxes = *value.maximum_boxes;
 	}
 
+	if (value.outer_width.has_value()) {
+		out.outer_width = *value.outer_width;
+	}
+
+	if (value.outer_length.has_value()) {
+		out.outer_length = *value.outer_length;
+	}
+
+	if (value.outer_depth.has_value()) {
+		out.outer_depth = *value.outer_depth;
+	}
+
 	return out;
 }
 
@@ -184,6 +199,18 @@ inline fbs::BoxTypeT fromDomain(BoxType const& value)
 
 	if (value.maximum_boxes.has_value()) {
 		out.maximum_boxes = *value.maximum_boxes;
+	}
+
+	if (value.outer_width.has_value()) {
+		out.outer_width = *value.outer_width;
+	}
+
+	if (value.outer_length.has_value()) {
+		out.outer_length = *value.outer_length;
+	}
+
+	if (value.outer_depth.has_value()) {
+		out.outer_depth = *value.outer_depth;
 	}
 
 	return out;

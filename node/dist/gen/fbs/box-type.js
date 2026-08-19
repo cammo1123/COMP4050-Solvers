@@ -48,8 +48,20 @@ export class BoxType {
         const offset = this.bb.__offset(this.bb_pos, 18);
         return offset ? this.bb.readUint32(this.bb_pos + offset) : null;
     }
+    outerWidth() {
+        const offset = this.bb.__offset(this.bb_pos, 20);
+        return offset ? this.bb.readUint32(this.bb_pos + offset) : null;
+    }
+    outerLength() {
+        const offset = this.bb.__offset(this.bb_pos, 22);
+        return offset ? this.bb.readUint32(this.bb_pos + offset) : null;
+    }
+    outerDepth() {
+        const offset = this.bb.__offset(this.bb_pos, 24);
+        return offset ? this.bb.readUint32(this.bb_pos + offset) : null;
+    }
     static startBoxType(builder) {
-        builder.startObject(8);
+        builder.startObject(11);
     }
     static addReference(builder, referenceOffset) {
         builder.addFieldOffset(0, referenceOffset, 0);
@@ -75,11 +87,20 @@ export class BoxType {
     static addMaximumBoxes(builder, maximumBoxes) {
         builder.addFieldInt32(7, maximumBoxes, null);
     }
+    static addOuterWidth(builder, outerWidth) {
+        builder.addFieldInt32(8, outerWidth, null);
+    }
+    static addOuterLength(builder, outerLength) {
+        builder.addFieldInt32(9, outerLength, null);
+    }
+    static addOuterDepth(builder, outerDepth) {
+        builder.addFieldInt32(10, outerDepth, null);
+    }
     static endBoxType(builder) {
         const offset = builder.endObject();
         return offset;
     }
-    static createBoxType(builder, referenceOffset, width, length, depth, maxWeight, boxWeight, active, maximumBoxes) {
+    static createBoxType(builder, referenceOffset, width, length, depth, maxWeight, boxWeight, active, maximumBoxes, outerWidth, outerLength, outerDepth) {
         BoxType.startBoxType(builder);
         BoxType.addReference(builder, referenceOffset);
         BoxType.addWidth(builder, width);
@@ -93,10 +114,16 @@ export class BoxType {
             BoxType.addActive(builder, active);
         if (maximumBoxes !== null)
             BoxType.addMaximumBoxes(builder, maximumBoxes);
+        if (outerWidth !== null)
+            BoxType.addOuterWidth(builder, outerWidth);
+        if (outerLength !== null)
+            BoxType.addOuterLength(builder, outerLength);
+        if (outerDepth !== null)
+            BoxType.addOuterDepth(builder, outerDepth);
         return BoxType.endBoxType(builder);
     }
     unpack() {
-        return new BoxTypeT(this.reference(), this.width(), this.length(), this.depth(), this.maxWeight(), this.boxWeight(), this.active(), this.maximumBoxes());
+        return new BoxTypeT(this.reference(), this.width(), this.length(), this.depth(), this.maxWeight(), this.boxWeight(), this.active(), this.maximumBoxes(), this.outerWidth(), this.outerLength(), this.outerDepth());
     }
     unpackTo(_o) {
         _o.reference = this.reference();
@@ -107,6 +134,9 @@ export class BoxType {
         _o.boxWeight = this.boxWeight();
         _o.active = this.active();
         _o.maximumBoxes = this.maximumBoxes();
+        _o.outerWidth = this.outerWidth();
+        _o.outerLength = this.outerLength();
+        _o.outerDepth = this.outerDepth();
     }
 }
 export class BoxTypeT {
@@ -118,7 +148,10 @@ export class BoxTypeT {
     boxWeight;
     active;
     maximumBoxes;
-    constructor(reference = null, width = 0, length = 0, depth = 0, maxWeight = null, boxWeight = null, active = null, maximumBoxes = null) {
+    outerWidth;
+    outerLength;
+    outerDepth;
+    constructor(reference = null, width = 0, length = 0, depth = 0, maxWeight = null, boxWeight = null, active = null, maximumBoxes = null, outerWidth = null, outerLength = null, outerDepth = null) {
         this.reference = reference;
         this.width = width;
         this.length = length;
@@ -127,10 +160,13 @@ export class BoxTypeT {
         this.boxWeight = boxWeight;
         this.active = active;
         this.maximumBoxes = maximumBoxes;
+        this.outerWidth = outerWidth;
+        this.outerLength = outerLength;
+        this.outerDepth = outerDepth;
     }
     pack(builder) {
         const reference = (this.reference !== null ? builder.createString(this.reference) : 0);
-        return BoxType.createBoxType(builder, reference, this.width, this.length, this.depth, this.maxWeight, this.boxWeight, this.active, this.maximumBoxes);
+        return BoxType.createBoxType(builder, reference, this.width, this.length, this.depth, this.maxWeight, this.boxWeight, this.active, this.maximumBoxes, this.outerWidth, this.outerLength, this.outerDepth);
     }
 }
 //# sourceMappingURL=box-type.js.map

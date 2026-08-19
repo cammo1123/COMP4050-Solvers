@@ -200,6 +200,9 @@ struct BoxTypeT : public ::flatbuffers::NativeTable {
   ::flatbuffers::Optional<float> box_weight = ::flatbuffers::nullopt;
   ::flatbuffers::Optional<bool> active = ::flatbuffers::nullopt;
   ::flatbuffers::Optional<uint32_t> maximum_boxes = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<uint32_t> outer_width = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<uint32_t> outer_length = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<uint32_t> outer_depth = ::flatbuffers::nullopt;
 };
 
 struct BoxType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
@@ -213,7 +216,10 @@ struct BoxType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_MAX_WEIGHT = 12,
     VT_BOX_WEIGHT = 14,
     VT_ACTIVE = 16,
-    VT_MAXIMUM_BOXES = 18
+    VT_MAXIMUM_BOXES = 18,
+    VT_OUTER_WIDTH = 20,
+    VT_OUTER_LENGTH = 22,
+    VT_OUTER_DEPTH = 24
   };
   const ::flatbuffers::String *reference() const {
     return GetPointer<const ::flatbuffers::String *>(VT_REFERENCE);
@@ -239,6 +245,15 @@ struct BoxType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   ::flatbuffers::Optional<uint32_t> maximum_boxes() const {
     return GetOptional<uint32_t, uint32_t>(VT_MAXIMUM_BOXES);
   }
+  ::flatbuffers::Optional<uint32_t> outer_width() const {
+    return GetOptional<uint32_t, uint32_t>(VT_OUTER_WIDTH);
+  }
+  ::flatbuffers::Optional<uint32_t> outer_length() const {
+    return GetOptional<uint32_t, uint32_t>(VT_OUTER_LENGTH);
+  }
+  ::flatbuffers::Optional<uint32_t> outer_depth() const {
+    return GetOptional<uint32_t, uint32_t>(VT_OUTER_DEPTH);
+  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -251,6 +266,9 @@ struct BoxType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<float>(verifier, VT_BOX_WEIGHT, 4) &&
            VerifyField<uint8_t>(verifier, VT_ACTIVE, 1) &&
            VerifyField<uint32_t>(verifier, VT_MAXIMUM_BOXES, 4) &&
+           VerifyField<uint32_t>(verifier, VT_OUTER_WIDTH, 4) &&
+           VerifyField<uint32_t>(verifier, VT_OUTER_LENGTH, 4) &&
+           VerifyField<uint32_t>(verifier, VT_OUTER_DEPTH, 4) &&
            verifier.EndTable();
   }
   BoxTypeT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
@@ -286,6 +304,15 @@ struct BoxTypeBuilder {
   void add_maximum_boxes(uint32_t maximum_boxes) {
     fbb_.AddElement<uint32_t>(BoxType::VT_MAXIMUM_BOXES, maximum_boxes);
   }
+  void add_outer_width(uint32_t outer_width) {
+    fbb_.AddElement<uint32_t>(BoxType::VT_OUTER_WIDTH, outer_width);
+  }
+  void add_outer_length(uint32_t outer_length) {
+    fbb_.AddElement<uint32_t>(BoxType::VT_OUTER_LENGTH, outer_length);
+  }
+  void add_outer_depth(uint32_t outer_depth) {
+    fbb_.AddElement<uint32_t>(BoxType::VT_OUTER_DEPTH, outer_depth);
+  }
   explicit BoxTypeBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -306,8 +333,14 @@ inline ::flatbuffers::Offset<BoxType> CreateBoxType(
     ::flatbuffers::Optional<float> max_weight = ::flatbuffers::nullopt,
     ::flatbuffers::Optional<float> box_weight = ::flatbuffers::nullopt,
     ::flatbuffers::Optional<bool> active = ::flatbuffers::nullopt,
-    ::flatbuffers::Optional<uint32_t> maximum_boxes = ::flatbuffers::nullopt) {
+    ::flatbuffers::Optional<uint32_t> maximum_boxes = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<uint32_t> outer_width = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<uint32_t> outer_length = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<uint32_t> outer_depth = ::flatbuffers::nullopt) {
   BoxTypeBuilder builder_(_fbb);
+  if(outer_depth) { builder_.add_outer_depth(*outer_depth); }
+  if(outer_length) { builder_.add_outer_length(*outer_length); }
+  if(outer_width) { builder_.add_outer_width(*outer_width); }
   if(maximum_boxes) { builder_.add_maximum_boxes(*maximum_boxes); }
   if(box_weight) { builder_.add_box_weight(*box_weight); }
   if(max_weight) { builder_.add_max_weight(*max_weight); }
@@ -328,7 +361,10 @@ inline ::flatbuffers::Offset<BoxType> CreateBoxTypeDirect(
     ::flatbuffers::Optional<float> max_weight = ::flatbuffers::nullopt,
     ::flatbuffers::Optional<float> box_weight = ::flatbuffers::nullopt,
     ::flatbuffers::Optional<bool> active = ::flatbuffers::nullopt,
-    ::flatbuffers::Optional<uint32_t> maximum_boxes = ::flatbuffers::nullopt) {
+    ::flatbuffers::Optional<uint32_t> maximum_boxes = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<uint32_t> outer_width = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<uint32_t> outer_length = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<uint32_t> outer_depth = ::flatbuffers::nullopt) {
   auto reference__ = reference ? _fbb.CreateString(reference) : 0;
   return fbs::CreateBoxType(
       _fbb,
@@ -339,7 +375,10 @@ inline ::flatbuffers::Offset<BoxType> CreateBoxTypeDirect(
       max_weight,
       box_weight,
       active,
-      maximum_boxes);
+      maximum_boxes,
+      outer_width,
+      outer_length,
+      outer_depth);
 }
 
 ::flatbuffers::Offset<BoxType> CreateBoxType(::flatbuffers::FlatBufferBuilder &_fbb, const BoxTypeT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
@@ -612,6 +651,9 @@ inline void BoxType::UnPackTo(BoxTypeT *_o, const ::flatbuffers::resolver_functi
   { auto _e = box_weight(); _o->box_weight = _e; }
   { auto _e = active(); _o->active = _e; }
   { auto _e = maximum_boxes(); _o->maximum_boxes = _e; }
+  { auto _e = outer_width(); _o->outer_width = _e; }
+  { auto _e = outer_length(); _o->outer_length = _e; }
+  { auto _e = outer_depth(); _o->outer_depth = _e; }
 }
 
 inline ::flatbuffers::Offset<BoxType> CreateBoxType(::flatbuffers::FlatBufferBuilder &_fbb, const BoxTypeT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
@@ -630,6 +672,9 @@ inline ::flatbuffers::Offset<BoxType> BoxType::Pack(::flatbuffers::FlatBufferBui
   auto _box_weight = _o->box_weight;
   auto _active = _o->active;
   auto _maximum_boxes = _o->maximum_boxes;
+  auto _outer_width = _o->outer_width;
+  auto _outer_length = _o->outer_length;
+  auto _outer_depth = _o->outer_depth;
   return fbs::CreateBoxType(
       _fbb,
       _reference,
@@ -639,7 +684,10 @@ inline ::flatbuffers::Offset<BoxType> BoxType::Pack(::flatbuffers::FlatBufferBui
       _max_weight,
       _box_weight,
       _active,
-      _maximum_boxes);
+      _maximum_boxes,
+      _outer_width,
+      _outer_length,
+      _outer_depth);
 }
 
 inline ItemTypeT::ItemTypeT(const ItemTypeT &o)
