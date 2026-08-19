@@ -17,9 +17,6 @@ std::string info()
 	out << " (" << BUILDINFO_BUILD_TYPE << ")\n";
 
 	out << "  git: " << BUILDINFO_GIT_HASH << " (" << BUILDINFO_GIT_BRANCH << ")";
-#if BUILDINFO_GIT_DIRTY
-	out << " [dirty]";
-#endif
 	out << "\n";
 
 	out << "  built: " << BUILDINFO_BUILD_TIME << "\n";
