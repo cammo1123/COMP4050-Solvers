@@ -22,6 +22,7 @@ struct SolveOptions {
 	std::optional<bool> balance_weight = std::nullopt;
 	std::optional<bool> all_permutations = std::nullopt;
 	std::optional<bool> single_box = std::nullopt;
+	std::optional<bool> strict_item_order = std::nullopt;
 };
 
 struct SolveRequest {
@@ -83,6 +84,10 @@ inline SolveOptions toDomain(fbs::SolveOptionsT const& value)
 		out.single_box = *value.single_box;
 	}
 
+	if (value.strict_item_order.has_value()) {
+		out.strict_item_order = *value.strict_item_order;
+	}
+
 	return out;
 }
 
@@ -114,6 +119,10 @@ inline fbs::SolveOptionsT fromDomain(SolveOptions const& value)
 
 	if (value.single_box.has_value()) {
 		out.single_box = *value.single_box;
+	}
+
+	if (value.strict_item_order.has_value()) {
+		out.strict_item_order = *value.strict_item_order;
 	}
 
 	return out;

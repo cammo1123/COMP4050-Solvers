@@ -201,9 +201,12 @@ Result pack(std::vector<Box> boxes, std::vector<Item> items, Options options, Pr
 {
 	const auto deadline = Clock::now() + std::chrono::milliseconds(options.timeout_ms.value_or(std::numeric_limits<uint32_t>::max()));
 	if (options.single_box) options.max_boxes = 1;
-	std::sort(items.begin(), items.end(), [](auto const& a, auto const& b) {
-		return a.dimensions.volume() != b.dimensions.volume() ? a.dimensions.volume() > b.dimensions.volume() : a.code < b.code;
-	});
+	if (!options.strict_item_order) {
+		std::sort(items.begin(), items.end(), [](auto const& a, auto const& b) {
+			return a.dimensions.volume() != b.dimensions.volume() ? a.dimensions.volume() > b.dimensions.volume() : a.code < b.code;
+		});
+	}
+	if (options.strict_item_order) options.all_permutations = false;
 	if (!options.all_permutations || items.size() < 2) return pack_ordered(std::move(boxes), std::move(items), options, deadline, progress);
 
 	Result best;

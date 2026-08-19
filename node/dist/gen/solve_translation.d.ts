@@ -56,6 +56,7 @@ export type SolveOptionsT = {
     balanceWeight?: boolean;
     allPermutations?: boolean;
     singleBox?: boolean;
+    strictItemOrder?: boolean;
 };
 export type SolveRequest = {
     boxes: BoxTypeT[];

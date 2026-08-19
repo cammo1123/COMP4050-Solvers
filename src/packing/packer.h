@@ -19,6 +19,7 @@ struct Options {
 	bool balance_weight = false;
 	bool all_permutations = false;
 	bool single_box = false;
+	bool strict_item_order = false;
 	Strategy strategy = Strategy::Default;
 };
 

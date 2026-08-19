@@ -2,7 +2,7 @@ import * as flatbuffers from "flatbuffers";
 import { describe, expect, it } from "vitest";
 
 import addon from "../index.cjs";
-import { solve, SolveStrategy } from "../src/addon.js";
+import { solve, SolveStrategy, RotationPolicy } from "../src/addon.js";
 import { BoxType, ItemType, SolveRequest, SolveResponse } from "../src/gen/fbs.js";
 
 // Encodes a request into a raw FlatBuffers Buffer using the generated code, so
@@ -177,6 +177,20 @@ describe("packing invariants", () => {
 			items: [{ itemCode: "none", itemReference: "none", width: 10, length: 10, depth: 10, weight: 1, quantity: 0, rotationPolicy: 0 }],
 		});
 		expect(result).toEqual({ results: [], failed: [] });
+	});
+
+	it("preserves input item order when strict ordering is enabled", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 20, length: 10, depth: 10 }],
+			items: [
+				{ itemCode: "small", itemReference: "small", width: 5, length: 10, depth: 10, weight: 1, rotationPolicy: RotationPolicy.Never },
+				{ itemCode: "large", itemReference: "large", width: 15, length: 10, depth: 10, weight: 1, rotationPolicy: RotationPolicy.Never },
+			],
+			options: { strictItemOrder: true },
+		});
+		expect(result.failed).toHaveLength(0);
+		expect(result.results[0].placements.map((item) => item.itemCode)).toEqual(["small", "large"]);
+		expect(result.results[0].placements.map((item) => item.x)).toEqual([0, 5]);
 	});
 
 	it("reports progress while evaluating an unpackable item", async () => {

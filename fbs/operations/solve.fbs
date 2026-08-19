@@ -23,6 +23,7 @@ table SolveOptions {
   balance_weight: bool = null;
   all_permutations: bool = null;
   single_box: bool = null;
+  strict_item_order: bool = null;
 }
 
 table ItemPlacement {

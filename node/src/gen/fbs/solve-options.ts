@@ -60,8 +60,13 @@ singleBox():boolean|null {
   return offset ? !!this.bb!.readInt8(this.bb_pos + offset) : null;
 }
 
+strictItemOrder():boolean|null {
+  const offset = this.bb!.__offset(this.bb_pos, 18);
+  return offset ? !!this.bb!.readInt8(this.bb_pos + offset) : null;
+}
+
 static startSolveOptions(builder:flatbuffers.Builder) {
-  builder.startObject(7);
+  builder.startObject(8);
 }
 
 static addMaxBoxes(builder:flatbuffers.Builder, maxBoxes:number) {
@@ -92,12 +97,16 @@ static addSingleBox(builder:flatbuffers.Builder, singleBox:boolean) {
   builder.addFieldInt8(6, +singleBox, null);
 }
 
+static addStrictItemOrder(builder:flatbuffers.Builder, strictItemOrder:boolean) {
+  builder.addFieldInt8(7, +strictItemOrder, null);
+}
+
 static endSolveOptions(builder:flatbuffers.Builder):flatbuffers.Offset {
   const offset = builder.endObject();
   return offset;
 }
 
-static createSolveOptions(builder:flatbuffers.Builder, maxBoxes:number|null, allowRotation:boolean, timeoutMs:number|null, strategy:SolveStrategy|null, balanceWeight:boolean|null, allPermutations:boolean|null, singleBox:boolean|null):flatbuffers.Offset {
+static createSolveOptions(builder:flatbuffers.Builder, maxBoxes:number|null, allowRotation:boolean, timeoutMs:number|null, strategy:SolveStrategy|null, balanceWeight:boolean|null, allPermutations:boolean|null, singleBox:boolean|null, strictItemOrder:boolean|null):flatbuffers.Offset {
   SolveOptions.startSolveOptions(builder);
   if (maxBoxes !== null)
     SolveOptions.addMaxBoxes(builder, maxBoxes);
@@ -112,6 +121,8 @@ static createSolveOptions(builder:flatbuffers.Builder, maxBoxes:number|null, all
     SolveOptions.addAllPermutations(builder, allPermutations);
   if (singleBox !== null)
     SolveOptions.addSingleBox(builder, singleBox);
+  if (strictItemOrder !== null)
+    SolveOptions.addStrictItemOrder(builder, strictItemOrder);
   return SolveOptions.endSolveOptions(builder);
 }
 
@@ -123,7 +134,8 @@ unpack(): SolveOptionsT {
     this.strategy(),
     this.balanceWeight(),
     this.allPermutations(),
-    this.singleBox()
+    this.singleBox(),
+    this.strictItemOrder()
   );
 }
 
@@ -136,6 +148,7 @@ unpackTo(_o: SolveOptionsT): void {
   _o.balanceWeight = this.balanceWeight();
   _o.allPermutations = this.allPermutations();
   _o.singleBox = this.singleBox();
+  _o.strictItemOrder = this.strictItemOrder();
 }
 }
 
@@ -147,7 +160,8 @@ constructor(
   public strategy: SolveStrategy|null = null,
   public balanceWeight: boolean|null = null,
   public allPermutations: boolean|null = null,
-  public singleBox: boolean|null = null
+  public singleBox: boolean|null = null,
+  public strictItemOrder: boolean|null = null
 ){}
 
 
@@ -159,7 +173,8 @@ pack(builder:flatbuffers.Builder): flatbuffers.Offset {
     this.strategy,
     this.balanceWeight,
     this.allPermutations,
-    this.singleBox
+    this.singleBox,
+    this.strictItemOrder
   );
 }
 }

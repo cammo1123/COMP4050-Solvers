@@ -174,6 +174,7 @@ struct SolveOptionsT : public ::flatbuffers::NativeTable {
   ::flatbuffers::Optional<bool> balance_weight = ::flatbuffers::nullopt;
   ::flatbuffers::Optional<bool> all_permutations = ::flatbuffers::nullopt;
   ::flatbuffers::Optional<bool> single_box = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<bool> strict_item_order = ::flatbuffers::nullopt;
 };
 
 struct SolveOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
@@ -186,7 +187,8 @@ struct SolveOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_STRATEGY = 10,
     VT_BALANCE_WEIGHT = 12,
     VT_ALL_PERMUTATIONS = 14,
-    VT_SINGLE_BOX = 16
+    VT_SINGLE_BOX = 16,
+    VT_STRICT_ITEM_ORDER = 18
   };
   ::flatbuffers::Optional<uint32_t> max_boxes() const {
     return GetOptional<uint32_t, uint32_t>(VT_MAX_BOXES);
@@ -209,6 +211,9 @@ struct SolveOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   ::flatbuffers::Optional<bool> single_box() const {
     return GetOptional<uint8_t, bool>(VT_SINGLE_BOX);
   }
+  ::flatbuffers::Optional<bool> strict_item_order() const {
+    return GetOptional<uint8_t, bool>(VT_STRICT_ITEM_ORDER);
+  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -219,6 +224,7 @@ struct SolveOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<uint8_t>(verifier, VT_BALANCE_WEIGHT, 1) &&
            VerifyField<uint8_t>(verifier, VT_ALL_PERMUTATIONS, 1) &&
            VerifyField<uint8_t>(verifier, VT_SINGLE_BOX, 1) &&
+           VerifyField<uint8_t>(verifier, VT_STRICT_ITEM_ORDER, 1) &&
            verifier.EndTable();
   }
   SolveOptionsT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
@@ -251,6 +257,9 @@ struct SolveOptionsBuilder {
   void add_single_box(bool single_box) {
     fbb_.AddElement<uint8_t>(SolveOptions::VT_SINGLE_BOX, static_cast<uint8_t>(single_box));
   }
+  void add_strict_item_order(bool strict_item_order) {
+    fbb_.AddElement<uint8_t>(SolveOptions::VT_STRICT_ITEM_ORDER, static_cast<uint8_t>(strict_item_order));
+  }
   explicit SolveOptionsBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -270,10 +279,12 @@ inline ::flatbuffers::Offset<SolveOptions> CreateSolveOptions(
     ::flatbuffers::Optional<fbs::SolveStrategy> strategy = ::flatbuffers::nullopt,
     ::flatbuffers::Optional<bool> balance_weight = ::flatbuffers::nullopt,
     ::flatbuffers::Optional<bool> all_permutations = ::flatbuffers::nullopt,
-    ::flatbuffers::Optional<bool> single_box = ::flatbuffers::nullopt) {
+    ::flatbuffers::Optional<bool> single_box = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<bool> strict_item_order = ::flatbuffers::nullopt) {
   SolveOptionsBuilder builder_(_fbb);
   if(timeout_ms) { builder_.add_timeout_ms(*timeout_ms); }
   if(max_boxes) { builder_.add_max_boxes(*max_boxes); }
+  if(strict_item_order) { builder_.add_strict_item_order(*strict_item_order); }
   if(single_box) { builder_.add_single_box(*single_box); }
   if(all_permutations) { builder_.add_all_permutations(*all_permutations); }
   if(balance_weight) { builder_.add_balance_weight(*balance_weight); }
@@ -696,6 +707,7 @@ inline void SolveOptions::UnPackTo(SolveOptionsT *_o, const ::flatbuffers::resol
   { auto _e = balance_weight(); _o->balance_weight = _e; }
   { auto _e = all_permutations(); _o->all_permutations = _e; }
   { auto _e = single_box(); _o->single_box = _e; }
+  { auto _e = strict_item_order(); _o->strict_item_order = _e; }
 }
 
 inline ::flatbuffers::Offset<SolveOptions> CreateSolveOptions(::flatbuffers::FlatBufferBuilder &_fbb, const SolveOptionsT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
@@ -713,6 +725,7 @@ inline ::flatbuffers::Offset<SolveOptions> SolveOptions::Pack(::flatbuffers::Fla
   auto _balance_weight = _o->balance_weight;
   auto _all_permutations = _o->all_permutations;
   auto _single_box = _o->single_box;
+  auto _strict_item_order = _o->strict_item_order;
   return fbs::CreateSolveOptions(
       _fbb,
       _max_boxes,
@@ -721,7 +734,8 @@ inline ::flatbuffers::Offset<SolveOptions> SolveOptions::Pack(::flatbuffers::Fla
       _strategy,
       _balance_weight,
       _all_permutations,
-      _single_box);
+      _single_box,
+      _strict_item_order);
 }
 
 inline ItemPlacementT *ItemPlacement::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {

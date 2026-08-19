@@ -13,6 +13,7 @@ export declare class SolveOptions implements flatbuffers.IUnpackableObject<Solve
     balanceWeight(): boolean | null;
     allPermutations(): boolean | null;
     singleBox(): boolean | null;
+    strictItemOrder(): boolean | null;
     static startSolveOptions(builder: flatbuffers.Builder): void;
     static addMaxBoxes(builder: flatbuffers.Builder, maxBoxes: number): void;
     static addAllowRotation(builder: flatbuffers.Builder, allowRotation: boolean): void;
@@ -21,8 +22,9 @@ export declare class SolveOptions implements flatbuffers.IUnpackableObject<Solve
     static addBalanceWeight(builder: flatbuffers.Builder, balanceWeight: boolean): void;
     static addAllPermutations(builder: flatbuffers.Builder, allPermutations: boolean): void;
     static addSingleBox(builder: flatbuffers.Builder, singleBox: boolean): void;
+    static addStrictItemOrder(builder: flatbuffers.Builder, strictItemOrder: boolean): void;
     static endSolveOptions(builder: flatbuffers.Builder): flatbuffers.Offset;
-    static createSolveOptions(builder: flatbuffers.Builder, maxBoxes: number | null, allowRotation: boolean, timeoutMs: number | null, strategy: SolveStrategy | null, balanceWeight: boolean | null, allPermutations: boolean | null, singleBox: boolean | null): flatbuffers.Offset;
+    static createSolveOptions(builder: flatbuffers.Builder, maxBoxes: number | null, allowRotation: boolean, timeoutMs: number | null, strategy: SolveStrategy | null, balanceWeight: boolean | null, allPermutations: boolean | null, singleBox: boolean | null, strictItemOrder: boolean | null): flatbuffers.Offset;
     unpack(): SolveOptionsT;
     unpackTo(_o: SolveOptionsT): void;
 }
@@ -34,7 +36,8 @@ export declare class SolveOptionsT implements flatbuffers.IGeneratedObject {
     balanceWeight: boolean | null;
     allPermutations: boolean | null;
     singleBox: boolean | null;
-    constructor(maxBoxes?: number | null, allowRotation?: boolean, timeoutMs?: number | null, strategy?: SolveStrategy | null, balanceWeight?: boolean | null, allPermutations?: boolean | null, singleBox?: boolean | null);
+    strictItemOrder: boolean | null;
+    constructor(maxBoxes?: number | null, allowRotation?: boolean, timeoutMs?: number | null, strategy?: SolveStrategy | null, balanceWeight?: boolean | null, allPermutations?: boolean | null, singleBox?: boolean | null, strictItemOrder?: boolean | null);
     pack(builder: flatbuffers.Builder): flatbuffers.Offset;
 }
 //# sourceMappingURL=solve-options.d.ts.map
