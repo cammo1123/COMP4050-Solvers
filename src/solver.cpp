@@ -1,5 +1,6 @@
 #include "solver.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <sstream>
@@ -46,8 +47,12 @@ SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
 	}
 
 	if (!maybe_box.has_value()) {
+		size_t i = 0;
+		on_progress(i, request.items.size());
 		for (auto item : request.items) {
 			response.failed.push_back(item);
+			i++;
+			on_progress(i, request.items.size());
 		}
 		return response;
 	}
@@ -58,7 +63,10 @@ SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
 	auto results = std::vector<BoxResult>();
 	
 	uint32_t y = 0;
+	size_t i = 0;
+	on_progress(i, request.items.size());
 	for (auto item : request.items) {
+
 		placements.push_back(ItemPlacement{
 			.x = 0,
 			.y = y,
@@ -69,6 +77,8 @@ SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
 			.depth = item.depth,
 		});
 
+		i++;
+		on_progress(i, request.items.size());
 		y += item.depth;
 	}
 	
