@@ -32,6 +32,47 @@ bool intrinsically_stable(Dimensions dimensions, Dimensions box_dimensions)
 		dimensions.height == box_dimensions.height;
 }
 
+bool simple_item(Item const& item)
+{
+	const auto& constraint = item.constraint;
+	return !constraint.no_stacking && !constraint.required_vertical && constraint.min_x == 0 && constraint.min_y == 0 && constraint.min_z == 0 &&
+		constraint.max_x == UINT32_MAX && constraint.max_y == UINT32_MAX && constraint.max_z == UINT32_MAX;
+}
+
+void add_edge(std::vector<uint32_t>& edges, uint32_t origin, uint32_t size)
+{
+	const auto end = static_cast<uint64_t>(origin) + size;
+	if (end <= UINT32_MAX) edges.push_back(static_cast<uint32_t>(end));
+}
+
+bool supported(PackedBox const& box, PackedItem const& item);
+
+std::optional<PackedItem> place_repeated(Dimensions box_dimensions, Item const& item, std::vector<PackedItem> const& placed)
+{
+	if (placed.empty() || !simple_item(item)) return std::nullopt;
+	for (auto const& existing : placed) if (!simple_item(existing.item) || !(existing.dimensions == item.dimensions)) return std::nullopt;
+	std::vector<uint32_t> x_edges{0};
+	std::vector<uint32_t> y_edges{0};
+	std::vector<uint32_t> z_edges{0};
+	for (auto const& existing : placed) {
+		add_edge(x_edges, existing.x, existing.dimensions.width);
+		add_edge(y_edges, existing.y, existing.dimensions.height);
+		add_edge(z_edges, existing.z, existing.dimensions.length);
+	}
+	std::sort(x_edges.begin(), x_edges.end());
+	std::sort(y_edges.begin(), y_edges.end());
+	std::sort(z_edges.begin(), z_edges.end());
+	x_edges.erase(std::unique(x_edges.begin(), x_edges.end()), x_edges.end());
+	y_edges.erase(std::unique(y_edges.begin(), y_edges.end()), y_edges.end());
+	z_edges.erase(std::unique(z_edges.begin(), z_edges.end()), z_edges.end());
+	PackedBox state{Box{}, box_dimensions, placed, 0};
+	for (auto y : y_edges) for (auto z : z_edges) for (auto x : x_edges) {
+		PackedItem candidate{item, item.dimensions, x, y, z};
+		if (supported(state, candidate)) return candidate;
+	}
+	return std::nullopt;
+}
+
 bool supported(PackedBox const& box, PackedItem const& item)
 {
 	auto const& constraint = item.item.constraint;
@@ -158,6 +199,7 @@ std::optional<PackedItem> place(Box const& box, Dimensions box_dimensions, Item 
 	float weight, Clock::time_point deadline)
 {
 	PackedBox state{box, box_dimensions, placed, weight};
+	if (auto repeated = place_repeated(box_dimensions, item, placed)) return repeated;
 	auto possible_orientations = orientations(item.dimensions, item.rotation);
 	const auto has_stable_orientation = std::any_of(possible_orientations.begin(), possible_orientations.end(),
 		[&](auto dimensions) { return intrinsically_stable(dimensions, box_dimensions); });
