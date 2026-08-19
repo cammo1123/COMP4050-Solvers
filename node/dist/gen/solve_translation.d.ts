@@ -1,4 +1,4 @@
-import { SolveStrategy } from "./fbs.js";
+import { SolveStrategy, RotationPolicy } from "./fbs.js";
 export type BoxResultT = {
     boxReference: string;
     placements: ItemPlacementT[];
@@ -34,7 +34,7 @@ export type ItemTypeT = {
     weight: number;
     quantity?: number;
     boxGroup?: string | Uint8Array;
-    rotationPolicy?: number;
+    rotationPolicy?: RotationPolicy;
     linkedGroup?: string | Uint8Array;
     constraint?: PlacementConstraintT | null;
 };

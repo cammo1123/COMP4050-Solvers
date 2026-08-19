@@ -27,6 +27,39 @@ struct ItemType;
 struct ItemTypeBuilder;
 struct ItemTypeT;
 
+enum RotationPolicy : int8_t {
+  RotationPolicy_Never = 0,
+  RotationPolicy_KeepFlat = 1,
+  RotationPolicy_BestFit = 2,
+  RotationPolicy_MIN = RotationPolicy_Never,
+  RotationPolicy_MAX = RotationPolicy_BestFit
+};
+
+inline const RotationPolicy (&EnumValuesRotationPolicy())[3] {
+  static const RotationPolicy values[] = {
+    RotationPolicy_Never,
+    RotationPolicy_KeepFlat,
+    RotationPolicy_BestFit
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesRotationPolicy() {
+  static const char * const names[4] = {
+    "Never",
+    "KeepFlat",
+    "BestFit",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNameRotationPolicy(RotationPolicy e) {
+  if (::flatbuffers::IsOutRange(e, RotationPolicy_Never, RotationPolicy_BestFit)) return "";
+  const size_t index = static_cast<size_t>(e);
+  return EnumNamesRotationPolicy()[index];
+}
+
 struct PlacementConstraintT : public ::flatbuffers::NativeTable {
   typedef PlacementConstraint TableType;
   ::flatbuffers::Optional<bool> no_stacking = ::flatbuffers::nullopt;
@@ -321,7 +354,7 @@ struct ItemTypeT : public ::flatbuffers::NativeTable {
   float weight = 0.0f;
   ::flatbuffers::Optional<uint32_t> quantity = ::flatbuffers::nullopt;
   std::string box_group{};
-  ::flatbuffers::Optional<int8_t> rotation_policy = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<fbs::RotationPolicy> rotation_policy = ::flatbuffers::nullopt;
   std::string linked_group{};
   std::unique_ptr<fbs::PlacementConstraintT> constraint{};
   ItemTypeT() = default;
@@ -370,8 +403,8 @@ struct ItemType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const ::flatbuffers::String *box_group() const {
     return GetPointer<const ::flatbuffers::String *>(VT_BOX_GROUP);
   }
-  ::flatbuffers::Optional<int8_t> rotation_policy() const {
-    return GetOptional<int8_t, int8_t>(VT_ROTATION_POLICY);
+  ::flatbuffers::Optional<fbs::RotationPolicy> rotation_policy() const {
+    return GetOptional<int8_t, fbs::RotationPolicy>(VT_ROTATION_POLICY);
   }
   const ::flatbuffers::String *linked_group() const {
     return GetPointer<const ::flatbuffers::String *>(VT_LINKED_GROUP);
@@ -433,8 +466,8 @@ struct ItemTypeBuilder {
   void add_box_group(::flatbuffers::Offset<::flatbuffers::String> box_group) {
     fbb_.AddOffset(ItemType::VT_BOX_GROUP, box_group);
   }
-  void add_rotation_policy(int8_t rotation_policy) {
-    fbb_.AddElement<int8_t>(ItemType::VT_ROTATION_POLICY, rotation_policy);
+  void add_rotation_policy(fbs::RotationPolicy rotation_policy) {
+    fbb_.AddElement<int8_t>(ItemType::VT_ROTATION_POLICY, static_cast<int8_t>(rotation_policy));
   }
   void add_linked_group(::flatbuffers::Offset<::flatbuffers::String> linked_group) {
     fbb_.AddOffset(ItemType::VT_LINKED_GROUP, linked_group);
@@ -463,7 +496,7 @@ inline ::flatbuffers::Offset<ItemType> CreateItemType(
     float weight = 0.0f,
     ::flatbuffers::Optional<uint32_t> quantity = ::flatbuffers::nullopt,
     ::flatbuffers::Offset<::flatbuffers::String> box_group = 0,
-    ::flatbuffers::Optional<int8_t> rotation_policy = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<fbs::RotationPolicy> rotation_policy = ::flatbuffers::nullopt,
     ::flatbuffers::Offset<::flatbuffers::String> linked_group = 0,
     ::flatbuffers::Offset<fbs::PlacementConstraint> constraint = 0) {
   ItemTypeBuilder builder_(_fbb);
@@ -491,7 +524,7 @@ inline ::flatbuffers::Offset<ItemType> CreateItemTypeDirect(
     float weight = 0.0f,
     ::flatbuffers::Optional<uint32_t> quantity = ::flatbuffers::nullopt,
     const char *box_group = nullptr,
-    ::flatbuffers::Optional<int8_t> rotation_policy = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<fbs::RotationPolicy> rotation_policy = ::flatbuffers::nullopt,
     const char *linked_group = nullptr,
     ::flatbuffers::Offset<fbs::PlacementConstraint> constraint = 0) {
   auto item_code__ = item_code ? _fbb.CreateString(item_code) : 0;

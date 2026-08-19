@@ -5,6 +5,7 @@
 import * as flatbuffers from 'flatbuffers';
 
 import { PlacementConstraint, PlacementConstraintT } from '../fbs/placement-constraint.js';
+import { RotationPolicy } from '../fbs/rotation-policy.js';
 
 
 export class ItemType implements flatbuffers.IUnpackableObject<ItemTypeT> {
@@ -71,7 +72,7 @@ boxGroup(optionalEncoding?:any):string|Uint8Array|null {
   return offset ? this.bb!.__string(this.bb_pos + offset, optionalEncoding) : null;
 }
 
-rotationPolicy():number|null {
+rotationPolicy():RotationPolicy|null {
   const offset = this.bb!.__offset(this.bb_pos, 20);
   return offset ? this.bb!.readInt8(this.bb_pos + offset) : null;
 }
@@ -124,7 +125,7 @@ static addBoxGroup(builder:flatbuffers.Builder, boxGroupOffset:flatbuffers.Offse
   builder.addFieldOffset(7, boxGroupOffset, 0);
 }
 
-static addRotationPolicy(builder:flatbuffers.Builder, rotationPolicy:number) {
+static addRotationPolicy(builder:flatbuffers.Builder, rotationPolicy:RotationPolicy) {
   builder.addFieldInt8(8, rotationPolicy, null);
 }
 
@@ -184,7 +185,7 @@ constructor(
   public weight: number = 0.0,
   public quantity: number|null = null,
   public boxGroup: string|Uint8Array|null = null,
-  public rotationPolicy: number|null = null,
+  public rotationPolicy: RotationPolicy|null = null,
   public linkedGroup: string|Uint8Array|null = null,
   public constraint: PlacementConstraintT|null = null
 ){}

@@ -214,7 +214,7 @@ inline ItemType toDomain(fbs::ItemTypeT const& value)
 	}
 
 	if (value.rotation_policy.has_value()) {
-		out.rotation_policy = *value.rotation_policy;
+		out.rotation_policy = static_cast<int8_t>(*value.rotation_policy);
 	}
 
 	if (!value.linked_group.empty()) {
@@ -253,7 +253,7 @@ inline fbs::ItemTypeT fromDomain(ItemType const& value)
 	}
 
 	if (value.rotation_policy.has_value()) {
-		out.rotation_policy = *value.rotation_policy;
+		out.rotation_policy = static_cast<fbs::RotationPolicy>(*value.rotation_policy);
 	}
 
 	if (value.linked_group.has_value()) {

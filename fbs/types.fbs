@@ -2,6 +2,12 @@ namespace fbs;
 
 attribute "optional";
 
+enum RotationPolicy : byte {
+  Never = 0,
+  KeepFlat = 1,
+  BestFit = 2
+}
+
 table PlacementConstraint {
   no_stacking: bool = null;
   required_vertical: bool = null;
@@ -35,8 +41,7 @@ table ItemType {
   quantity: uint = null;
 
   box_group: string (optional);
-  // 0 = never, 1 = keep flat (Y axis fixed), 2 = best fit.
-  rotation_policy: byte = null;
+  rotation_policy: RotationPolicy = null;
   linked_group: string (optional);
   constraint: PlacementConstraint (optional);
 }
