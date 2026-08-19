@@ -2,6 +2,7 @@
   "recommendations": [
     "llvm-vs-code-extensions.vscode-clangd",
     "gaborv.flatbuffers",
+    "xaver.clang-format",
   ],
   "unwantedRecommendations": [
     "ms-vscode.cpptools"

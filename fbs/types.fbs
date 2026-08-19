@@ -11,15 +11,15 @@ table BoxType {
   max_weight: float = null;
   box_weight: float = null;
   active: bool = null;
-  maximum_boxes: int = null;
+  maximum_boxes: uint = null;
 }
 
 table ItemType {
   item_code: string;
   item_reference: string;
-  width: int;
-  length: int;
-  depth: int;
+  width: uint;
+  length: uint;
+  depth: uint;
   weight: float;
 
   box_group: string (optional);

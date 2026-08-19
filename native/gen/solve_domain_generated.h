@@ -15,9 +15,9 @@ namespace fbs {
 namespace domain {
 
 struct SolveOptions {
-	std::optional<int32_t> max_boxes = std::nullopt;
+	std::optional<uint32_t> max_boxes = std::nullopt;
 	bool allow_rotation = true;
-	std::optional<int32_t> timeout_ms = std::nullopt;
+	std::optional<uint32_t> timeout_ms = std::nullopt;
 	std::optional<int8_t> strategy = std::nullopt;
 };
 
@@ -28,12 +28,12 @@ struct SolveRequest {
 };
 
 struct ItemPlacement {
-	float x = 0.0f;
-	float y = 0.0f;
-	float z = 0.0f;
-	float width = 0.0f;
-	float length = 0.0f;
-	float depth = 0.0f;
+	uint32_t x = 0;
+	uint32_t y = 0;
+	uint32_t z = 0;
+	uint32_t width = 0;
+	uint32_t length = 0;
+	uint32_t depth = 0;
 };
 
 struct BoxResult {

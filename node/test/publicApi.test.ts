@@ -21,8 +21,8 @@ describe("package public API (typed entry)", () => {
 		};
 		const result: SolveResponse = await solve(request);
 		expect(result).toEqual({
-			results: [],
-			failed: [{ depth: 10, length: 10, width: 10, itemCode: "A", itemReference: "A", weight: 10 }],
+			results: [{ boxReference: "A", placements: [{ depth: 10, length: 10, width: 10, x: 0, y: 0, z: 0 }] }],
+			failed: [],
 		});
 	});
 
@@ -48,8 +48,8 @@ describe("package public API (typed entry)", () => {
 		];
 
 		expect(await solve({ boxes, items })).toEqual({
-			failed: [{ depth: 10, length: 10, width: 10, itemCode: "A", itemReference: "A", weight: 10 }],
-			results: [],
+			failed: [],
+			results: [{ boxReference: "A", placements: [{ depth: 10, length: 10, width: 10, x: 0, y: 0, z: 0 }] }],
 		});
 	});
 });

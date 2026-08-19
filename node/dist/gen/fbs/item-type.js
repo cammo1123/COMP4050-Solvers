@@ -26,15 +26,15 @@ export class ItemType {
     }
     width() {
         const offset = this.bb.__offset(this.bb_pos, 8);
-        return offset ? this.bb.readInt32(this.bb_pos + offset) : 0;
+        return offset ? this.bb.readUint32(this.bb_pos + offset) : 0;
     }
     length() {
         const offset = this.bb.__offset(this.bb_pos, 10);
-        return offset ? this.bb.readInt32(this.bb_pos + offset) : 0;
+        return offset ? this.bb.readUint32(this.bb_pos + offset) : 0;
     }
     depth() {
         const offset = this.bb.__offset(this.bb_pos, 12);
-        return offset ? this.bb.readInt32(this.bb_pos + offset) : 0;
+        return offset ? this.bb.readUint32(this.bb_pos + offset) : 0;
     }
     weight() {
         const offset = this.bb.__offset(this.bb_pos, 14);

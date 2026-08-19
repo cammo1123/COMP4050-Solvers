@@ -18,7 +18,7 @@ export class SolveOptions {
     }
     maxBoxes() {
         const offset = this.bb.__offset(this.bb_pos, 4);
-        return offset ? this.bb.readInt32(this.bb_pos + offset) : null;
+        return offset ? this.bb.readUint32(this.bb_pos + offset) : null;
     }
     allowRotation() {
         const offset = this.bb.__offset(this.bb_pos, 6);
@@ -26,7 +26,7 @@ export class SolveOptions {
     }
     timeoutMs() {
         const offset = this.bb.__offset(this.bb_pos, 8);
-        return offset ? this.bb.readInt32(this.bb_pos + offset) : null;
+        return offset ? this.bb.readUint32(this.bb_pos + offset) : null;
     }
     strategy() {
         const offset = this.bb.__offset(this.bb_pos, 10);

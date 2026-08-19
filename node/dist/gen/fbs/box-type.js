@@ -46,7 +46,7 @@ export class BoxType {
     }
     maximumBoxes() {
         const offset = this.bb.__offset(this.bb_pos, 18);
-        return offset ? this.bb.readInt32(this.bb_pos + offset) : null;
+        return offset ? this.bb.readUint32(this.bb_pos + offset) : null;
     }
     static startBoxType(builder) {
         builder.startObject(8);

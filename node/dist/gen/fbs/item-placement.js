@@ -18,48 +18,48 @@ export class ItemPlacement {
     }
     x() {
         const offset = this.bb.__offset(this.bb_pos, 4);
-        return offset ? this.bb.readFloat32(this.bb_pos + offset) : 0.0;
+        return offset ? this.bb.readUint32(this.bb_pos + offset) : 0;
     }
     y() {
         const offset = this.bb.__offset(this.bb_pos, 6);
-        return offset ? this.bb.readFloat32(this.bb_pos + offset) : 0.0;
+        return offset ? this.bb.readUint32(this.bb_pos + offset) : 0;
     }
     z() {
         const offset = this.bb.__offset(this.bb_pos, 8);
-        return offset ? this.bb.readFloat32(this.bb_pos + offset) : 0.0;
+        return offset ? this.bb.readUint32(this.bb_pos + offset) : 0;
     }
     width() {
         const offset = this.bb.__offset(this.bb_pos, 10);
-        return offset ? this.bb.readFloat32(this.bb_pos + offset) : 0.0;
+        return offset ? this.bb.readUint32(this.bb_pos + offset) : 0;
     }
     length() {
         const offset = this.bb.__offset(this.bb_pos, 12);
-        return offset ? this.bb.readFloat32(this.bb_pos + offset) : 0.0;
+        return offset ? this.bb.readUint32(this.bb_pos + offset) : 0;
     }
     depth() {
         const offset = this.bb.__offset(this.bb_pos, 14);
-        return offset ? this.bb.readFloat32(this.bb_pos + offset) : 0.0;
+        return offset ? this.bb.readUint32(this.bb_pos + offset) : 0;
     }
     static startItemPlacement(builder) {
         builder.startObject(6);
     }
     static addX(builder, x) {
-        builder.addFieldFloat32(0, x, 0.0);
+        builder.addFieldInt32(0, x, 0);
     }
     static addY(builder, y) {
-        builder.addFieldFloat32(1, y, 0.0);
+        builder.addFieldInt32(1, y, 0);
     }
     static addZ(builder, z) {
-        builder.addFieldFloat32(2, z, 0.0);
+        builder.addFieldInt32(2, z, 0);
     }
     static addWidth(builder, width) {
-        builder.addFieldFloat32(3, width, 0.0);
+        builder.addFieldInt32(3, width, 0);
     }
     static addLength(builder, length) {
-        builder.addFieldFloat32(4, length, 0.0);
+        builder.addFieldInt32(4, length, 0);
     }
     static addDepth(builder, depth) {
-        builder.addFieldFloat32(5, depth, 0.0);
+        builder.addFieldInt32(5, depth, 0);
     }
     static endItemPlacement(builder) {
         const offset = builder.endObject();
@@ -94,7 +94,7 @@ export class ItemPlacementT {
     width;
     length;
     depth;
-    constructor(x = 0.0, y = 0.0, z = 0.0, width = 0.0, length = 0.0, depth = 0.0) {
+    constructor(x = 0, y = 0, z = 0, width = 0, length = 0, depth = 0) {
         this.x = x;
         this.y = y;
         this.z = z;
