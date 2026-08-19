@@ -193,6 +193,21 @@ describe("packing invariants", () => {
 		expect(result.results[0].placements.map((item) => item.x)).toEqual([0, 5]);
 	});
 
+	it("selects a denser best subset when requested", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 10, length: 10, depth: 10, maximumBoxes: 1 }],
+			items: [
+				{ itemCode: "large", itemReference: "large", width: 10, length: 10, depth: 6, weight: 1, rotationPolicy: RotationPolicy.Never },
+				{ itemCode: "small", itemReference: "small", width: 5, length: 5, depth: 5, weight: 1, quantity: 8, rotationPolicy: RotationPolicy.Never },
+			],
+			options: { bestSubset: true },
+		});
+		expect(result.results[0].placements).toHaveLength(8);
+		expect(result.results[0].placements.every((item) => item.itemCode === "small")).toBe(true);
+		expect(result.failed).toHaveLength(1);
+		expect(result.failed[0].itemCode).toBe("large");
+	});
+
 	it("reports progress while evaluating an unpackable item", async () => {
 		const progress: Array<[number, number]> = [];
 		const result = await solve({

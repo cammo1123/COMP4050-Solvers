@@ -175,6 +175,7 @@ struct SolveOptionsT : public ::flatbuffers::NativeTable {
   ::flatbuffers::Optional<bool> all_permutations = ::flatbuffers::nullopt;
   ::flatbuffers::Optional<bool> single_box = ::flatbuffers::nullopt;
   ::flatbuffers::Optional<bool> strict_item_order = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<bool> best_subset = ::flatbuffers::nullopt;
 };
 
 struct SolveOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
@@ -188,7 +189,8 @@ struct SolveOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_BALANCE_WEIGHT = 12,
     VT_ALL_PERMUTATIONS = 14,
     VT_SINGLE_BOX = 16,
-    VT_STRICT_ITEM_ORDER = 18
+    VT_STRICT_ITEM_ORDER = 18,
+    VT_BEST_SUBSET = 20
   };
   ::flatbuffers::Optional<uint32_t> max_boxes() const {
     return GetOptional<uint32_t, uint32_t>(VT_MAX_BOXES);
@@ -214,6 +216,9 @@ struct SolveOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   ::flatbuffers::Optional<bool> strict_item_order() const {
     return GetOptional<uint8_t, bool>(VT_STRICT_ITEM_ORDER);
   }
+  ::flatbuffers::Optional<bool> best_subset() const {
+    return GetOptional<uint8_t, bool>(VT_BEST_SUBSET);
+  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -225,6 +230,7 @@ struct SolveOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<uint8_t>(verifier, VT_ALL_PERMUTATIONS, 1) &&
            VerifyField<uint8_t>(verifier, VT_SINGLE_BOX, 1) &&
            VerifyField<uint8_t>(verifier, VT_STRICT_ITEM_ORDER, 1) &&
+           VerifyField<uint8_t>(verifier, VT_BEST_SUBSET, 1) &&
            verifier.EndTable();
   }
   SolveOptionsT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
@@ -260,6 +266,9 @@ struct SolveOptionsBuilder {
   void add_strict_item_order(bool strict_item_order) {
     fbb_.AddElement<uint8_t>(SolveOptions::VT_STRICT_ITEM_ORDER, static_cast<uint8_t>(strict_item_order));
   }
+  void add_best_subset(bool best_subset) {
+    fbb_.AddElement<uint8_t>(SolveOptions::VT_BEST_SUBSET, static_cast<uint8_t>(best_subset));
+  }
   explicit SolveOptionsBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -280,10 +289,12 @@ inline ::flatbuffers::Offset<SolveOptions> CreateSolveOptions(
     ::flatbuffers::Optional<bool> balance_weight = ::flatbuffers::nullopt,
     ::flatbuffers::Optional<bool> all_permutations = ::flatbuffers::nullopt,
     ::flatbuffers::Optional<bool> single_box = ::flatbuffers::nullopt,
-    ::flatbuffers::Optional<bool> strict_item_order = ::flatbuffers::nullopt) {
+    ::flatbuffers::Optional<bool> strict_item_order = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<bool> best_subset = ::flatbuffers::nullopt) {
   SolveOptionsBuilder builder_(_fbb);
   if(timeout_ms) { builder_.add_timeout_ms(*timeout_ms); }
   if(max_boxes) { builder_.add_max_boxes(*max_boxes); }
+  if(best_subset) { builder_.add_best_subset(*best_subset); }
   if(strict_item_order) { builder_.add_strict_item_order(*strict_item_order); }
   if(single_box) { builder_.add_single_box(*single_box); }
   if(all_permutations) { builder_.add_all_permutations(*all_permutations); }
@@ -708,6 +719,7 @@ inline void SolveOptions::UnPackTo(SolveOptionsT *_o, const ::flatbuffers::resol
   { auto _e = all_permutations(); _o->all_permutations = _e; }
   { auto _e = single_box(); _o->single_box = _e; }
   { auto _e = strict_item_order(); _o->strict_item_order = _e; }
+  { auto _e = best_subset(); _o->best_subset = _e; }
 }
 
 inline ::flatbuffers::Offset<SolveOptions> CreateSolveOptions(::flatbuffers::FlatBufferBuilder &_fbb, const SolveOptionsT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
@@ -726,6 +738,7 @@ inline ::flatbuffers::Offset<SolveOptions> SolveOptions::Pack(::flatbuffers::Fla
   auto _all_permutations = _o->all_permutations;
   auto _single_box = _o->single_box;
   auto _strict_item_order = _o->strict_item_order;
+  auto _best_subset = _o->best_subset;
   return fbs::CreateSolveOptions(
       _fbb,
       _max_boxes,
@@ -735,7 +748,8 @@ inline ::flatbuffers::Offset<SolveOptions> SolveOptions::Pack(::flatbuffers::Fla
       _balance_weight,
       _all_permutations,
       _single_box,
-      _strict_item_order);
+      _strict_item_order,
+      _best_subset);
 }
 
 inline ItemPlacementT *ItemPlacement::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {

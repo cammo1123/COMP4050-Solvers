@@ -24,6 +24,7 @@ table SolveOptions {
   all_permutations: bool = null;
   single_box: bool = null;
   strict_item_order: bool = null;
+  best_subset: bool = null;
 }
 
 table ItemPlacement {

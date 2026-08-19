@@ -48,8 +48,12 @@ export class SolveOptions {
         const offset = this.bb.__offset(this.bb_pos, 18);
         return offset ? !!this.bb.readInt8(this.bb_pos + offset) : null;
     }
+    bestSubset() {
+        const offset = this.bb.__offset(this.bb_pos, 20);
+        return offset ? !!this.bb.readInt8(this.bb_pos + offset) : null;
+    }
     static startSolveOptions(builder) {
-        builder.startObject(8);
+        builder.startObject(9);
     }
     static addMaxBoxes(builder, maxBoxes) {
         builder.addFieldInt32(0, maxBoxes, null);
@@ -75,11 +79,14 @@ export class SolveOptions {
     static addStrictItemOrder(builder, strictItemOrder) {
         builder.addFieldInt8(7, +strictItemOrder, null);
     }
+    static addBestSubset(builder, bestSubset) {
+        builder.addFieldInt8(8, +bestSubset, null);
+    }
     static endSolveOptions(builder) {
         const offset = builder.endObject();
         return offset;
     }
-    static createSolveOptions(builder, maxBoxes, allowRotation, timeoutMs, strategy, balanceWeight, allPermutations, singleBox, strictItemOrder) {
+    static createSolveOptions(builder, maxBoxes, allowRotation, timeoutMs, strategy, balanceWeight, allPermutations, singleBox, strictItemOrder, bestSubset) {
         SolveOptions.startSolveOptions(builder);
         if (maxBoxes !== null)
             SolveOptions.addMaxBoxes(builder, maxBoxes);
@@ -96,10 +103,12 @@ export class SolveOptions {
             SolveOptions.addSingleBox(builder, singleBox);
         if (strictItemOrder !== null)
             SolveOptions.addStrictItemOrder(builder, strictItemOrder);
+        if (bestSubset !== null)
+            SolveOptions.addBestSubset(builder, bestSubset);
         return SolveOptions.endSolveOptions(builder);
     }
     unpack() {
-        return new SolveOptionsT(this.maxBoxes(), this.allowRotation(), this.timeoutMs(), this.strategy(), this.balanceWeight(), this.allPermutations(), this.singleBox(), this.strictItemOrder());
+        return new SolveOptionsT(this.maxBoxes(), this.allowRotation(), this.timeoutMs(), this.strategy(), this.balanceWeight(), this.allPermutations(), this.singleBox(), this.strictItemOrder(), this.bestSubset());
     }
     unpackTo(_o) {
         _o.maxBoxes = this.maxBoxes();
@@ -110,6 +119,7 @@ export class SolveOptions {
         _o.allPermutations = this.allPermutations();
         _o.singleBox = this.singleBox();
         _o.strictItemOrder = this.strictItemOrder();
+        _o.bestSubset = this.bestSubset();
     }
 }
 export class SolveOptionsT {
@@ -121,7 +131,8 @@ export class SolveOptionsT {
     allPermutations;
     singleBox;
     strictItemOrder;
-    constructor(maxBoxes = null, allowRotation = true, timeoutMs = null, strategy = null, balanceWeight = null, allPermutations = null, singleBox = null, strictItemOrder = null) {
+    bestSubset;
+    constructor(maxBoxes = null, allowRotation = true, timeoutMs = null, strategy = null, balanceWeight = null, allPermutations = null, singleBox = null, strictItemOrder = null, bestSubset = null) {
         this.maxBoxes = maxBoxes;
         this.allowRotation = allowRotation;
         this.timeoutMs = timeoutMs;
@@ -130,9 +141,10 @@ export class SolveOptionsT {
         this.allPermutations = allPermutations;
         this.singleBox = singleBox;
         this.strictItemOrder = strictItemOrder;
+        this.bestSubset = bestSubset;
     }
     pack(builder) {
-        return SolveOptions.createSolveOptions(builder, this.maxBoxes, this.allowRotation, this.timeoutMs, this.strategy, this.balanceWeight, this.allPermutations, this.singleBox, this.strictItemOrder);
+        return SolveOptions.createSolveOptions(builder, this.maxBoxes, this.allowRotation, this.timeoutMs, this.strategy, this.balanceWeight, this.allPermutations, this.singleBox, this.strictItemOrder, this.bestSubset);
     }
 }
 //# sourceMappingURL=solve-options.js.map

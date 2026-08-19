@@ -47,7 +47,7 @@ std::optional<PackedItem> place(Box const& box, Dimensions box_dimensions, Item 
 	return std::nullopt;
 }
 
-std::optional<PackedBox> try_box(Box const& box, std::vector<Item> const& items, bool allow_rotation, Clock::time_point deadline,
+std::optional<PackedBox> try_box_once(Box const& box, std::vector<Item> const& items, bool allow_rotation, Clock::time_point deadline,
 	ProgressCallback progress)
 {
 	std::vector<Dimensions> box_orientations{{box.dimensions}, {box.dimensions.length, box.dimensions.height, box.dimensions.width}};
@@ -84,6 +84,23 @@ std::optional<PackedBox> try_box(Box const& box, std::vector<Item> const& items,
 			if (progress) progress(candidate.items.size(), items.size());
 		}
 		if (!best || candidate.items.size() > best->items.size() || (candidate.items.size() == best->items.size() && candidate.used_volume() > best->used_volume())) best = candidate;
+	}
+	return best;
+}
+
+std::optional<PackedBox> try_box(Box const& box, std::vector<Item> const& items, bool allow_rotation, bool best_subset,
+	Clock::time_point deadline, ProgressCallback progress)
+{
+	if (!best_subset) return try_box_once(box, items, allow_rotation, deadline, progress);
+
+	std::optional<PackedBox> best;
+	for (size_t first = 0; first < items.size() && Clock::now() < deadline; ++first) {
+		std::vector<Item> subset(items.begin() + static_cast<std::ptrdiff_t>(first), items.end());
+		auto candidate = try_box_once(box, subset, allow_rotation, deadline, nullptr);
+		const auto packed_count = candidate ? candidate->items.size() : 0;
+		if (candidate && (!best || candidate->used_volume() > best->used_volume() ||
+			(candidate->used_volume() == best->used_volume() && packed_count > best->items.size()))) best = std::move(candidate);
+		if (progress && packed_count) progress(packed_count, items.size());
 	}
 	return best;
 }
@@ -166,7 +183,7 @@ Result pack_ordered(std::vector<Box> boxes, std::vector<Item> items, Options opt
 		size_t best_box = 0;
 		for (size_t i = 0; i < boxes.size(); ++i) {
 			if (!boxes[i].active || (boxes[i].quantity && used[i] >= boxes[i].quantity)) continue;
-			auto candidate = try_box(boxes[i], remaining, options.allow_rotation, deadline, progress);
+			auto candidate = try_box(boxes[i], remaining, options.allow_rotation, options.best_subset, deadline, progress);
 			if (!candidate) continue;
 			bool better = !best;
 			if (best && options.strategy == Strategy::Utilization) {

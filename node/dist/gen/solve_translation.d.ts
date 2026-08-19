@@ -57,6 +57,7 @@ export type SolveOptionsT = {
     allPermutations?: boolean;
     singleBox?: boolean;
     strictItemOrder?: boolean;
+    bestSubset?: boolean;
 };
 export type SolveRequest = {
     boxes: BoxTypeT[];

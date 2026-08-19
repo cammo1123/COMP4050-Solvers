@@ -23,6 +23,7 @@ struct SolveOptions {
 	std::optional<bool> all_permutations = std::nullopt;
 	std::optional<bool> single_box = std::nullopt;
 	std::optional<bool> strict_item_order = std::nullopt;
+	std::optional<bool> best_subset = std::nullopt;
 };
 
 struct SolveRequest {
@@ -88,6 +89,10 @@ inline SolveOptions toDomain(fbs::SolveOptionsT const& value)
 		out.strict_item_order = *value.strict_item_order;
 	}
 
+	if (value.best_subset.has_value()) {
+		out.best_subset = *value.best_subset;
+	}
+
 	return out;
 }
 
@@ -123,6 +128,10 @@ inline fbs::SolveOptionsT fromDomain(SolveOptions const& value)
 
 	if (value.strict_item_order.has_value()) {
 		out.strict_item_order = *value.strict_item_order;
+	}
+
+	if (value.best_subset.has_value()) {
+		out.best_subset = *value.best_subset;
 	}
 
 	return out;

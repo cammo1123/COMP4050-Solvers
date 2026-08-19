@@ -65,6 +65,7 @@ SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
 		options.all_permutations = request.options->all_permutations.value_or(false);
 		options.single_box = request.options->single_box.value_or(false);
 		options.strict_item_order = request.options->strict_item_order.value_or(false);
+		options.best_subset = request.options->best_subset.value_or(false);
 		options.strategy = static_cast<packing::Strategy>(request.options->strategy.value_or(static_cast<int8_t>(fbs::SolveStrategy_Default)));
 	}
 	auto packed = packing::pack(std::move(boxes), std::move(items), options, std::move(on_progress));

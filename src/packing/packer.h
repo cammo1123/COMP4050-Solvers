@@ -20,6 +20,7 @@ struct Options {
 	bool all_permutations = false;
 	bool single_box = false;
 	bool strict_item_order = false;
+	bool best_subset = false;
 	Strategy strategy = Strategy::Default;
 };
 
