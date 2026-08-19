@@ -33,7 +33,7 @@ std::string info()
 SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
 {
 	SolveResponse response;
-	SolveOptions options = request.options.value_or({ });
+	SolveOptions options = request.options.value_or(SolveOptions{ });
 
 	(void)on_progress;
 	(void)options;
