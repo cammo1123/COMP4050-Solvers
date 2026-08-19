@@ -15,9 +15,9 @@ namespace domain {
 
 struct BoxType {
 	std::string reference{};
-	float width = 0.0f;
-	float length = 0.0f;
-	float depth = 0.0f;
+	uint32_t width = 0;
+	uint32_t length = 0;
+	uint32_t depth = 0;
 	std::optional<float> max_weight = std::nullopt;
 	std::optional<float> box_weight = std::nullopt;
 	std::optional<bool> active = std::nullopt;

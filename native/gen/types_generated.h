@@ -26,9 +26,9 @@ struct ItemTypeT;
 struct BoxTypeT : public ::flatbuffers::NativeTable {
   typedef BoxType TableType;
   std::string reference{};
-  float width = 0.0f;
-  float length = 0.0f;
-  float depth = 0.0f;
+  uint32_t width = 0;
+  uint32_t length = 0;
+  uint32_t depth = 0;
   ::flatbuffers::Optional<float> max_weight = ::flatbuffers::nullopt;
   ::flatbuffers::Optional<float> box_weight = ::flatbuffers::nullopt;
   ::flatbuffers::Optional<bool> active = ::flatbuffers::nullopt;
@@ -51,14 +51,14 @@ struct BoxType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const ::flatbuffers::String *reference() const {
     return GetPointer<const ::flatbuffers::String *>(VT_REFERENCE);
   }
-  float width() const {
-    return GetField<float>(VT_WIDTH, 0.0f);
+  uint32_t width() const {
+    return GetField<uint32_t>(VT_WIDTH, 0);
   }
-  float length() const {
-    return GetField<float>(VT_LENGTH, 0.0f);
+  uint32_t length() const {
+    return GetField<uint32_t>(VT_LENGTH, 0);
   }
-  float depth() const {
-    return GetField<float>(VT_DEPTH, 0.0f);
+  uint32_t depth() const {
+    return GetField<uint32_t>(VT_DEPTH, 0);
   }
   ::flatbuffers::Optional<float> max_weight() const {
     return GetOptional<float, float>(VT_MAX_WEIGHT);
@@ -77,9 +77,9 @@ struct BoxType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_REFERENCE) &&
            verifier.VerifyString(reference()) &&
-           VerifyField<float>(verifier, VT_WIDTH, 4) &&
-           VerifyField<float>(verifier, VT_LENGTH, 4) &&
-           VerifyField<float>(verifier, VT_DEPTH, 4) &&
+           VerifyField<uint32_t>(verifier, VT_WIDTH, 4) &&
+           VerifyField<uint32_t>(verifier, VT_LENGTH, 4) &&
+           VerifyField<uint32_t>(verifier, VT_DEPTH, 4) &&
            VerifyField<float>(verifier, VT_MAX_WEIGHT, 4) &&
            VerifyField<float>(verifier, VT_BOX_WEIGHT, 4) &&
            VerifyField<uint8_t>(verifier, VT_ACTIVE, 1) &&
@@ -98,14 +98,14 @@ struct BoxTypeBuilder {
   void add_reference(::flatbuffers::Offset<::flatbuffers::String> reference) {
     fbb_.AddOffset(BoxType::VT_REFERENCE, reference);
   }
-  void add_width(float width) {
-    fbb_.AddElement<float>(BoxType::VT_WIDTH, width, 0.0f);
+  void add_width(uint32_t width) {
+    fbb_.AddElement<uint32_t>(BoxType::VT_WIDTH, width, 0);
   }
-  void add_length(float length) {
-    fbb_.AddElement<float>(BoxType::VT_LENGTH, length, 0.0f);
+  void add_length(uint32_t length) {
+    fbb_.AddElement<uint32_t>(BoxType::VT_LENGTH, length, 0);
   }
-  void add_depth(float depth) {
-    fbb_.AddElement<float>(BoxType::VT_DEPTH, depth, 0.0f);
+  void add_depth(uint32_t depth) {
+    fbb_.AddElement<uint32_t>(BoxType::VT_DEPTH, depth, 0);
   }
   void add_max_weight(float max_weight) {
     fbb_.AddElement<float>(BoxType::VT_MAX_WEIGHT, max_weight);
@@ -133,9 +133,9 @@ struct BoxTypeBuilder {
 inline ::flatbuffers::Offset<BoxType> CreateBoxType(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     ::flatbuffers::Offset<::flatbuffers::String> reference = 0,
-    float width = 0.0f,
-    float length = 0.0f,
-    float depth = 0.0f,
+    uint32_t width = 0,
+    uint32_t length = 0,
+    uint32_t depth = 0,
     ::flatbuffers::Optional<float> max_weight = ::flatbuffers::nullopt,
     ::flatbuffers::Optional<float> box_weight = ::flatbuffers::nullopt,
     ::flatbuffers::Optional<bool> active = ::flatbuffers::nullopt,
@@ -155,9 +155,9 @@ inline ::flatbuffers::Offset<BoxType> CreateBoxType(
 inline ::flatbuffers::Offset<BoxType> CreateBoxTypeDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     const char *reference = nullptr,
-    float width = 0.0f,
-    float length = 0.0f,
-    float depth = 0.0f,
+    uint32_t width = 0,
+    uint32_t length = 0,
+    uint32_t depth = 0,
     ::flatbuffers::Optional<float> max_weight = ::flatbuffers::nullopt,
     ::flatbuffers::Optional<float> box_weight = ::flatbuffers::nullopt,
     ::flatbuffers::Optional<bool> active = ::flatbuffers::nullopt,

@@ -4,9 +4,9 @@ attribute "optional";
 
 table BoxType {
   reference: string;
-  width: float;
-  length: float;
-  depth: float;
+  width: uint;
+  length: uint;
+  depth: uint;
 
   max_weight: float = null;
   box_weight: float = null;
