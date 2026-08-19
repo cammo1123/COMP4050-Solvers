@@ -148,6 +148,27 @@ describe("packing invariants", () => {
 		expect(result.results[0].placements[0]).toMatchObject({ width: 10, depth: 5, length: 20 });
 	});
 
+	it("uses best-fit rotation when the original axes do not fit", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 5, length: 4, depth: 3 }],
+			items: [{ itemCode: "rotated", itemReference: "rotated", width: 4, length: 3, depth: 5, weight: 1, rotationPolicy: RotationPolicy.BestFit }],
+		});
+		expect(result.failed).toHaveLength(0);
+		expect(result.results[0].placements[0]).toMatchObject({ width: 5, depth: 3, length: 4 });
+	});
+
+	it("places items front-to-back along the Z axis", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 10, length: 20, depth: 10 }],
+			items: [
+				{ itemCode: "front", itemReference: "front", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: RotationPolicy.Never },
+				{ itemCode: "back", itemReference: "back", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: RotationPolicy.Never },
+			],
+		});
+		expect(result.failed).toHaveLength(0);
+		expect(result.results[0].placements.map((item) => item.z)).toEqual([0, 10]);
+	});
+
 	it("honors box quantities and reports items that do not fit", async () => {
 		const result = await solve({
 			boxes: [{ reference: "A", width: 10, length: 10, depth: 10, maximumBoxes: 1 }],
@@ -158,6 +179,23 @@ describe("packing invariants", () => {
 		});
 		expect(result.results).toHaveLength(1);
 		expect(result.failed.map((item) => item.itemCode)).toEqual(["two"]);
+	});
+
+	it("enforces maximum box count and empty-box weight", async () => {
+		const result = await solve({
+			boxes: [
+				{ reference: "A", width: 10, length: 10, depth: 10, boxWeight: 3, maxWeight: 5 },
+				{ reference: "B", width: 10, length: 10, depth: 10, boxWeight: 3, maxWeight: 5 },
+			],
+			items: [
+				{ itemCode: "one", itemReference: "one", width: 10, length: 10, depth: 10, weight: 3, rotationPolicy: RotationPolicy.Never },
+				{ itemCode: "two", itemReference: "two", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: RotationPolicy.Never },
+			],
+			options: { maxBoxes: 1 },
+		});
+		expect(result.results).toHaveLength(1);
+		expect(result.results[0].totalWeight).toBe(4);
+		expect(result.failed.map((item) => item.itemCode)).toEqual(["one"]);
 	});
 
 	it("expands explicit item quantities into instances", async () => {
