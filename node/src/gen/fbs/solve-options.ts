@@ -26,7 +26,7 @@ static getSizePrefixedRootAsSolveOptions(bb:flatbuffers.ByteBuffer, obj?:SolveOp
 
 maxBoxes():number|null {
   const offset = this.bb!.__offset(this.bb_pos, 4);
-  return offset ? this.bb!.readInt32(this.bb_pos + offset) : null;
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : null;
 }
 
 allowRotation():boolean {
@@ -36,7 +36,7 @@ allowRotation():boolean {
 
 timeoutMs():number|null {
   const offset = this.bb!.__offset(this.bb_pos, 8);
-  return offset ? this.bb!.readInt32(this.bb_pos + offset) : null;
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : null;
 }
 
 strategy():number|null {

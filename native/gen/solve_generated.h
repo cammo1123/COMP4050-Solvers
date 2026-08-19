@@ -137,9 +137,9 @@ inline ::flatbuffers::Offset<SolveRequest> CreateSolveRequestDirect(
 
 struct SolveOptionsT : public ::flatbuffers::NativeTable {
   typedef SolveOptions TableType;
-  ::flatbuffers::Optional<int32_t> max_boxes = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<uint32_t> max_boxes = ::flatbuffers::nullopt;
   bool allow_rotation = true;
-  ::flatbuffers::Optional<int32_t> timeout_ms = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<uint32_t> timeout_ms = ::flatbuffers::nullopt;
   ::flatbuffers::Optional<int8_t> strategy = ::flatbuffers::nullopt;
 };
 
@@ -152,14 +152,14 @@ struct SolveOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_TIMEOUT_MS = 8,
     VT_STRATEGY = 10
   };
-  ::flatbuffers::Optional<int32_t> max_boxes() const {
-    return GetOptional<int32_t, int32_t>(VT_MAX_BOXES);
+  ::flatbuffers::Optional<uint32_t> max_boxes() const {
+    return GetOptional<uint32_t, uint32_t>(VT_MAX_BOXES);
   }
   bool allow_rotation() const {
     return GetField<uint8_t>(VT_ALLOW_ROTATION, 1) != 0;
   }
-  ::flatbuffers::Optional<int32_t> timeout_ms() const {
-    return GetOptional<int32_t, int32_t>(VT_TIMEOUT_MS);
+  ::flatbuffers::Optional<uint32_t> timeout_ms() const {
+    return GetOptional<uint32_t, uint32_t>(VT_TIMEOUT_MS);
   }
   ::flatbuffers::Optional<int8_t> strategy() const {
     return GetOptional<int8_t, int8_t>(VT_STRATEGY);
@@ -167,9 +167,9 @@ struct SolveOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<int32_t>(verifier, VT_MAX_BOXES, 4) &&
+           VerifyField<uint32_t>(verifier, VT_MAX_BOXES, 4) &&
            VerifyField<uint8_t>(verifier, VT_ALLOW_ROTATION, 1) &&
-           VerifyField<int32_t>(verifier, VT_TIMEOUT_MS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_TIMEOUT_MS, 4) &&
            VerifyField<int8_t>(verifier, VT_STRATEGY, 1) &&
            verifier.EndTable();
   }
@@ -182,14 +182,14 @@ struct SolveOptionsBuilder {
   typedef SolveOptions Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  void add_max_boxes(int32_t max_boxes) {
-    fbb_.AddElement<int32_t>(SolveOptions::VT_MAX_BOXES, max_boxes);
+  void add_max_boxes(uint32_t max_boxes) {
+    fbb_.AddElement<uint32_t>(SolveOptions::VT_MAX_BOXES, max_boxes);
   }
   void add_allow_rotation(bool allow_rotation) {
     fbb_.AddElement<uint8_t>(SolveOptions::VT_ALLOW_ROTATION, static_cast<uint8_t>(allow_rotation), 1);
   }
-  void add_timeout_ms(int32_t timeout_ms) {
-    fbb_.AddElement<int32_t>(SolveOptions::VT_TIMEOUT_MS, timeout_ms);
+  void add_timeout_ms(uint32_t timeout_ms) {
+    fbb_.AddElement<uint32_t>(SolveOptions::VT_TIMEOUT_MS, timeout_ms);
   }
   void add_strategy(int8_t strategy) {
     fbb_.AddElement<int8_t>(SolveOptions::VT_STRATEGY, strategy);
@@ -207,9 +207,9 @@ struct SolveOptionsBuilder {
 
 inline ::flatbuffers::Offset<SolveOptions> CreateSolveOptions(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Optional<int32_t> max_boxes = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<uint32_t> max_boxes = ::flatbuffers::nullopt,
     bool allow_rotation = true,
-    ::flatbuffers::Optional<int32_t> timeout_ms = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<uint32_t> timeout_ms = ::flatbuffers::nullopt,
     ::flatbuffers::Optional<int8_t> strategy = ::flatbuffers::nullopt) {
   SolveOptionsBuilder builder_(_fbb);
   if(timeout_ms) { builder_.add_timeout_ms(*timeout_ms); }
@@ -223,12 +223,12 @@ inline ::flatbuffers::Offset<SolveOptions> CreateSolveOptions(
 
 struct ItemPlacementT : public ::flatbuffers::NativeTable {
   typedef ItemPlacement TableType;
-  float x = 0.0f;
-  float y = 0.0f;
-  float z = 0.0f;
-  float width = 0.0f;
-  float length = 0.0f;
-  float depth = 0.0f;
+  uint32_t x = 0;
+  uint32_t y = 0;
+  uint32_t z = 0;
+  uint32_t width = 0;
+  uint32_t length = 0;
+  uint32_t depth = 0;
 };
 
 struct ItemPlacement FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
@@ -242,33 +242,33 @@ struct ItemPlacement FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_LENGTH = 12,
     VT_DEPTH = 14
   };
-  float x() const {
-    return GetField<float>(VT_X, 0.0f);
+  uint32_t x() const {
+    return GetField<uint32_t>(VT_X, 0);
   }
-  float y() const {
-    return GetField<float>(VT_Y, 0.0f);
+  uint32_t y() const {
+    return GetField<uint32_t>(VT_Y, 0);
   }
-  float z() const {
-    return GetField<float>(VT_Z, 0.0f);
+  uint32_t z() const {
+    return GetField<uint32_t>(VT_Z, 0);
   }
-  float width() const {
-    return GetField<float>(VT_WIDTH, 0.0f);
+  uint32_t width() const {
+    return GetField<uint32_t>(VT_WIDTH, 0);
   }
-  float length() const {
-    return GetField<float>(VT_LENGTH, 0.0f);
+  uint32_t length() const {
+    return GetField<uint32_t>(VT_LENGTH, 0);
   }
-  float depth() const {
-    return GetField<float>(VT_DEPTH, 0.0f);
+  uint32_t depth() const {
+    return GetField<uint32_t>(VT_DEPTH, 0);
   }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<float>(verifier, VT_X, 4) &&
-           VerifyField<float>(verifier, VT_Y, 4) &&
-           VerifyField<float>(verifier, VT_Z, 4) &&
-           VerifyField<float>(verifier, VT_WIDTH, 4) &&
-           VerifyField<float>(verifier, VT_LENGTH, 4) &&
-           VerifyField<float>(verifier, VT_DEPTH, 4) &&
+           VerifyField<uint32_t>(verifier, VT_X, 4) &&
+           VerifyField<uint32_t>(verifier, VT_Y, 4) &&
+           VerifyField<uint32_t>(verifier, VT_Z, 4) &&
+           VerifyField<uint32_t>(verifier, VT_WIDTH, 4) &&
+           VerifyField<uint32_t>(verifier, VT_LENGTH, 4) &&
+           VerifyField<uint32_t>(verifier, VT_DEPTH, 4) &&
            verifier.EndTable();
   }
   ItemPlacementT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
@@ -280,23 +280,23 @@ struct ItemPlacementBuilder {
   typedef ItemPlacement Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  void add_x(float x) {
-    fbb_.AddElement<float>(ItemPlacement::VT_X, x, 0.0f);
+  void add_x(uint32_t x) {
+    fbb_.AddElement<uint32_t>(ItemPlacement::VT_X, x, 0);
   }
-  void add_y(float y) {
-    fbb_.AddElement<float>(ItemPlacement::VT_Y, y, 0.0f);
+  void add_y(uint32_t y) {
+    fbb_.AddElement<uint32_t>(ItemPlacement::VT_Y, y, 0);
   }
-  void add_z(float z) {
-    fbb_.AddElement<float>(ItemPlacement::VT_Z, z, 0.0f);
+  void add_z(uint32_t z) {
+    fbb_.AddElement<uint32_t>(ItemPlacement::VT_Z, z, 0);
   }
-  void add_width(float width) {
-    fbb_.AddElement<float>(ItemPlacement::VT_WIDTH, width, 0.0f);
+  void add_width(uint32_t width) {
+    fbb_.AddElement<uint32_t>(ItemPlacement::VT_WIDTH, width, 0);
   }
-  void add_length(float length) {
-    fbb_.AddElement<float>(ItemPlacement::VT_LENGTH, length, 0.0f);
+  void add_length(uint32_t length) {
+    fbb_.AddElement<uint32_t>(ItemPlacement::VT_LENGTH, length, 0);
   }
-  void add_depth(float depth) {
-    fbb_.AddElement<float>(ItemPlacement::VT_DEPTH, depth, 0.0f);
+  void add_depth(uint32_t depth) {
+    fbb_.AddElement<uint32_t>(ItemPlacement::VT_DEPTH, depth, 0);
   }
   explicit ItemPlacementBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -311,12 +311,12 @@ struct ItemPlacementBuilder {
 
 inline ::flatbuffers::Offset<ItemPlacement> CreateItemPlacement(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    float x = 0.0f,
-    float y = 0.0f,
-    float z = 0.0f,
-    float width = 0.0f,
-    float length = 0.0f,
-    float depth = 0.0f) {
+    uint32_t x = 0,
+    uint32_t y = 0,
+    uint32_t z = 0,
+    uint32_t width = 0,
+    uint32_t length = 0,
+    uint32_t depth = 0) {
   ItemPlacementBuilder builder_(_fbb);
   builder_.add_depth(depth);
   builder_.add_length(length);

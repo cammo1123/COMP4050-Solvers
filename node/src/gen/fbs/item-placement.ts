@@ -26,32 +26,32 @@ static getSizePrefixedRootAsItemPlacement(bb:flatbuffers.ByteBuffer, obj?:ItemPl
 
 x():number {
   const offset = this.bb!.__offset(this.bb_pos, 4);
-  return offset ? this.bb!.readFloat32(this.bb_pos + offset) : 0.0;
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
 }
 
 y():number {
   const offset = this.bb!.__offset(this.bb_pos, 6);
-  return offset ? this.bb!.readFloat32(this.bb_pos + offset) : 0.0;
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
 }
 
 z():number {
   const offset = this.bb!.__offset(this.bb_pos, 8);
-  return offset ? this.bb!.readFloat32(this.bb_pos + offset) : 0.0;
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
 }
 
 width():number {
   const offset = this.bb!.__offset(this.bb_pos, 10);
-  return offset ? this.bb!.readFloat32(this.bb_pos + offset) : 0.0;
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
 }
 
 length():number {
   const offset = this.bb!.__offset(this.bb_pos, 12);
-  return offset ? this.bb!.readFloat32(this.bb_pos + offset) : 0.0;
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
 }
 
 depth():number {
   const offset = this.bb!.__offset(this.bb_pos, 14);
-  return offset ? this.bb!.readFloat32(this.bb_pos + offset) : 0.0;
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
 }
 
 static startItemPlacement(builder:flatbuffers.Builder) {
@@ -59,27 +59,27 @@ static startItemPlacement(builder:flatbuffers.Builder) {
 }
 
 static addX(builder:flatbuffers.Builder, x:number) {
-  builder.addFieldFloat32(0, x, 0.0);
+  builder.addFieldInt32(0, x, 0);
 }
 
 static addY(builder:flatbuffers.Builder, y:number) {
-  builder.addFieldFloat32(1, y, 0.0);
+  builder.addFieldInt32(1, y, 0);
 }
 
 static addZ(builder:flatbuffers.Builder, z:number) {
-  builder.addFieldFloat32(2, z, 0.0);
+  builder.addFieldInt32(2, z, 0);
 }
 
 static addWidth(builder:flatbuffers.Builder, width:number) {
-  builder.addFieldFloat32(3, width, 0.0);
+  builder.addFieldInt32(3, width, 0);
 }
 
 static addLength(builder:flatbuffers.Builder, length:number) {
-  builder.addFieldFloat32(4, length, 0.0);
+  builder.addFieldInt32(4, length, 0);
 }
 
 static addDepth(builder:flatbuffers.Builder, depth:number) {
-  builder.addFieldFloat32(5, depth, 0.0);
+  builder.addFieldInt32(5, depth, 0);
 }
 
 static endItemPlacement(builder:flatbuffers.Builder):flatbuffers.Offset {
@@ -122,12 +122,12 @@ unpackTo(_o: ItemPlacementT): void {
 
 export class ItemPlacementT implements flatbuffers.IGeneratedObject {
 constructor(
-  public x: number = 0.0,
-  public y: number = 0.0,
-  public z: number = 0.0,
-  public width: number = 0.0,
-  public length: number = 0.0,
-  public depth: number = 0.0
+  public x: number = 0,
+  public y: number = 0,
+  public z: number = 0,
+  public width: number = 0,
+  public length: number = 0,
+  public depth: number = 0
 ){}
 
 

@@ -21,15 +21,15 @@ struct BoxType {
 	std::optional<float> max_weight = std::nullopt;
 	std::optional<float> box_weight = std::nullopt;
 	std::optional<bool> active = std::nullopt;
-	std::optional<int32_t> maximum_boxes = std::nullopt;
+	std::optional<uint32_t> maximum_boxes = std::nullopt;
 };
 
 struct ItemType {
 	std::string item_code{};
 	std::string item_reference{};
-	int32_t width = 0;
-	int32_t length = 0;
-	int32_t depth = 0;
+	uint32_t width = 0;
+	uint32_t length = 0;
+	uint32_t depth = 0;
 	float weight = 0.0f;
 	std::optional<std::string> box_group = std::nullopt;
 };
