@@ -61,6 +61,7 @@ SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
 		options.balance_weight = request.options->balance_weight.value_or(false);
 		options.all_permutations = request.options->all_permutations.value_or(false);
 		options.single_box = request.options->single_box.value_or(false);
+		options.strategy = request.options->strategy.value_or(0);
 	}
 	auto packed = packing::pack(std::move(boxes), std::move(items), options, std::move(on_progress));
 	SolveResponse response;

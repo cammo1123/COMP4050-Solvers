@@ -181,7 +181,16 @@ Result pack_ordered(std::vector<Box> boxes, std::vector<Item> items, Options opt
 		for (size_t i = 0; i < boxes.size(); ++i) {
 			if (!boxes[i].active || (boxes[i].quantity && used[i] >= boxes[i].quantity)) continue;
 			auto candidate = try_box(boxes[i], remaining, options.allow_rotation, deadline);
-			if (candidate && (!best || candidate->items.size() > best->items.size() || (candidate->items.size() == best->items.size() && candidate->box.dimensions.volume() < best->box.dimensions.volume()))) { best = std::move(candidate); best_box = i; }
+			if (!candidate) continue;
+			bool better = !best;
+			if (best && options.strategy == 1) {
+				auto utilization = candidate->dimensions.volume() == 0 ? 0.0 : static_cast<double>(candidate->used_volume()) / candidate->dimensions.volume();
+				auto best_utilization = best->dimensions.volume() == 0 ? 0.0 : static_cast<double>(best->used_volume()) / best->dimensions.volume();
+				better = utilization > best_utilization || (utilization == best_utilization && candidate->items.size() > best->items.size());
+			} else if (best) {
+				better = candidate->items.size() > best->items.size() || (candidate->items.size() == best->items.size() && candidate->box.dimensions.volume() < best->box.dimensions.volume());
+			}
+			if (better) { best = std::move(candidate); best_box = i; }
 		}
 		if (!best || best->items.empty() || (options.max_boxes && result.boxes.size() >= *options.max_boxes)) break;
 		std::vector<bool> packed(remaining.size());

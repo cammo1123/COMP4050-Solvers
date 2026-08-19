@@ -17,6 +17,7 @@ struct Options {
 	bool balance_weight = false;
 	bool all_permutations = false;
 	bool single_box = false;
+	int8_t strategy = 0; // 0 = default item count, 1 = utilization first.
 };
 
 struct Result {
