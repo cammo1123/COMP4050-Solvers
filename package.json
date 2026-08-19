@@ -29,8 +29,8 @@
 		"prebuild:binaries": "node node/scripts/build.mjs --prebuild",
 		"prepublishOnly": "pnpm run build",
 		"format": "node node/scripts/build.mjs format",
-		"test": "node node/scripts/build.mjs --if-needed && pnpm build:ts && vitest run --root node",
-		"test:watch": "node node/scripts/build.mjs --if-needed && pnpm build:ts && vitest --root node",
+		"test": "node node/scripts/build.mjs && pnpm build:ts && vitest run --root node",
+		"test:watch": "node node/scripts/build.mjs && pnpm build:ts && vitest --root node",
 		"typecheck": "tsc -p node/tsconfig.json"
 	},
 	"devEngines": {

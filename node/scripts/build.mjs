@@ -108,20 +108,10 @@ const buildType = args.includes('--release') || args.includes('--optimize') ? 'R
 if (!BUILD_TYPES.includes(buildType)) {
 	fail("build", `unknown build type "${buildType}"`)
 }
-const ifNeeded = args.includes('--if-needed')
 const doPrebuild = args.includes('--prebuild')
 const optimize = args.includes('--optimize')
 const buildDir = `build/${target}`
 const buildsAddon = target === 'addon'
-
-if (ifNeeded) {
-	const available = [releaseAddonPath(), prebuildAddonPath()].some((file) => fs.existsSync(file))
-	if (available) {
-		log("build", 'addon.node already available; skipping build')
-		process.exit(0)
-	}
-	log("build", 'no addon.node found; building before tests run')
-}
 
 if (doPrebuild && first === undefined) {
 	if (!fs.existsSync(builtAddonPath(buildDir))) {
