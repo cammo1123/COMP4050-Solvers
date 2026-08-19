@@ -24,7 +24,10 @@ function isUsable (binary) {
 }
 
 function extractArchive (archive, extractDir) {
-	if (archive.endsWith('.zip') && findOnPath('unzip')) {
+	if (archive.endsWith('.zip')) {
+		if (!findOnPath('unzip')) {
+			fail("generated", "`unzip` is required to extract .zip archives but was not found on PATH")
+		}
 		const result = run('unzip', ['-o', '-q', archive, '-d', extractDir])
 		if (result.status === 0) return result
 	}
@@ -71,7 +74,13 @@ function downloadAsset (platform, arch) {
 	if (!found || !isUsable(found)) {
 		fail("generated", `flatc ${FLATC_VERSION} downloaded from ${url} but could not be executed`)
 	}
-	fs.renameSync(found, binary)
+	try {
+		fs.renameSync(found, binary)
+	} catch (err) {
+		if (err.code !== 'EXDEV') throw err
+		fs.copyFileSync(found, binary)
+		fs.unlinkSync(found)
+	}
 	return binary
 }
 

@@ -116,20 +116,22 @@ foreach(schema IN LISTS OPERATION_SCHEMA_FILES)
         "${GENERATED_DIR}/${schema_name}_translation_generated.h")
 endforeach()
 
-if(NODE_EXECUTABLE)
-    add_custom_command(
-        OUTPUT ${GENERATED_HEADERS}
-        COMMAND "${NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/generate.mjs"
-        DEPENDS
-        ${SCHEMA_FILES}
-        "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/generate.mjs"
-        "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/generated.mjs"
-        "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/shared.mjs"
-        "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/translation.mjs"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-        VERBATIM
-    )
+if(NOT NODE_EXECUTABLE)
+    message(FATAL_ERROR "node not found on PATH; required to generate FlatBuffers bindings")
 endif()
+
+add_custom_command(
+    OUTPUT ${GENERATED_HEADERS}
+    COMMAND "${NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/generate.mjs"
+    DEPENDS
+    ${SCHEMA_FILES}
+    "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/generate.mjs"
+    "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/generated.mjs"
+    "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/shared.mjs"
+    "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/translation.mjs"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    VERBATIM
+)
 
 add_library(solver_core STATIC src/solver.cpp ${GENERATED_HEADERS})
 target_include_directories(solver_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR} ${GENERATED_DIR} ${flatbuffers_include})
@@ -146,86 +148,82 @@ foreach(target solver_core solver)
 endforeach()
 
 if(COMP4050_BUILD_ADDON)
-    if(NOT NODE_EXECUTABLE)
-        message(WARNING "node not found on PATH; skipping the Node.js addon target")
-    else()
-        execute_process(
-            COMMAND "${NODE_EXECUTABLE}" -p "process.versions.node"
-            OUTPUT_VARIABLE node_version
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            RESULT_VARIABLE node_version_result
+    execute_process(
+        COMMAND "${NODE_EXECUTABLE}" -p "process.versions.node"
+        OUTPUT_VARIABLE node_version
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE node_version_result
+    )
+    execute_process(
+        COMMAND "${NODE_EXECUTABLE}" -p "process.config.variables.target_arch"
+        OUTPUT_VARIABLE node_arch
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+    if(NOT node_version_result EQUAL 0 OR NOT node_version OR NOT node_arch)
+        message(FATAL_ERROR "Failed to query the Node.js version and architecture")
+    endif()
+
+    set(BUILDINFO_NODE_VERSION "v${node_version}")
+
+    set(node_dir "${CMAKE_BINARY_DIR}/node-v${node_version}")
+    set(node_include "${node_dir}/node-v${node_version}/include/node")
+
+    if(NOT EXISTS "${node_include}/node_api.h")
+        comp4050_fetch_archive(
+            "https://nodejs.org/download/release/v${node_version}/node-v${node_version}-headers.tar.gz"
+            "${node_dir}"
         )
-        execute_process(
-            COMMAND "${NODE_EXECUTABLE}" -p "process.config.variables.target_arch"
-            OUTPUT_VARIABLE node_arch
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
+    endif()
 
-        if(NOT node_version_result EQUAL 0 OR NOT node_version OR NOT node_arch)
-            message(FATAL_ERROR "Failed to query the Node.js version and architecture")
-        endif()
+    set(node_lib "")
 
-        set(BUILDINFO_NODE_VERSION "v${node_version}")
-
-        set(node_dir "${CMAKE_BINARY_DIR}/node-v${node_version}")
-        set(node_include "${node_dir}/node-v${node_version}/include/node")
-
-        if(NOT EXISTS "${node_include}/node_api.h")
-            comp4050_fetch_archive(
-                "https://nodejs.org/download/release/v${node_version}/node-v${node_version}-headers.tar.gz"
-                "${node_dir}"
-            )
-        endif()
-
-        set(node_lib "")
-
-        if(WIN32)
-            if(node_arch STREQUAL "ia32")
-                set(win_arch "x86")
-            else()
-                set(win_arch "${node_arch}")
-            endif()
-
-            set(node_lib "${node_dir}/win-${win_arch}/node.lib")
-
-            if(NOT EXISTS "${node_lib}")
-                file(DOWNLOAD
-                    "https://nodejs.org/download/release/v${node_version}/win-${win_arch}/node.lib"
-                    "${node_lib}"
-                    STATUS download_status
-                )
-                list(GET download_status 0 status_code)
-                if(NOT status_code EQUAL 0)
-                    message(FATAL_ERROR "Failed to download node.lib: ${node_lib}")
-                endif()
-            endif()
-        endif()
-
-        set(napi_dir "${CMAKE_BINARY_DIR}/node-addon-api-8.9.1")
-
-        if(NOT EXISTS "${napi_dir}/napi.h")
-            comp4050_fetch_archive(
-                "https://github.com/nodejs/node-addon-api/archive/refs/tags/v8.9.1.tar.gz"
-                "${CMAKE_BINARY_DIR}"
-            )
-        endif()
-
-        add_library(solver_addon MODULE src/addon.cpp ${GENERATED_HEADERS})
-        target_include_directories(solver_addon PRIVATE "${node_include}" "${napi_dir}" "${GENERATED_DIR}" "${flatbuffers_include}")
-        target_link_libraries(solver_addon PRIVATE solver_core)
-        set_target_properties(solver_addon PROPERTIES PREFIX "" OUTPUT_NAME "addon" SUFFIX ".node")
-
-        if(WIN32)
-            target_link_libraries(solver_addon PRIVATE "${node_lib}")
-        elseif(APPLE)
-            target_link_options(solver_addon PRIVATE "-undefined" "dynamic_lookup")
-        endif()
-
-        if(MSVC)
-            target_compile_options(solver_addon PRIVATE /W4)
+    if(WIN32)
+        if(node_arch STREQUAL "ia32")
+            set(win_arch "x86")
         else()
-            target_compile_options(solver_addon PRIVATE -Wall -Wextra)
+            set(win_arch "${node_arch}")
         endif()
+
+        set(node_lib "${node_dir}/win-${win_arch}/node.lib")
+
+        if(NOT EXISTS "${node_lib}")
+            file(DOWNLOAD
+                "https://nodejs.org/download/release/v${node_version}/win-${win_arch}/node.lib"
+                "${node_lib}"
+                STATUS download_status
+            )
+            list(GET download_status 0 status_code)
+            if(NOT status_code EQUAL 0)
+                message(FATAL_ERROR "Failed to download node.lib: ${node_lib}")
+            endif()
+        endif()
+    endif()
+
+    set(napi_dir "${CMAKE_BINARY_DIR}/node-addon-api-8.9.1")
+
+    if(NOT EXISTS "${napi_dir}/napi.h")
+        comp4050_fetch_archive(
+            "https://github.com/nodejs/node-addon-api/archive/refs/tags/v8.9.1.tar.gz"
+            "${CMAKE_BINARY_DIR}"
+        )
+    endif()
+
+    add_library(solver_addon MODULE src/addon.cpp ${GENERATED_HEADERS})
+    target_include_directories(solver_addon PRIVATE "${node_include}" "${napi_dir}" "${GENERATED_DIR}" "${flatbuffers_include}")
+    target_link_libraries(solver_addon PRIVATE solver_core)
+    set_target_properties(solver_addon PROPERTIES PREFIX "" OUTPUT_NAME "addon" SUFFIX ".node")
+
+    if(WIN32)
+        target_link_libraries(solver_addon PRIVATE "${node_lib}")
+    elseif(APPLE)
+        target_link_options(solver_addon PRIVATE "-undefined" "dynamic_lookup")
+    endif()
+
+    if(MSVC)
+        target_compile_options(solver_addon PRIVATE /W4)
+    else()
+        target_compile_options(solver_addon PRIVATE -Wall -Wextra)
     endif()
 endif()
 
