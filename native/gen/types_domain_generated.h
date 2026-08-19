@@ -42,6 +42,7 @@ struct ItemType {
 	uint32_t length = 0;
 	uint32_t depth = 0;
 	float weight = 0.0f;
+	std::optional<uint32_t> quantity = std::nullopt;
 	std::optional<std::string> box_group = std::nullopt;
 	std::optional<int8_t> rotation_policy = std::nullopt;
 	std::optional<std::string> linked_group = std::nullopt;
@@ -204,6 +205,10 @@ inline ItemType toDomain(fbs::ItemTypeT const& value)
 
 	out.weight = value.weight;
 
+	if (value.quantity.has_value()) {
+		out.quantity = *value.quantity;
+	}
+
 	if (!value.box_group.empty()) {
 		out.box_group = value.box_group;
 	}
@@ -238,6 +243,10 @@ inline fbs::ItemTypeT fromDomain(ItemType const& value)
 	out.depth = value.depth;
 
 	out.weight = value.weight;
+
+	if (value.quantity.has_value()) {
+		out.quantity = *value.quantity;
+	}
 
 	if (value.box_group.has_value()) {
 		out.box_group = *value.box_group;

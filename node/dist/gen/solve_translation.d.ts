@@ -32,6 +32,7 @@ export type ItemTypeT = {
     length: number;
     depth: number;
     weight: number;
+    quantity?: number;
     boxGroup?: string | Uint8Array;
     rotationPolicy?: number;
     linkedGroup?: string | Uint8Array;

@@ -160,6 +160,25 @@ describe("packing invariants", () => {
 		expect(result.failed.map((item) => item.itemCode)).toEqual(["two"]);
 	});
 
+	it("expands explicit item quantities into instances", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 10, length: 10, depth: 10, maximumBoxes: 1 }],
+			items: [{ itemCode: "repeat", itemReference: "repeat", width: 10, length: 10, depth: 10, weight: 1, quantity: 2, rotationPolicy: 0 }],
+		});
+		expect(result.results[0].placements).toHaveLength(1);
+		expect(result.results[0].placements[0]).toMatchObject({ itemCode: "repeat", itemReference: "repeat" });
+		expect(result.failed).toHaveLength(1);
+		expect(result.failed[0]).toMatchObject({ itemCode: "repeat", itemReference: "repeat" });
+	});
+
+	it("does not create instances for an explicit zero quantity", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 10, length: 10, depth: 10 }],
+			items: [{ itemCode: "none", itemReference: "none", width: 10, length: 10, depth: 10, weight: 1, quantity: 0, rotationPolicy: 0 }],
+		});
+		expect(result).toEqual({ results: [], failed: [] });
+	});
+
 	it("reports progress while evaluating an unpackable item", async () => {
 		const progress: Array<[number, number]> = [];
 		const result = await solve({

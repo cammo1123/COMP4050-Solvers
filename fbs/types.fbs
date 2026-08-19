@@ -32,6 +32,7 @@ table ItemType {
   length: uint;
   depth: uint;
   weight: float;
+  quantity: uint = null;
 
   box_group: string (optional);
   // 0 = never, 1 = keep flat (Y axis fixed), 2 = best fit.

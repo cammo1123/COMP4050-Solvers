@@ -34,24 +34,27 @@ SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
 	}
 	std::vector<packing::Item> items;
 	for (auto const& source : request.items) {
-		packing::Item item;
-		item.code = source.item_code;
-		item.reference = source.item_reference;
-		item.linked_group = source.linked_group.value_or("");
-		item.dimensions = {source.width, source.depth, source.length};
-		item.weight = source.weight;
-		item.rotation = source.rotation_policy.has_value() ? static_cast<packing::RotationPolicy>(*source.rotation_policy) : packing::RotationPolicy::BestFit;
-		if (source.constraint) {
-			item.constraint.no_stacking = source.constraint->no_stacking.value_or(false);
-			item.constraint.required_vertical = source.constraint->required_vertical.value_or(false);
-			item.constraint.min_x = source.constraint->min_x.value_or(0);
-			item.constraint.min_y = source.constraint->min_y.value_or(0);
-			item.constraint.min_z = source.constraint->min_z.value_or(0);
-			item.constraint.max_x = source.constraint->max_x.value_or(UINT32_MAX);
-			item.constraint.max_y = source.constraint->max_y.value_or(UINT32_MAX);
-			item.constraint.max_z = source.constraint->max_z.value_or(UINT32_MAX);
+		const auto quantity = source.quantity.value_or(1);
+		for (uint32_t instance = 0; instance < quantity; ++instance) {
+			packing::Item item;
+			item.code = source.item_code;
+			item.reference = source.item_reference;
+			item.linked_group = source.linked_group.value_or("");
+			item.dimensions = {source.width, source.depth, source.length};
+			item.weight = source.weight;
+			item.rotation = source.rotation_policy.has_value() ? static_cast<packing::RotationPolicy>(*source.rotation_policy) : packing::RotationPolicy::BestFit;
+			if (source.constraint) {
+				item.constraint.no_stacking = source.constraint->no_stacking.value_or(false);
+				item.constraint.required_vertical = source.constraint->required_vertical.value_or(false);
+				item.constraint.min_x = source.constraint->min_x.value_or(0);
+				item.constraint.min_y = source.constraint->min_y.value_or(0);
+				item.constraint.min_z = source.constraint->min_z.value_or(0);
+				item.constraint.max_x = source.constraint->max_x.value_or(UINT32_MAX);
+				item.constraint.max_y = source.constraint->max_y.value_or(UINT32_MAX);
+				item.constraint.max_z = source.constraint->max_z.value_or(UINT32_MAX);
+			}
+			items.push_back(std::move(item));
 		}
-		items.push_back(std::move(item));
 	}
 	packing::Options options;
 	if (request.options) {

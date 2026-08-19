@@ -41,24 +41,28 @@ export class ItemType {
         const offset = this.bb.__offset(this.bb_pos, 14);
         return offset ? this.bb.readFloat32(this.bb_pos + offset) : 0.0;
     }
-    boxGroup(optionalEncoding) {
+    quantity() {
         const offset = this.bb.__offset(this.bb_pos, 16);
+        return offset ? this.bb.readUint32(this.bb_pos + offset) : null;
+    }
+    boxGroup(optionalEncoding) {
+        const offset = this.bb.__offset(this.bb_pos, 18);
         return offset ? this.bb.__string(this.bb_pos + offset, optionalEncoding) : null;
     }
     rotationPolicy() {
-        const offset = this.bb.__offset(this.bb_pos, 18);
+        const offset = this.bb.__offset(this.bb_pos, 20);
         return offset ? this.bb.readInt8(this.bb_pos + offset) : null;
     }
     linkedGroup(optionalEncoding) {
-        const offset = this.bb.__offset(this.bb_pos, 20);
+        const offset = this.bb.__offset(this.bb_pos, 22);
         return offset ? this.bb.__string(this.bb_pos + offset, optionalEncoding) : null;
     }
     constraint(obj) {
-        const offset = this.bb.__offset(this.bb_pos, 22);
+        const offset = this.bb.__offset(this.bb_pos, 24);
         return offset ? (obj || new PlacementConstraint()).__init(this.bb.__indirect(this.bb_pos + offset), this.bb) : null;
     }
     static startItemType(builder) {
-        builder.startObject(10);
+        builder.startObject(11);
     }
     static addItemCode(builder, itemCodeOffset) {
         builder.addFieldOffset(0, itemCodeOffset, 0);
@@ -78,24 +82,27 @@ export class ItemType {
     static addWeight(builder, weight) {
         builder.addFieldFloat32(5, weight, 0.0);
     }
+    static addQuantity(builder, quantity) {
+        builder.addFieldInt32(6, quantity, null);
+    }
     static addBoxGroup(builder, boxGroupOffset) {
-        builder.addFieldOffset(6, boxGroupOffset, 0);
+        builder.addFieldOffset(7, boxGroupOffset, 0);
     }
     static addRotationPolicy(builder, rotationPolicy) {
-        builder.addFieldInt8(7, rotationPolicy, null);
+        builder.addFieldInt8(8, rotationPolicy, null);
     }
     static addLinkedGroup(builder, linkedGroupOffset) {
-        builder.addFieldOffset(8, linkedGroupOffset, 0);
+        builder.addFieldOffset(9, linkedGroupOffset, 0);
     }
     static addConstraint(builder, constraintOffset) {
-        builder.addFieldOffset(9, constraintOffset, 0);
+        builder.addFieldOffset(10, constraintOffset, 0);
     }
     static endItemType(builder) {
         const offset = builder.endObject();
         return offset;
     }
     unpack() {
-        return new ItemTypeT(this.itemCode(), this.itemReference(), this.width(), this.length(), this.depth(), this.weight(), this.boxGroup(), this.rotationPolicy(), this.linkedGroup(), (this.constraint() !== null ? this.constraint().unpack() : null));
+        return new ItemTypeT(this.itemCode(), this.itemReference(), this.width(), this.length(), this.depth(), this.weight(), this.quantity(), this.boxGroup(), this.rotationPolicy(), this.linkedGroup(), (this.constraint() !== null ? this.constraint().unpack() : null));
     }
     unpackTo(_o) {
         _o.itemCode = this.itemCode();
@@ -104,6 +111,7 @@ export class ItemType {
         _o.length = this.length();
         _o.depth = this.depth();
         _o.weight = this.weight();
+        _o.quantity = this.quantity();
         _o.boxGroup = this.boxGroup();
         _o.rotationPolicy = this.rotationPolicy();
         _o.linkedGroup = this.linkedGroup();
@@ -117,17 +125,19 @@ export class ItemTypeT {
     length;
     depth;
     weight;
+    quantity;
     boxGroup;
     rotationPolicy;
     linkedGroup;
     constraint;
-    constructor(itemCode = null, itemReference = null, width = 0, length = 0, depth = 0, weight = 0.0, boxGroup = null, rotationPolicy = null, linkedGroup = null, constraint = null) {
+    constructor(itemCode = null, itemReference = null, width = 0, length = 0, depth = 0, weight = 0.0, quantity = null, boxGroup = null, rotationPolicy = null, linkedGroup = null, constraint = null) {
         this.itemCode = itemCode;
         this.itemReference = itemReference;
         this.width = width;
         this.length = length;
         this.depth = depth;
         this.weight = weight;
+        this.quantity = quantity;
         this.boxGroup = boxGroup;
         this.rotationPolicy = rotationPolicy;
         this.linkedGroup = linkedGroup;
@@ -146,6 +156,8 @@ export class ItemTypeT {
         ItemType.addLength(builder, this.length);
         ItemType.addDepth(builder, this.depth);
         ItemType.addWeight(builder, this.weight);
+        if (this.quantity !== null)
+            ItemType.addQuantity(builder, this.quantity);
         ItemType.addBoxGroup(builder, boxGroup);
         if (this.rotationPolicy !== null)
             ItemType.addRotationPolicy(builder, this.rotationPolicy);

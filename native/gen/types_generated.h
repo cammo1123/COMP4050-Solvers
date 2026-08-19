@@ -319,6 +319,7 @@ struct ItemTypeT : public ::flatbuffers::NativeTable {
   uint32_t length = 0;
   uint32_t depth = 0;
   float weight = 0.0f;
+  ::flatbuffers::Optional<uint32_t> quantity = ::flatbuffers::nullopt;
   std::string box_group{};
   ::flatbuffers::Optional<int8_t> rotation_policy = ::flatbuffers::nullopt;
   std::string linked_group{};
@@ -339,10 +340,11 @@ struct ItemType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_LENGTH = 10,
     VT_DEPTH = 12,
     VT_WEIGHT = 14,
-    VT_BOX_GROUP = 16,
-    VT_ROTATION_POLICY = 18,
-    VT_LINKED_GROUP = 20,
-    VT_CONSTRAINT = 22
+    VT_QUANTITY = 16,
+    VT_BOX_GROUP = 18,
+    VT_ROTATION_POLICY = 20,
+    VT_LINKED_GROUP = 22,
+    VT_CONSTRAINT = 24
   };
   const ::flatbuffers::String *item_code() const {
     return GetPointer<const ::flatbuffers::String *>(VT_ITEM_CODE);
@@ -361,6 +363,9 @@ struct ItemType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   }
   float weight() const {
     return GetField<float>(VT_WEIGHT, 0.0f);
+  }
+  ::flatbuffers::Optional<uint32_t> quantity() const {
+    return GetOptional<uint32_t, uint32_t>(VT_QUANTITY);
   }
   const ::flatbuffers::String *box_group() const {
     return GetPointer<const ::flatbuffers::String *>(VT_BOX_GROUP);
@@ -385,6 +390,7 @@ struct ItemType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<uint32_t>(verifier, VT_LENGTH, 4) &&
            VerifyField<uint32_t>(verifier, VT_DEPTH, 4) &&
            VerifyField<float>(verifier, VT_WEIGHT, 4) &&
+           VerifyField<uint32_t>(verifier, VT_QUANTITY, 4) &&
            VerifyOffset(verifier, VT_BOX_GROUP) &&
            verifier.VerifyString(box_group()) &&
            VerifyField<int8_t>(verifier, VT_ROTATION_POLICY, 1) &&
@@ -421,6 +427,9 @@ struct ItemTypeBuilder {
   void add_weight(float weight) {
     fbb_.AddElement<float>(ItemType::VT_WEIGHT, weight, 0.0f);
   }
+  void add_quantity(uint32_t quantity) {
+    fbb_.AddElement<uint32_t>(ItemType::VT_QUANTITY, quantity);
+  }
   void add_box_group(::flatbuffers::Offset<::flatbuffers::String> box_group) {
     fbb_.AddOffset(ItemType::VT_BOX_GROUP, box_group);
   }
@@ -452,6 +461,7 @@ inline ::flatbuffers::Offset<ItemType> CreateItemType(
     uint32_t length = 0,
     uint32_t depth = 0,
     float weight = 0.0f,
+    ::flatbuffers::Optional<uint32_t> quantity = ::flatbuffers::nullopt,
     ::flatbuffers::Offset<::flatbuffers::String> box_group = 0,
     ::flatbuffers::Optional<int8_t> rotation_policy = ::flatbuffers::nullopt,
     ::flatbuffers::Offset<::flatbuffers::String> linked_group = 0,
@@ -460,6 +470,7 @@ inline ::flatbuffers::Offset<ItemType> CreateItemType(
   builder_.add_constraint(constraint);
   builder_.add_linked_group(linked_group);
   builder_.add_box_group(box_group);
+  if(quantity) { builder_.add_quantity(*quantity); }
   builder_.add_weight(weight);
   builder_.add_depth(depth);
   builder_.add_length(length);
@@ -478,6 +489,7 @@ inline ::flatbuffers::Offset<ItemType> CreateItemTypeDirect(
     uint32_t length = 0,
     uint32_t depth = 0,
     float weight = 0.0f,
+    ::flatbuffers::Optional<uint32_t> quantity = ::flatbuffers::nullopt,
     const char *box_group = nullptr,
     ::flatbuffers::Optional<int8_t> rotation_policy = ::flatbuffers::nullopt,
     const char *linked_group = nullptr,
@@ -494,6 +506,7 @@ inline ::flatbuffers::Offset<ItemType> CreateItemTypeDirect(
       length,
       depth,
       weight,
+      quantity,
       box_group__,
       rotation_policy,
       linked_group__,
@@ -603,6 +616,7 @@ inline ItemTypeT::ItemTypeT(const ItemTypeT &o)
         length(o.length),
         depth(o.depth),
         weight(o.weight),
+        quantity(o.quantity),
         box_group(o.box_group),
         rotation_policy(o.rotation_policy),
         linked_group(o.linked_group),
@@ -616,6 +630,7 @@ inline ItemTypeT &ItemTypeT::operator=(ItemTypeT o) FLATBUFFERS_NOEXCEPT {
   std::swap(length, o.length);
   std::swap(depth, o.depth);
   std::swap(weight, o.weight);
+  std::swap(quantity, o.quantity);
   std::swap(box_group, o.box_group);
   std::swap(rotation_policy, o.rotation_policy);
   std::swap(linked_group, o.linked_group);
@@ -638,6 +653,7 @@ inline void ItemType::UnPackTo(ItemTypeT *_o, const ::flatbuffers::resolver_func
   { auto _e = length(); _o->length = _e; }
   { auto _e = depth(); _o->depth = _e; }
   { auto _e = weight(); _o->weight = _e; }
+  { auto _e = quantity(); _o->quantity = _e; }
   { auto _e = box_group(); if (_e) _o->box_group = _e->str(); }
   { auto _e = rotation_policy(); _o->rotation_policy = _e; }
   { auto _e = linked_group(); if (_e) _o->linked_group = _e->str(); }
@@ -658,6 +674,7 @@ inline ::flatbuffers::Offset<ItemType> ItemType::Pack(::flatbuffers::FlatBufferB
   auto _length = _o->length;
   auto _depth = _o->depth;
   auto _weight = _o->weight;
+  auto _quantity = _o->quantity;
   auto _box_group = _o->box_group.empty() ? 0 : _fbb.CreateString(_o->box_group);
   auto _rotation_policy = _o->rotation_policy;
   auto _linked_group = _o->linked_group.empty() ? 0 : _fbb.CreateString(_o->linked_group);
@@ -670,6 +687,7 @@ inline ::flatbuffers::Offset<ItemType> ItemType::Pack(::flatbuffers::FlatBufferB
       _length,
       _depth,
       _weight,
+      _quantity,
       _box_group,
       _rotation_policy,
       _linked_group,
