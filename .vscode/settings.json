@@ -14,7 +14,7 @@
     "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
   },
   "[cpp]": {
-    "editor.defaultFormatter": "mjohns.clang-format"
+    "editor.defaultFormatter": "xaver.clang-format"
   },
   "cmake.buildDirectory": "${workspaceFolder}/build/cmake",
   "cmake.configureOnOpen": true,
