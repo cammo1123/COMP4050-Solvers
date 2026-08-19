@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { parseArgs } from 'node:util'
-import { FBS_DIR, CPP_OUT, TS_OUT, fail, repoRoot } from './shared.mjs'
+import { FBS_DIR, CPP_OUT, TS_OUT, fail, repoRoot, log } from './shared.mjs'
 import { resolveFlatc, runFlatc } from './generated.mjs'
 import { parseSchema, writeDomain, writeTranslation } from './translation.mjs'
 
@@ -31,11 +31,11 @@ try {
 		allowPositionals: true,
 	}))
 } catch (error) {
-	fail(`${error.message}\n\n${usage()}`)
+	fail("generate", `${error.message}\n\n${usage()}`)
 }
 
 if (values.help) {
-	console.log(usage())
+	log("generate", usage())
 	process.exit(0)
 }
 
@@ -73,14 +73,14 @@ const requestedSchemas = positionals.length > 0
 const schemaFiles = [...new Set(requestedSchemas.flatMap((file) => [...collectSchemas(file)]))]
 	.sort((a, b) => a.length - b.length)
 
-if (schemaFiles.length === 0) fail(`no .fbs schema files found in ${FBS_DIR}`)
+if (schemaFiles.length === 0) fail("generate", `no .fbs schema files found in ${FBS_DIR}`)
 
 for (const dir of [CPP_OUT, TS_OUT]) {
 	if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
 }
 
 for (const schemaPath of schemaFiles) {
-	if (!fs.existsSync(schemaPath)) fail(`schema file not found: ${schemaPath}`)
+	if (!fs.existsSync(schemaPath)) fail("generate", `schema file not found: ${schemaPath}`)
 
 	const basename = path.basename(schemaPath, '.fbs')
 	const label = path.relative(repoRoot, schemaPath).split(path.sep).join('/')
@@ -92,7 +92,7 @@ for (const schemaPath of schemaFiles) {
 	schema.declaredTables = Object.keys(localSchema.tables)
 	schema.includes = directIncludes
 	if (!schema.request && path.dirname(schemaPath) !== FBS_DIR) {
-		fail(`operation schema ${label} must declare a root_type`)
+		fail("generate", `operation schema ${label} must declare a root_type`)
 	}
 
 	runFlatc(['--cpp', '--gen-object-api', '-I', FBS_DIR, '-o', CPP_OUT, schemaPath])
@@ -100,13 +100,13 @@ for (const schemaPath of schemaFiles) {
 
 	const domainHeader = writeDomain(schema, basename, label, CPP_OUT)
 
-	console.log(`[generate] wrote ${path.join(CPP_OUT, `${basename}_generated.h`)}`)
-	console.log(`[generate] wrote ${domainHeader}`)
-	console.log(`[generate] wrote TS bindings under ${TS_OUT}`)
+	log("generate", `wrote ${path.join(CPP_OUT, basename + "_generated.h")}`)
+	log("generate", `wrote ${domainHeader}`)
+	log("generate", `wrote TS bindings under ${TS_OUT}`)
 
 	if (schema.request) {
 		const { cppTranslation, tsTranslation } = writeTranslation(schema, basename, label, CPP_OUT, TS_OUT)
-		console.log(`[generate] wrote ${cppTranslation}`)
-		console.log(`[generate] wrote ${tsTranslation}`)
+		log("generate", `wrote ${cppTranslation}`)
+		log("generate", `wrote ${tsTranslation}`)
 	}
 }

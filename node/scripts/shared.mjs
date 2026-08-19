@@ -11,12 +11,20 @@ export const CPP_OUT = path.join(repoRoot, 'native', 'gen')
 export const TS_OUT = path.join(nodeRoot, 'src', 'gen')
 export const FBS_DIR = path.join(repoRoot, 'fbs')
 
-export function fail (message) {
-	console.error(`[generate] ${message}`)
+export function fail(prefix, message) {
+	console.error(`[ ${prefix.padEnd(9) }] ${message}`)
 	process.exit(1)
 }
 
-export function findOnPath (name) {
+export function log(prefix, message) {
+	console.log(`[ ${prefix.padEnd(9) }] ${message}`)
+}
+
+export function warn(prefix, message) {
+	console.warn(`[ ${prefix.padEnd(9) }] ${message}`)
+}
+
+export function findOnPath(name) {
 	const found = spawnSync(process.platform === 'win32' ? 'where.exe' : 'which', [name], { encoding: 'utf8' })
 	if (found.status === 0 && found.stdout) {
 		return found.stdout.split(/\r?\n/)[0].trim()

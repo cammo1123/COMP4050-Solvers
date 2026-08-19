@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
-import { fail, findOnPath, nodeRoot, repoRoot } from './shared.mjs'
+import { fail, findOnPath, log, nodeRoot, repoRoot } from './shared.mjs'
 
 export const FLATC_VERSION = '25.12.19'
 
@@ -34,7 +34,7 @@ function extractArchive (archive, extractDir) {
 function downloadAsset (platform, arch) {
 	const spec = DOWNLOADS[`${platform}/${arch}`]
 	if (!spec) {
-		fail(`no flatc release asset known for ${platform}/${arch}; install flatc on PATH instead`)
+		fail("generated", `no flatc release asset known for ${platform}/${arch}; install flatc on PATH instead`)
 	}
 	const [asset, executable] = spec
 	const cacheDir = path.join(nodeRoot, '.flatc', FLATC_VERSION)
@@ -43,18 +43,18 @@ function downloadAsset (platform, arch) {
 
 	const archive = path.join(cacheDir, asset)
 	const url = `https://github.com/google/flatbuffers/releases/download/v${FLATC_VERSION}/${asset}`
-	console.log(`[generate] downloading ${url}`)
+	log("generate", `downloading ${url}`)
 	fs.mkdirSync(cacheDir, { recursive: true })
 	const download = run('curl', ['-fL', '--retry', '3', '-o', archive, url])
 	if (download.status !== 0) {
-		fail(`failed to download ${url}: ${download.stderr.trim() || `curl exited ${download.status}`}`)
+		fail("generated", `failed to download ${url}: ${download.stderr.trim() || `curl exited ${download.status}`}`)
 	}
 
 	const extractDir = path.join(cacheDir, 'x')
 	fs.mkdirSync(extractDir, { recursive: true })
 	const extract = extractArchive(archive, extractDir)
 	if (extract.status !== 0) {
-		fail(`failed to extract ${archive}: ${extract.stderr.trim() || `tar exited ${extract.status}`}`)
+		fail("generated", `failed to extract ${archive}: ${extract.stderr.trim() || `tar exited ${extract.status}`}`)
 	}
 
 	const candidates = []
@@ -69,7 +69,7 @@ function downloadAsset (platform, arch) {
 
 	const found = candidates[0]
 	if (!found || !isUsable(found)) {
-		fail(`flatc ${FLATC_VERSION} downloaded from ${url} but could not be executed`)
+		fail("generated", `flatc ${FLATC_VERSION} downloaded from ${url} but could not be executed`)
 	}
 	fs.renameSync(found, binary)
 	return binary
@@ -85,6 +85,6 @@ export function resolveFlatc () {
 
 export function runFlatc (args) {
 	const result = spawnSync(resolveFlatc(), args, { cwd: repoRoot, stdio: 'inherit' })
-	if (result.error) fail(`failed to run flatc: ${result.error.message}`)
-	if (result.status !== 0) fail(`flatc exited with code ${result.status}`)
+	if (result.error) fail("generated", `failed to run flatc: ${result.error.message}`)
+	if (result.status !== 0) fail("generated", `flatc exited with code ${result.status}`)
 }

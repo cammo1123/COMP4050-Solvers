@@ -2,7 +2,7 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
-import { repoRoot } from './shared.mjs'
+import { log, repoRoot } from './shared.mjs'
 
 const generatedPaths = [
 	'build',
@@ -16,5 +16,5 @@ const generatedPaths = [
 for (const relativePath of generatedPaths) {
 	const target = path.join(repoRoot, relativePath)
 	fs.rmSync(target, { recursive: true, force: true })
-	console.log(`[clean] removed ${relativePath}`)
+	log("clean", `removed ${relativePath}`)
 }

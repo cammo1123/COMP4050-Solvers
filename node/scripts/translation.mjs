@@ -120,15 +120,15 @@ export function parseSchema (text, label, { requireRoot = true } = {}) {
 	}
 
 	if (!root) {
-		if (requireRoot) fail(`no root_type declared in ${label}`)
+		if (requireRoot) fail("translation", `no root_type declared in ${label}`)
 		return { namespace: namespace ?? 'myaddon', request: undefined, response: undefined, tables }
 	}
-	if (!tables[root]) fail(`root_type "${root}" is not a table in ${label}`)
+	if (!tables[root]) fail("translation", `root_type "${root}" is not a table in ${label}`)
 	if (!root.endsWith('Request')) {
-		fail(`root_type "${root}" must be named *Request so the response type can be derived`)
+		fail("translation", `root_type "${root}" must be named *Request so the response type can be derived`)
 	}
 	const response = root.replace(/Request$/, 'Response')
-	if (!tables[response]) fail(`expected a "${response}" table to pair with root_type "${root}"`)
+	if (!tables[response]) fail("translation", `expected a "${response}" table to pair with root_type "${root}"`)
 
 	return { namespace: namespace ?? 'myaddon', request: root, response, tables }
 }
@@ -140,12 +140,12 @@ function resolveField (field, tables) {
 		if (inner === 'string') return { ...field, kind: 'vector-string' }
 		if (SCALARS.has(inner)) return { ...field, kind: 'vector-scalar', scalar: inner }
 		if (tables[inner]) return { ...field, kind: 'vector-table', table: inner }
-		fail(`unresolved vector element type "${inner}"`)
+		fail("translation", `unresolved vector element type "${inner}"`)
 	}
 	if (raw === 'string') return { ...field, kind: 'string' }
 	if (SCALARS.has(raw)) return { ...field, kind: 'scalar', scalar: raw }
 	if (tables[raw]) return { ...field, kind: 'table', table: raw }
-	fail(`unresolved type "${raw}"`)
+	fail("translation", `unresolved type "${raw}"`)
 }
 
 function resolveTable (name, tables) {

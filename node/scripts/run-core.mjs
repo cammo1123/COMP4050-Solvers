@@ -3,18 +3,16 @@
 import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
-import { repoRoot } from './shared.mjs'
+import { fail, repoRoot } from './shared.mjs'
 
 const binary = path.join(repoRoot, 'build', 'core', process.platform === 'win32' ? 'solvers.exe' : 'solvers')
 
 if (!fs.existsSync(binary)) {
-  console.error(`[run] ${binary} not found; run "pnpm build:core" first`)
-  process.exit(1)
+  fail("run", `${binary} not found; run "pnpm build:core" first`)
 }
 
 const result = spawnSync(binary, process.argv.slice(2), { stdio: 'inherit' })
 if (result.error) {
-  console.error(`[run] failed to run ${binary}: ${result.error.message}`)
-  process.exit(1)
+  fail("run", `failed to run ${binary}: ${result.error.message}`)
 }
 process.exit(result.status ?? 1)
