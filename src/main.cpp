@@ -4,13 +4,13 @@
 #include <stdio.h>
 
 #include "solve_domain_generated.h"
-#include "solvers.h"
+#include "solver.h"
 
 using namespace fbs::domain;
 
 int main()
 {
-	std::cout << solvers::info() << '\n';
+	std::cout << solver::info() << '\n';
 
 	SolveRequest solve = { };
 
@@ -70,7 +70,7 @@ int main()
 		});
 	}
 
-	auto res = solvers::solve(solve, [](size_t done, size_t total) {
+	auto res = solver::solve(solve, [](size_t done, size_t total) {
 		std::cout << "\rprogress: " << ((static_cast<float>(done) / total) * 100) << "%" << std::flush;
 	});
 	std::cout << "\n";

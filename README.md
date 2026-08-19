@@ -1,4 +1,4 @@
-# COMP4050-Solvers
+# @bionic/solver
 
 C++ solver core exposed through a Node.js addon. The binary boundary between the
 TypeScript wrapper and the native addon is defined by a single FlatBuffers
@@ -6,7 +6,7 @@ schema.
 
 ## Layout
 
-- **`src/`** — C++ core: solver logic (`solvers.h` / `solvers.cpp`), a
+- **`src/`** — C++ core: solver logic (`solver.h` / `solver.cpp`), a
   standalone CLI (`main.cpp`), and the N-API addon (`addon.cpp`).
 - **`fbs/`** — FlatBuffers schemas. Each `*.fbs` generates C++ and TypeScript
   bindings, so it is the single source of truth for the binary boundary.
@@ -43,7 +43,7 @@ Standalone CLI only (no addon; fetches the header-only FlatBuffers runtime):
 
 ```sh
 pnpm build:core
-# binary: build/core/solvers (solvers.exe on Windows)
+# binary: build/core/solver (solver.exe on Windows)
 ```
 
 Remove all generated bindings, build outputs, binaries, and local compiler cache:
@@ -55,8 +55,8 @@ pnpm clean
 ## Usage
 
 ```ts
-import addon from "COMP4050-Solvers";
-// or: import { info, solve } from "COMP4050-Solvers";
+import addon from "@bionic/solver";
+// or: import { info, solve } from "@bionic/solver";
 
 addon.info();
 

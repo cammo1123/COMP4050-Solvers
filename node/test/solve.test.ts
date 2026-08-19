@@ -140,7 +140,7 @@ describe("native solve(Buffer) boundary", () => {
 describe("addon.info() re-export", () => {
 	it("still works through the wrapper", () => {
 		const escaped = version.replace(/\./g, "\\.");
-		expect(info()).toMatch(new RegExp(`^COMP4050-Solvers ${escaped} \\((Debug|Release)\\)$`, "m"));
+		expect(info()).toMatch(new RegExp(`^@bionic/solver ${escaped} \\((Debug|Release)\\)$`, "m"));
 		expect(info()).toMatch(/  git: [0-9a-f]{7,} \([^)]*\)/);
 	});
 

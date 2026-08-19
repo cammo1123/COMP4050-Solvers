@@ -73,7 +73,7 @@ merge, rebase stale feature branches rather than merging `dev` into them.
 - **Formatting** — `.clang-format` defines the project style (tabs, Allman
   braces). `pnpm format` applies it; `pnpm format --check` validates it.
 - **Debugging** — **Run > Start Debugging (F5)** rebuilds the standalone binary
-  (`build:core`) and points the debugger at `build/core/solvers.exe`.
+  (`build:core`) and points the debugger at `build/core/solver.exe`.
 
 ## Testing
 

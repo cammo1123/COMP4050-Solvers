@@ -9,7 +9,7 @@ describe("addon.info()", () => {
 	it("describes the build", () => {
 		const info = addon.info();
 		const escaped = version.replace(/\./g, "\\.");
-		expect(info).toMatch(new RegExp(`^COMP4050-Solvers ${escaped} \\((Debug|Release)\\)$`, "m"));
+		expect(info).toMatch(new RegExp(`^@bionic/solver ${escaped} \\((Debug|Release)\\)$`, "m"));
 		expect(info).toMatch(/  git: [0-9a-f]{7,} \([^)]*\)/);
 		expect(info).toMatch(/  built: \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} UTC/);
 		expect(info).toMatch(/  platform: /);

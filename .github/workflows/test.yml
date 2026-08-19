@@ -50,6 +50,6 @@ jobs:
           name: build-${{ runner.os }}
           path: |
             node/build/Release/addon.node
-            build/addon/solvers
-            build/addon/solvers.exe
+            build/addon/solver
+            build/addon/solver.exe
           if-no-files-found: ignore

@@ -5,7 +5,7 @@
       "name": "Debug standalone (C++)",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/core/solvers.exe",
+      "program": "${workspaceFolder}/build/core/solver.exe",
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],
