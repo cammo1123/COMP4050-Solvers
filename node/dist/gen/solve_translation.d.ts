@@ -1,6 +1,8 @@
 export type BoxResultT = {
     boxReference: string;
     placements: ItemPlacementT[];
+    totalWeight?: number;
+    utilization?: number;
 };
 export type BoxTypeT = {
     reference: string;
@@ -13,6 +15,8 @@ export type BoxTypeT = {
     maximumBoxes?: number;
 };
 export type ItemPlacementT = {
+    itemCode: string;
+    itemReference: string;
     x: number;
     y: number;
     z: number;
@@ -28,6 +32,7 @@ export type ItemTypeT = {
     depth: number;
     weight: number;
     boxGroup?: string | Uint8Array;
+    rotationPolicy?: number;
 };
 export type SolveOptionsT = {
     maxBoxes?: number;

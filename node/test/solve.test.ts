@@ -19,7 +19,7 @@ function encodeRequest(boxRefs: string[], itemRefs: string[] = []): Buffer {
 	const itemOffsets = itemRefs.map((reference) => {
 		const itemCodeOffset = builder.createString(reference);
 		const itemRefOffset = builder.createString(reference);
-		return ItemType.createItemType(builder, itemCodeOffset, itemRefOffset, 10, 10, 10, 0, 10);
+		return ItemType.createItemType(builder, itemCodeOffset, itemRefOffset, 10, 10, 10, 0, 10, null);
 	});
 	const itemsVector = SolveRequest.createItemsVector(builder, itemOffsets);
 
@@ -75,5 +75,42 @@ describe("native solve(Buffer) boundary", () => {
 		const decoded = decodeResponse(result as Buffer);
 		expect(decoded.failed).toEqual([]);
 		expect(decoded.results).toEqual([]);
+	});
+});
+
+describe("packing invariants", () => {
+	it("packs side by side and stacks upward without overlap", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 20, length: 10, depth: 10 }],
+			items: [
+				{ itemCode: "one", itemReference: "one", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: 0 },
+				{ itemCode: "two", itemReference: "two", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: 0 },
+			],
+		});
+		expect(result.failed).toHaveLength(0);
+		expect(result.results[0].placements).toHaveLength(2);
+		expect(result.results[0].placements.map((item) => item.itemCode)).toEqual(["one", "two"]);
+		expect(result.results[0].placements[1].x).toBe(10);
+	});
+
+	it("keeps flat rotation on the Y axis", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 10, length: 20, depth: 5 }],
+			items: [{ itemCode: "flat", itemReference: "flat", width: 20, length: 10, depth: 5, weight: 1, rotationPolicy: 1 }],
+		});
+		expect(result.failed).toHaveLength(0);
+		expect(result.results[0].placements[0]).toMatchObject({ width: 10, depth: 5, length: 20 });
+	});
+
+	it("honors box quantities and reports items that do not fit", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 10, length: 10, depth: 10, maximumBoxes: 1 }],
+			items: [
+				{ itemCode: "one", itemReference: "one", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: 0 },
+				{ itemCode: "two", itemReference: "two", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: 0 },
+			],
+		});
+		expect(result.results).toHaveLength(1);
+		expect(result.failed.map((item) => item.itemCode)).toEqual(["two"]);
 	});
 });

@@ -44,8 +44,12 @@ export class ItemType {
         const offset = this.bb.__offset(this.bb_pos, 16);
         return offset ? this.bb.__string(this.bb_pos + offset, optionalEncoding) : null;
     }
+    rotationPolicy() {
+        const offset = this.bb.__offset(this.bb_pos, 18);
+        return offset ? this.bb.readInt8(this.bb_pos + offset) : null;
+    }
     static startItemType(builder) {
-        builder.startObject(7);
+        builder.startObject(8);
     }
     static addItemCode(builder, itemCodeOffset) {
         builder.addFieldOffset(0, itemCodeOffset, 0);
@@ -68,11 +72,14 @@ export class ItemType {
     static addBoxGroup(builder, boxGroupOffset) {
         builder.addFieldOffset(6, boxGroupOffset, 0);
     }
+    static addRotationPolicy(builder, rotationPolicy) {
+        builder.addFieldInt8(7, rotationPolicy, null);
+    }
     static endItemType(builder) {
         const offset = builder.endObject();
         return offset;
     }
-    static createItemType(builder, itemCodeOffset, itemReferenceOffset, width, length, depth, weight, boxGroupOffset) {
+    static createItemType(builder, itemCodeOffset, itemReferenceOffset, width, length, depth, weight, boxGroupOffset, rotationPolicy) {
         ItemType.startItemType(builder);
         ItemType.addItemCode(builder, itemCodeOffset);
         ItemType.addItemReference(builder, itemReferenceOffset);
@@ -81,10 +88,12 @@ export class ItemType {
         ItemType.addDepth(builder, depth);
         ItemType.addWeight(builder, weight);
         ItemType.addBoxGroup(builder, boxGroupOffset);
+        if (rotationPolicy !== null)
+            ItemType.addRotationPolicy(builder, rotationPolicy);
         return ItemType.endItemType(builder);
     }
     unpack() {
-        return new ItemTypeT(this.itemCode(), this.itemReference(), this.width(), this.length(), this.depth(), this.weight(), this.boxGroup());
+        return new ItemTypeT(this.itemCode(), this.itemReference(), this.width(), this.length(), this.depth(), this.weight(), this.boxGroup(), this.rotationPolicy());
     }
     unpackTo(_o) {
         _o.itemCode = this.itemCode();
@@ -94,6 +103,7 @@ export class ItemType {
         _o.depth = this.depth();
         _o.weight = this.weight();
         _o.boxGroup = this.boxGroup();
+        _o.rotationPolicy = this.rotationPolicy();
     }
 }
 export class ItemTypeT {
@@ -104,7 +114,8 @@ export class ItemTypeT {
     depth;
     weight;
     boxGroup;
-    constructor(itemCode = null, itemReference = null, width = 0, length = 0, depth = 0, weight = 0.0, boxGroup = null) {
+    rotationPolicy;
+    constructor(itemCode = null, itemReference = null, width = 0, length = 0, depth = 0, weight = 0.0, boxGroup = null, rotationPolicy = null) {
         this.itemCode = itemCode;
         this.itemReference = itemReference;
         this.width = width;
@@ -112,12 +123,13 @@ export class ItemTypeT {
         this.depth = depth;
         this.weight = weight;
         this.boxGroup = boxGroup;
+        this.rotationPolicy = rotationPolicy;
     }
     pack(builder) {
         const itemCode = (this.itemCode !== null ? builder.createString(this.itemCode) : 0);
         const itemReference = (this.itemReference !== null ? builder.createString(this.itemReference) : 0);
         const boxGroup = (this.boxGroup !== null ? builder.createString(this.boxGroup) : 0);
-        return ItemType.createItemType(builder, itemCode, itemReference, this.width, this.length, this.depth, this.weight, boxGroup);
+        return ItemType.createItemType(builder, itemCode, itemReference, this.width, this.length, this.depth, this.weight, boxGroup, this.rotationPolicy);
     }
 }
 //# sourceMappingURL=item-type.js.map

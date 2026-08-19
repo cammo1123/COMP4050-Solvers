@@ -18,6 +18,8 @@ table SolveOptions {
 }
 
 table ItemPlacement {
+  item_code: string;
+  item_reference: string;
   x: uint;
   y: uint;
   z: uint;
@@ -29,6 +31,8 @@ table ItemPlacement {
 table BoxResult {
   box_reference: string;
   placements: [ItemPlacement];
+  total_weight: float = null;
+  utilization: float = null;
 }
 
 table SolveResponse {

@@ -23,4 +23,6 @@ table ItemType {
   weight: float;
 
   box_group: string (optional);
+  // 0 = never, 1 = keep flat (Y axis fixed), 2 = best fit.
+  rotation_policy: byte = null;
 }

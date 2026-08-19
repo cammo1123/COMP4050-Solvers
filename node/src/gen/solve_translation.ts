@@ -16,6 +16,8 @@ import {
 export type BoxResultT = {
 	boxReference: string;
 	placements: ItemPlacementT[];
+	totalWeight?: number;
+	utilization?: number;
 };
 
 export type BoxTypeT = {
@@ -30,6 +32,8 @@ export type BoxTypeT = {
 };
 
 export type ItemPlacementT = {
+	itemCode: string;
+	itemReference: string;
 	x: number;
 	y: number;
 	z: number;
@@ -46,6 +50,7 @@ export type ItemTypeT = {
 	depth: number;
 	weight: number;
 	boxGroup?: string | Uint8Array;
+	rotationPolicy?: number;
 };
 
 export type SolveOptionsT = {
@@ -70,7 +75,7 @@ export function encodeRequest(request: SolveRequest): Uint8Array {
 
 	const message = new SolveRequestObject(
 		(request.boxes ?? []).map((item) => new BoxTypeObject(item.reference, item.width, item.length, item.depth, item.maxWeight, item.boxWeight, item.active, item.maximumBoxes)),
-		(request.items ?? []).map((item) => new ItemTypeObject(item.itemCode, item.itemReference, item.width, item.length, item.depth, item.weight, item.boxGroup)),
+		(request.items ?? []).map((item) => new ItemTypeObject(item.itemCode, item.itemReference, item.width, item.length, item.depth, item.weight, item.boxGroup, item.rotationPolicy)),
 		request.options ? new SolveOptionsObject(request.options.maxBoxes, request.options.allowRotation, request.options.timeoutMs, request.options.strategy) : null
 	);
 
@@ -83,7 +88,7 @@ export function decodeResponse(bytes: Uint8Array): SolveResponse {
 	const message = SolveResponseMessage.getRootAsSolveResponse(new flatbuffers.ByteBuffer(bytes));
 	const unpacked = message.unpack();
 	return {
-		results: (unpacked.results ?? []).map((item) => ({ boxReference: item.boxReference as string, placements: (item.placements ?? []).map((item) => ({ x: item.x, y: item.y, z: item.z, width: item.width, length: item.length, depth: item.depth })) })),
-		failed: (unpacked.failed ?? []).map((item) => ({ itemCode: item.itemCode as string, itemReference: item.itemReference as string, width: item.width, length: item.length, depth: item.depth, weight: item.weight, ...(item.boxGroup !== null && item.boxGroup !== undefined ? { boxGroup: item.boxGroup } : {}) }))
+		results: (unpacked.results ?? []).map((item) => ({ boxReference: item.boxReference as string, placements: (item.placements ?? []).map((item) => ({ itemCode: item.itemCode as string, itemReference: item.itemReference as string, x: item.x, y: item.y, z: item.z, width: item.width, length: item.length, depth: item.depth })), ...(item.totalWeight !== null && item.totalWeight !== undefined ? { totalWeight: item.totalWeight } : {}), ...(item.utilization !== null && item.utilization !== undefined ? { utilization: item.utilization } : {}) })),
+		failed: (unpacked.failed ?? []).map((item) => ({ itemCode: item.itemCode as string, itemReference: item.itemReference as string, width: item.width, length: item.length, depth: item.depth, weight: item.weight, ...(item.boxGroup !== null && item.boxGroup !== undefined ? { boxGroup: item.boxGroup } : {}), ...(item.rotationPolicy !== null && item.rotationPolicy !== undefined ? { rotationPolicy: item.rotationPolicy } : {}) }))
 	};
 }

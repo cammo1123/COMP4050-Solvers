@@ -65,8 +65,13 @@ boxGroup(optionalEncoding?:any):string|Uint8Array|null {
   return offset ? this.bb!.__string(this.bb_pos + offset, optionalEncoding) : null;
 }
 
+rotationPolicy():number|null {
+  const offset = this.bb!.__offset(this.bb_pos, 18);
+  return offset ? this.bb!.readInt8(this.bb_pos + offset) : null;
+}
+
 static startItemType(builder:flatbuffers.Builder) {
-  builder.startObject(7);
+  builder.startObject(8);
 }
 
 static addItemCode(builder:flatbuffers.Builder, itemCodeOffset:flatbuffers.Offset) {
@@ -97,12 +102,16 @@ static addBoxGroup(builder:flatbuffers.Builder, boxGroupOffset:flatbuffers.Offse
   builder.addFieldOffset(6, boxGroupOffset, 0);
 }
 
+static addRotationPolicy(builder:flatbuffers.Builder, rotationPolicy:number) {
+  builder.addFieldInt8(7, rotationPolicy, null);
+}
+
 static endItemType(builder:flatbuffers.Builder):flatbuffers.Offset {
   const offset = builder.endObject();
   return offset;
 }
 
-static createItemType(builder:flatbuffers.Builder, itemCodeOffset:flatbuffers.Offset, itemReferenceOffset:flatbuffers.Offset, width:number, length:number, depth:number, weight:number, boxGroupOffset:flatbuffers.Offset):flatbuffers.Offset {
+static createItemType(builder:flatbuffers.Builder, itemCodeOffset:flatbuffers.Offset, itemReferenceOffset:flatbuffers.Offset, width:number, length:number, depth:number, weight:number, boxGroupOffset:flatbuffers.Offset, rotationPolicy:number|null):flatbuffers.Offset {
   ItemType.startItemType(builder);
   ItemType.addItemCode(builder, itemCodeOffset);
   ItemType.addItemReference(builder, itemReferenceOffset);
@@ -111,6 +120,8 @@ static createItemType(builder:flatbuffers.Builder, itemCodeOffset:flatbuffers.Of
   ItemType.addDepth(builder, depth);
   ItemType.addWeight(builder, weight);
   ItemType.addBoxGroup(builder, boxGroupOffset);
+  if (rotationPolicy !== null)
+    ItemType.addRotationPolicy(builder, rotationPolicy);
   return ItemType.endItemType(builder);
 }
 
@@ -122,7 +133,8 @@ unpack(): ItemTypeT {
     this.length(),
     this.depth(),
     this.weight(),
-    this.boxGroup()
+    this.boxGroup(),
+    this.rotationPolicy()
   );
 }
 
@@ -135,6 +147,7 @@ unpackTo(_o: ItemTypeT): void {
   _o.depth = this.depth();
   _o.weight = this.weight();
   _o.boxGroup = this.boxGroup();
+  _o.rotationPolicy = this.rotationPolicy();
 }
 }
 
@@ -146,7 +159,8 @@ constructor(
   public length: number = 0,
   public depth: number = 0,
   public weight: number = 0.0,
-  public boxGroup: string|Uint8Array|null = null
+  public boxGroup: string|Uint8Array|null = null,
+  public rotationPolicy: number|null = null
 ){}
 
 
@@ -162,7 +176,8 @@ pack(builder:flatbuffers.Builder): flatbuffers.Offset {
     this.length,
     this.depth,
     this.weight,
-    boxGroup
+    boxGroup,
+    this.rotationPolicy
   );
 }
 }

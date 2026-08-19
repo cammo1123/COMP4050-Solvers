@@ -128,7 +128,7 @@ add_custom_command(
     VERBATIM
 )
 
-add_library(solver_core STATIC src/solver.cpp ${GENERATED_HEADERS})
+add_library(solver_core STATIC src/solver.cpp src/packing/packer.cpp ${GENERATED_HEADERS})
 target_include_directories(solver_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR} ${GENERATED_DIR} ${flatbuffers_include})
 
 add_executable(solver src/main.cpp)

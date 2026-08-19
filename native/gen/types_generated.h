@@ -186,6 +186,7 @@ struct ItemTypeT : public ::flatbuffers::NativeTable {
   uint32_t depth = 0;
   float weight = 0.0f;
   std::string box_group{};
+  ::flatbuffers::Optional<int8_t> rotation_policy = ::flatbuffers::nullopt;
 };
 
 struct ItemType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
@@ -198,7 +199,8 @@ struct ItemType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_LENGTH = 10,
     VT_DEPTH = 12,
     VT_WEIGHT = 14,
-    VT_BOX_GROUP = 16
+    VT_BOX_GROUP = 16,
+    VT_ROTATION_POLICY = 18
   };
   const ::flatbuffers::String *item_code() const {
     return GetPointer<const ::flatbuffers::String *>(VT_ITEM_CODE);
@@ -221,6 +223,9 @@ struct ItemType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const ::flatbuffers::String *box_group() const {
     return GetPointer<const ::flatbuffers::String *>(VT_BOX_GROUP);
   }
+  ::flatbuffers::Optional<int8_t> rotation_policy() const {
+    return GetOptional<int8_t, int8_t>(VT_ROTATION_POLICY);
+  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -234,6 +239,7 @@ struct ItemType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<float>(verifier, VT_WEIGHT, 4) &&
            VerifyOffset(verifier, VT_BOX_GROUP) &&
            verifier.VerifyString(box_group()) &&
+           VerifyField<int8_t>(verifier, VT_ROTATION_POLICY, 1) &&
            verifier.EndTable();
   }
   ItemTypeT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
@@ -266,6 +272,9 @@ struct ItemTypeBuilder {
   void add_box_group(::flatbuffers::Offset<::flatbuffers::String> box_group) {
     fbb_.AddOffset(ItemType::VT_BOX_GROUP, box_group);
   }
+  void add_rotation_policy(int8_t rotation_policy) {
+    fbb_.AddElement<int8_t>(ItemType::VT_ROTATION_POLICY, rotation_policy);
+  }
   explicit ItemTypeBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -285,7 +294,8 @@ inline ::flatbuffers::Offset<ItemType> CreateItemType(
     uint32_t length = 0,
     uint32_t depth = 0,
     float weight = 0.0f,
-    ::flatbuffers::Offset<::flatbuffers::String> box_group = 0) {
+    ::flatbuffers::Offset<::flatbuffers::String> box_group = 0,
+    ::flatbuffers::Optional<int8_t> rotation_policy = ::flatbuffers::nullopt) {
   ItemTypeBuilder builder_(_fbb);
   builder_.add_box_group(box_group);
   builder_.add_weight(weight);
@@ -294,6 +304,7 @@ inline ::flatbuffers::Offset<ItemType> CreateItemType(
   builder_.add_width(width);
   builder_.add_item_reference(item_reference);
   builder_.add_item_code(item_code);
+  if(rotation_policy) { builder_.add_rotation_policy(*rotation_policy); }
   return builder_.Finish();
 }
 
@@ -305,7 +316,8 @@ inline ::flatbuffers::Offset<ItemType> CreateItemTypeDirect(
     uint32_t length = 0,
     uint32_t depth = 0,
     float weight = 0.0f,
-    const char *box_group = nullptr) {
+    const char *box_group = nullptr,
+    ::flatbuffers::Optional<int8_t> rotation_policy = ::flatbuffers::nullopt) {
   auto item_code__ = item_code ? _fbb.CreateString(item_code) : 0;
   auto item_reference__ = item_reference ? _fbb.CreateString(item_reference) : 0;
   auto box_group__ = box_group ? _fbb.CreateString(box_group) : 0;
@@ -317,7 +329,8 @@ inline ::flatbuffers::Offset<ItemType> CreateItemTypeDirect(
       length,
       depth,
       weight,
-      box_group__);
+      box_group__,
+      rotation_policy);
 }
 
 ::flatbuffers::Offset<ItemType> CreateItemType(::flatbuffers::FlatBufferBuilder &_fbb, const ItemTypeT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
@@ -385,6 +398,7 @@ inline void ItemType::UnPackTo(ItemTypeT *_o, const ::flatbuffers::resolver_func
   { auto _e = depth(); _o->depth = _e; }
   { auto _e = weight(); _o->weight = _e; }
   { auto _e = box_group(); if (_e) _o->box_group = _e->str(); }
+  { auto _e = rotation_policy(); _o->rotation_policy = _e; }
 }
 
 inline ::flatbuffers::Offset<ItemType> CreateItemType(::flatbuffers::FlatBufferBuilder &_fbb, const ItemTypeT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
@@ -402,6 +416,7 @@ inline ::flatbuffers::Offset<ItemType> ItemType::Pack(::flatbuffers::FlatBufferB
   auto _depth = _o->depth;
   auto _weight = _o->weight;
   auto _box_group = _o->box_group.empty() ? 0 : _fbb.CreateString(_o->box_group);
+  auto _rotation_policy = _o->rotation_policy;
   return fbs::CreateItemType(
       _fbb,
       _item_code,
@@ -410,7 +425,8 @@ inline ::flatbuffers::Offset<ItemType> ItemType::Pack(::flatbuffers::FlatBufferB
       _length,
       _depth,
       _weight,
-      _box_group);
+      _box_group,
+      _rotation_policy);
 }
 
 }  // namespace fbs

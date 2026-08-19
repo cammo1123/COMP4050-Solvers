@@ -28,6 +28,8 @@ struct SolveRequest {
 };
 
 struct ItemPlacement {
+	std::string item_code{};
+	std::string item_reference{};
 	uint32_t x = 0;
 	uint32_t y = 0;
 	uint32_t z = 0;
@@ -39,6 +41,8 @@ struct ItemPlacement {
 struct BoxResult {
 	std::string box_reference{};
 	std::vector<ItemPlacement> placements{};
+	std::optional<float> total_weight = std::nullopt;
+	std::optional<float> utilization = std::nullopt;
 };
 
 struct SolveResponse {
@@ -134,6 +138,10 @@ inline ItemPlacement toDomain(fbs::ItemPlacementT const& value)
 {
 	ItemPlacement out;
 
+	out.item_code = value.item_code;
+
+	out.item_reference = value.item_reference;
+
 	out.x = value.x;
 
 	out.y = value.y;
@@ -152,6 +160,10 @@ inline ItemPlacement toDomain(fbs::ItemPlacementT const& value)
 inline fbs::ItemPlacementT fromDomain(ItemPlacement const& value)
 {
 	fbs::ItemPlacementT out;
+
+	out.item_code = value.item_code;
+
+	out.item_reference = value.item_reference;
 
 	out.x = value.x;
 
@@ -179,6 +191,14 @@ inline BoxResult toDomain(fbs::BoxResultT const& value)
 		out.placements.push_back(toDomain(*item));
 	}
 
+	if (value.total_weight.has_value()) {
+		out.total_weight = *value.total_weight;
+	}
+
+	if (value.utilization.has_value()) {
+		out.utilization = *value.utilization;
+	}
+
 	return out;
 }
 
@@ -191,6 +211,14 @@ inline fbs::BoxResultT fromDomain(BoxResult const& value)
 	out.placements.reserve(value.placements.size());
 	for (auto const& item : value.placements) {
 		out.placements.push_back(std::make_unique<fbs::ItemPlacementT>(fromDomain(item)));
+	}
+
+	if (value.total_weight.has_value()) {
+		out.total_weight = *value.total_weight;
+	}
+
+	if (value.utilization.has_value()) {
+		out.utilization = *value.utilization;
 	}
 
 	return out;

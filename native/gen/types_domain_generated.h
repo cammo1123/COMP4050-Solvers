@@ -32,6 +32,7 @@ struct ItemType {
 	uint32_t depth = 0;
 	float weight = 0.0f;
 	std::optional<std::string> box_group = std::nullopt;
+	std::optional<int8_t> rotation_policy = std::nullopt;
 };
 
 inline BoxType toDomain(fbs::BoxTypeT const& value)
@@ -116,6 +117,10 @@ inline ItemType toDomain(fbs::ItemTypeT const& value)
 		out.box_group = value.box_group;
 	}
 
+	if (value.rotation_policy.has_value()) {
+		out.rotation_policy = *value.rotation_policy;
+	}
+
 	return out;
 }
 
@@ -137,6 +142,10 @@ inline fbs::ItemTypeT fromDomain(ItemType const& value)
 
 	if (value.box_group.has_value()) {
 		out.box_group = *value.box_group;
+	}
+
+	if (value.rotation_policy.has_value()) {
+		out.rotation_policy = *value.rotation_policy;
 	}
 
 	return out;
