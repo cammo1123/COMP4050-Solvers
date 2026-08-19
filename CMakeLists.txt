@@ -192,7 +192,12 @@ if(COMP4050_BUILD_ADDON)
                 file(DOWNLOAD
                     "https://nodejs.org/download/release/v${node_version}/win-${win_arch}/node.lib"
                     "${node_lib}"
+                    STATUS download_status
                 )
+                list(GET download_status 0 status_code)
+                if(NOT status_code EQUAL 0)
+                    message(FATAL_ERROR "Failed to download node.lib: ${node_lib}")
+                endif()
             endif()
         endif()
 
