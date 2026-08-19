@@ -1,4 +1,4 @@
-#include "solvers.h"
+#include "solver.h"
 
 #include <sstream>
 
@@ -7,7 +7,7 @@
 
 using namespace fbs::domain;
 
-namespace solvers {
+namespace solver {
 
 std::string info()
 {

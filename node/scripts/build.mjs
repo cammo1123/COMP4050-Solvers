@@ -161,7 +161,7 @@ if (findClangCl()) configure.push('-DCMAKE_CXX_COMPILER=clang-cl')
 run(cmake, configure, { env })
 run(cmake, ['--build', buildDir], { env })
 
-const binary = path.join(repoRoot, buildDir, isWin ? 'solvers.exe' : 'solvers')
+const binary = path.join(repoRoot, buildDir, isWin ? 'solver.exe' : 'solver')
 log("build", `wrote ${binary}`)
 
 if (buildsAddon) {

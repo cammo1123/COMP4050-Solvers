@@ -5,7 +5,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fail, repoRoot } from './shared.mjs'
 
-const binary = path.join(repoRoot, 'build', 'core', process.platform === 'win32' ? 'solvers.exe' : 'solvers')
+const binary = path.join(repoRoot, 'build', 'core', process.platform === 'win32' ? 'solver.exe' : 'solver')
 
 if (!fs.existsSync(binary)) {
   fail("run", `${binary} not found; run "pnpm build:core" first`)

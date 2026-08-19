@@ -1,5 +1,5 @@
 {
-	"name": "COMP4050-Solvers",
+	"name": "@bionic/solver",
 	"version": "1.0.0",
 	"description": "",
 	"main": "node/dist/addon.js",

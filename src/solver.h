@@ -7,7 +7,7 @@
 
 #include "solve_domain_generated.h"
 
-namespace solvers {
+namespace solver {
 
 using ProgressCallback = std::function<void(size_t, size_t)>;
 

@@ -1,7 +1,7 @@
 #include "solve_domain_generated.h"
 #include "solve_generated.h"
 #include "solve_translation_generated.h"
-#include "solvers.h"
+#include "solver.h"
 #include <cstddef>
 #include <napi.h>
 
@@ -15,7 +15,7 @@ namespace {
 class SolveWorker final : public Napi::AsyncWorker {
 public:
 	SolveWorker(Napi::Env env, std::vector<uint8_t> request, Napi::Function callback)
-		: Napi::AsyncWorker(env, "solvers::solve")
+		: Napi::AsyncWorker(env, "solver::solve")
 		, _request(std::move(request))
 		, _deferred(Napi::Promise::Deferred::New(env))
 		, _tsfn(Napi::ThreadSafeFunction::New(
@@ -28,7 +28,7 @@ public:
 	}
 
 	SolveWorker(Napi::Env env, std::vector<uint8_t> request)
-		: Napi::AsyncWorker(env, "solvers::solve")
+		: Napi::AsyncWorker(env, "solver::solve")
 		, _request(std::move(request))
 		, _deferred(Napi::Promise::Deferred::New(env))
 	{
@@ -51,7 +51,7 @@ protected:
 
 		fbs::domain::SolveRequest const domain = fbs::domain::toDomain(request);
 
-		solvers::ProgressCallback on_progress;
+		solver::ProgressCallback on_progress;
 		if (_tsfn) {
 			auto tsfn = _tsfn;
 			on_progress = [tsfn](size_t done, size_t total) {
@@ -66,7 +66,7 @@ protected:
 			};
 		}
 
-		fbs::domain::SolveResponse const response = solvers::solve(domain, on_progress);
+		fbs::domain::SolveResponse const response = solver::solve(domain, on_progress);
 		fbs::SolveResponseT const encoded = fbs::domain::fromDomain(response);
 
 		_response = fbs::translation::encodeResponse(encoded);
@@ -99,7 +99,7 @@ private:
 
 Napi::Value info(Napi::CallbackInfo const& cbInfo)
 {
-	return Napi::String::New(cbInfo.Env(), solvers::info());
+	return Napi::String::New(cbInfo.Env(), solver::info());
 }
 
 Napi::Value solve(Napi::CallbackInfo const& cbInfo)
