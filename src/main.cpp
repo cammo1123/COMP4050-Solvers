@@ -1,7 +1,6 @@
 #include <cstddef>
 #include <cstdio>
 #include <iostream>
-#include <optional>
 #include <stdio.h>
 
 #include "solve_domain_generated.h"
@@ -76,12 +75,14 @@ int main()
 	});
 	std::cout << "\n";
 
+	auto f = res.failed.size();
 	int i = 0;
 	for (auto const& result : res.results) {
 		i += result.placements.size();
 	}
 
-	std::cout << "Total: " << i << " items\n";
+	std::cout << "Total : " << i << " items\n";
+	std::cout << "Failed: " << f << " items\n";
 
 	return 0;
 }

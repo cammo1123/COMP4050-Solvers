@@ -38,6 +38,10 @@ SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
 	(void)on_progress;
 	(void)options;
 
+	for (auto item : request.items) {
+		response.failed.push_back(item);
+	}
+	
 	return response;
 }
 
