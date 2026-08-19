@@ -102,6 +102,69 @@ std::optional<PackedBox> try_box(Box const& box, std::vector<Item> const& items,
 	return best;
 }
 
+void balance_weights(std::vector<PackedBox>& boxes, Clock::time_point deadline)
+{
+	while (Clock::now() < deadline && boxes.size() > 1) {
+		float current_spread = 0;
+		for (auto const& box : boxes) for (auto const& other : boxes) current_spread = std::max(current_spread, box.total_weight - other.total_weight);
+		if (current_spread == 0) return;
+
+		bool moved = false;
+		for (size_t source_index = 0; source_index < boxes.size() && !moved; ++source_index) {
+			for (size_t target_index = 0; target_index < boxes.size() && !moved; ++target_index) {
+				if (source_index == target_index) continue;
+				auto const& source = boxes[source_index];
+				auto const& target = boxes[target_index];
+				if (source.total_weight <= target.total_weight) continue;
+				for (size_t item_index = 0; item_index < source.items.size() && !moved; ++item_index) {
+					std::vector<size_t> group_indices{item_index};
+					auto const& selected = source.items[item_index].item;
+					if (!selected.linked_group.empty()) {
+						for (size_t i = item_index + 1; i < source.items.size(); ++i)
+							if (source.items[i].item.linked_group == selected.linked_group) group_indices.push_back(i);
+					}
+					std::vector<PackedItem> moved_items;
+					auto target_items = target.items;
+					float moved_weight = 0;
+					bool legal = true;
+					for (auto index : group_indices) {
+						if (target.total_weight + moved_weight + source.items[index].item.weight > target.box.max_weight && target.box.max_weight > 0) { legal = false; break; }
+						auto placement = place(target.box, target.dimensions, source.items[index].item, target_items, target.total_weight + moved_weight, deadline);
+						if (!placement) { legal = false; break; }
+						moved_items.push_back(*placement);
+						target_items.push_back(*placement);
+						moved_weight += source.items[index].item.weight;
+					}
+					if (!legal) continue;
+					float new_spread = 0;
+					for (size_t i = 0; i < boxes.size(); ++i) {
+						float weight = boxes[i].total_weight;
+						if (i == source_index) weight -= moved_weight;
+						if (i == target_index) weight += moved_weight;
+						for (size_t j = 0; j < boxes.size(); ++j) {
+							float other = boxes[j].total_weight;
+							if (j == source_index) other -= moved_weight;
+							if (j == target_index) other += moved_weight;
+							new_spread = std::max(new_spread, weight - other);
+						}
+					}
+					if (new_spread >= current_spread) continue;
+					std::vector<bool> selected_items(source.items.size());
+					for (auto index : group_indices) selected_items[index] = true;
+					std::vector<PackedItem> source_items;
+					for (size_t i = 0; i < source.items.size(); ++i) if (!selected_items[i]) source_items.push_back(source.items[i]);
+					boxes[source_index].items = std::move(source_items);
+					boxes[source_index].total_weight -= moved_weight;
+					boxes[target_index].items = std::move(target_items);
+					boxes[target_index].total_weight += moved_weight;
+					moved = true;
+				}
+			}
+		}
+		if (!moved) return;
+	}
+}
+
 } // namespace
 
 Result pack(std::vector<Box> boxes, std::vector<Item> items, Options options, ProgressCallback progress)
@@ -136,6 +199,7 @@ Result pack(std::vector<Box> boxes, std::vector<Item> items, Options options, Pr
 		++used[best_box];
 	}
 	result.failed = std::move(remaining);
+	if (options.balance_weight) balance_weights(result.boxes, deadline);
 	if (progress) progress(total - result.failed.size(), total);
 	return result;
 }

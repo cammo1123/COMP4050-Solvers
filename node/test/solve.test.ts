@@ -144,4 +144,18 @@ describe("packing invariants", () => {
 		expect(result.results[0].placements[0]).toMatchObject({ itemCode: "floor", x: 10, y: 0 });
 		expect(result.failed.map((item) => item.itemCode)).toEqual(["blocked"]);
 	});
+
+	it("redistributes linked-compatible weight when requested", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 10, length: 10, depth: 10, maxWeight: 10 }, { reference: "B", width: 10, length: 10, depth: 10, maxWeight: 10 }],
+			items: [
+				{ itemCode: "heavy", itemReference: "heavy", width: 10, length: 10, depth: 5, weight: 6, rotationPolicy: 0 },
+				{ itemCode: "first-light", itemReference: "first-light", width: 10, length: 10, depth: 5, weight: 4, rotationPolicy: 0 },
+				{ itemCode: "second-light", itemReference: "second-light", width: 10, length: 10, depth: 5, weight: 4, rotationPolicy: 0 },
+			],
+			options: { balanceWeight: true },
+		});
+		expect(result.results.map((box) => box.totalWeight)).toEqual([6, 8]);
+		expect(result.failed).toHaveLength(0);
+	});
 });

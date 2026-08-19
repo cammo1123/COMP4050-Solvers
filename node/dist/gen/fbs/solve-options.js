@@ -32,8 +32,12 @@ export class SolveOptions {
         const offset = this.bb.__offset(this.bb_pos, 10);
         return offset ? this.bb.readInt8(this.bb_pos + offset) : null;
     }
+    balanceWeight() {
+        const offset = this.bb.__offset(this.bb_pos, 12);
+        return offset ? !!this.bb.readInt8(this.bb_pos + offset) : null;
+    }
     static startSolveOptions(builder) {
-        builder.startObject(4);
+        builder.startObject(5);
     }
     static addMaxBoxes(builder, maxBoxes) {
         builder.addFieldInt32(0, maxBoxes, null);
@@ -47,11 +51,14 @@ export class SolveOptions {
     static addStrategy(builder, strategy) {
         builder.addFieldInt8(3, strategy, null);
     }
+    static addBalanceWeight(builder, balanceWeight) {
+        builder.addFieldInt8(4, +balanceWeight, null);
+    }
     static endSolveOptions(builder) {
         const offset = builder.endObject();
         return offset;
     }
-    static createSolveOptions(builder, maxBoxes, allowRotation, timeoutMs, strategy) {
+    static createSolveOptions(builder, maxBoxes, allowRotation, timeoutMs, strategy, balanceWeight) {
         SolveOptions.startSolveOptions(builder);
         if (maxBoxes !== null)
             SolveOptions.addMaxBoxes(builder, maxBoxes);
@@ -60,16 +67,19 @@ export class SolveOptions {
             SolveOptions.addTimeoutMs(builder, timeoutMs);
         if (strategy !== null)
             SolveOptions.addStrategy(builder, strategy);
+        if (balanceWeight !== null)
+            SolveOptions.addBalanceWeight(builder, balanceWeight);
         return SolveOptions.endSolveOptions(builder);
     }
     unpack() {
-        return new SolveOptionsT(this.maxBoxes(), this.allowRotation(), this.timeoutMs(), this.strategy());
+        return new SolveOptionsT(this.maxBoxes(), this.allowRotation(), this.timeoutMs(), this.strategy(), this.balanceWeight());
     }
     unpackTo(_o) {
         _o.maxBoxes = this.maxBoxes();
         _o.allowRotation = this.allowRotation();
         _o.timeoutMs = this.timeoutMs();
         _o.strategy = this.strategy();
+        _o.balanceWeight = this.balanceWeight();
     }
 }
 export class SolveOptionsT {
@@ -77,14 +87,16 @@ export class SolveOptionsT {
     allowRotation;
     timeoutMs;
     strategy;
-    constructor(maxBoxes = null, allowRotation = true, timeoutMs = null, strategy = null) {
+    balanceWeight;
+    constructor(maxBoxes = null, allowRotation = true, timeoutMs = null, strategy = null, balanceWeight = null) {
         this.maxBoxes = maxBoxes;
         this.allowRotation = allowRotation;
         this.timeoutMs = timeoutMs;
         this.strategy = strategy;
+        this.balanceWeight = balanceWeight;
     }
     pack(builder) {
-        return SolveOptions.createSolveOptions(builder, this.maxBoxes, this.allowRotation, this.timeoutMs, this.strategy);
+        return SolveOptions.createSolveOptions(builder, this.maxBoxes, this.allowRotation, this.timeoutMs, this.strategy, this.balanceWeight);
     }
 }
 //# sourceMappingURL=solve-options.js.map

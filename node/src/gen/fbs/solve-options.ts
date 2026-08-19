@@ -44,8 +44,13 @@ strategy():number|null {
   return offset ? this.bb!.readInt8(this.bb_pos + offset) : null;
 }
 
+balanceWeight():boolean|null {
+  const offset = this.bb!.__offset(this.bb_pos, 12);
+  return offset ? !!this.bb!.readInt8(this.bb_pos + offset) : null;
+}
+
 static startSolveOptions(builder:flatbuffers.Builder) {
-  builder.startObject(4);
+  builder.startObject(5);
 }
 
 static addMaxBoxes(builder:flatbuffers.Builder, maxBoxes:number) {
@@ -64,12 +69,16 @@ static addStrategy(builder:flatbuffers.Builder, strategy:number) {
   builder.addFieldInt8(3, strategy, null);
 }
 
+static addBalanceWeight(builder:flatbuffers.Builder, balanceWeight:boolean) {
+  builder.addFieldInt8(4, +balanceWeight, null);
+}
+
 static endSolveOptions(builder:flatbuffers.Builder):flatbuffers.Offset {
   const offset = builder.endObject();
   return offset;
 }
 
-static createSolveOptions(builder:flatbuffers.Builder, maxBoxes:number|null, allowRotation:boolean, timeoutMs:number|null, strategy:number|null):flatbuffers.Offset {
+static createSolveOptions(builder:flatbuffers.Builder, maxBoxes:number|null, allowRotation:boolean, timeoutMs:number|null, strategy:number|null, balanceWeight:boolean|null):flatbuffers.Offset {
   SolveOptions.startSolveOptions(builder);
   if (maxBoxes !== null)
     SolveOptions.addMaxBoxes(builder, maxBoxes);
@@ -78,6 +87,8 @@ static createSolveOptions(builder:flatbuffers.Builder, maxBoxes:number|null, all
     SolveOptions.addTimeoutMs(builder, timeoutMs);
   if (strategy !== null)
     SolveOptions.addStrategy(builder, strategy);
+  if (balanceWeight !== null)
+    SolveOptions.addBalanceWeight(builder, balanceWeight);
   return SolveOptions.endSolveOptions(builder);
 }
 
@@ -86,7 +97,8 @@ unpack(): SolveOptionsT {
     this.maxBoxes(),
     this.allowRotation(),
     this.timeoutMs(),
-    this.strategy()
+    this.strategy(),
+    this.balanceWeight()
   );
 }
 
@@ -96,6 +108,7 @@ unpackTo(_o: SolveOptionsT): void {
   _o.allowRotation = this.allowRotation();
   _o.timeoutMs = this.timeoutMs();
   _o.strategy = this.strategy();
+  _o.balanceWeight = this.balanceWeight();
 }
 }
 
@@ -104,7 +117,8 @@ constructor(
   public maxBoxes: number|null = null,
   public allowRotation: boolean = true,
   public timeoutMs: number|null = null,
-  public strategy: number|null = null
+  public strategy: number|null = null,
+  public balanceWeight: boolean|null = null
 ){}
 
 
@@ -113,7 +127,8 @@ pack(builder:flatbuffers.Builder): flatbuffers.Offset {
     this.maxBoxes,
     this.allowRotation,
     this.timeoutMs,
-    this.strategy
+    this.strategy,
+    this.balanceWeight
   );
 }
 }

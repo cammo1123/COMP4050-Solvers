@@ -58,12 +58,15 @@ SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
 		options.max_boxes = request.options->max_boxes;
 		options.allow_rotation = request.options->allow_rotation;
 		options.timeout_ms = request.options->timeout_ms;
+		options.balance_weight = request.options->balance_weight.value_or(false);
 	}
 	auto packed = packing::pack(std::move(boxes), std::move(items), options, std::move(on_progress));
 	SolveResponse response;
 	for (auto const& source : packed.boxes) {
 		BoxResult result;
 		result.box_reference = source.box.reference;
+		result.total_weight = source.total_weight;
+		result.utilization = source.dimensions.volume() == 0 ? 0.0f : static_cast<float>(source.used_volume()) / source.dimensions.volume();
 		for (auto const& item : source.items) {
 			result.placements.push_back({item.item.code, item.item.reference, item.x, item.y, item.z,
 				item.dimensions.width, item.dimensions.length, item.dimensions.height});

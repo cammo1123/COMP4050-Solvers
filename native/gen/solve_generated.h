@@ -141,6 +141,7 @@ struct SolveOptionsT : public ::flatbuffers::NativeTable {
   bool allow_rotation = true;
   ::flatbuffers::Optional<uint32_t> timeout_ms = ::flatbuffers::nullopt;
   ::flatbuffers::Optional<int8_t> strategy = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<bool> balance_weight = ::flatbuffers::nullopt;
 };
 
 struct SolveOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
@@ -150,7 +151,8 @@ struct SolveOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_MAX_BOXES = 4,
     VT_ALLOW_ROTATION = 6,
     VT_TIMEOUT_MS = 8,
-    VT_STRATEGY = 10
+    VT_STRATEGY = 10,
+    VT_BALANCE_WEIGHT = 12
   };
   ::flatbuffers::Optional<uint32_t> max_boxes() const {
     return GetOptional<uint32_t, uint32_t>(VT_MAX_BOXES);
@@ -164,6 +166,9 @@ struct SolveOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   ::flatbuffers::Optional<int8_t> strategy() const {
     return GetOptional<int8_t, int8_t>(VT_STRATEGY);
   }
+  ::flatbuffers::Optional<bool> balance_weight() const {
+    return GetOptional<uint8_t, bool>(VT_BALANCE_WEIGHT);
+  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -171,6 +176,7 @@ struct SolveOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<uint8_t>(verifier, VT_ALLOW_ROTATION, 1) &&
            VerifyField<uint32_t>(verifier, VT_TIMEOUT_MS, 4) &&
            VerifyField<int8_t>(verifier, VT_STRATEGY, 1) &&
+           VerifyField<uint8_t>(verifier, VT_BALANCE_WEIGHT, 1) &&
            verifier.EndTable();
   }
   SolveOptionsT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
@@ -194,6 +200,9 @@ struct SolveOptionsBuilder {
   void add_strategy(int8_t strategy) {
     fbb_.AddElement<int8_t>(SolveOptions::VT_STRATEGY, strategy);
   }
+  void add_balance_weight(bool balance_weight) {
+    fbb_.AddElement<uint8_t>(SolveOptions::VT_BALANCE_WEIGHT, static_cast<uint8_t>(balance_weight));
+  }
   explicit SolveOptionsBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -210,10 +219,12 @@ inline ::flatbuffers::Offset<SolveOptions> CreateSolveOptions(
     ::flatbuffers::Optional<uint32_t> max_boxes = ::flatbuffers::nullopt,
     bool allow_rotation = true,
     ::flatbuffers::Optional<uint32_t> timeout_ms = ::flatbuffers::nullopt,
-    ::flatbuffers::Optional<int8_t> strategy = ::flatbuffers::nullopt) {
+    ::flatbuffers::Optional<int8_t> strategy = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<bool> balance_weight = ::flatbuffers::nullopt) {
   SolveOptionsBuilder builder_(_fbb);
   if(timeout_ms) { builder_.add_timeout_ms(*timeout_ms); }
   if(max_boxes) { builder_.add_max_boxes(*max_boxes); }
+  if(balance_weight) { builder_.add_balance_weight(*balance_weight); }
   if(strategy) { builder_.add_strategy(*strategy); }
   builder_.add_allow_rotation(allow_rotation);
   return builder_.Finish();
@@ -630,6 +641,7 @@ inline void SolveOptions::UnPackTo(SolveOptionsT *_o, const ::flatbuffers::resol
   { auto _e = allow_rotation(); _o->allow_rotation = _e; }
   { auto _e = timeout_ms(); _o->timeout_ms = _e; }
   { auto _e = strategy(); _o->strategy = _e; }
+  { auto _e = balance_weight(); _o->balance_weight = _e; }
 }
 
 inline ::flatbuffers::Offset<SolveOptions> CreateSolveOptions(::flatbuffers::FlatBufferBuilder &_fbb, const SolveOptionsT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
@@ -644,12 +656,14 @@ inline ::flatbuffers::Offset<SolveOptions> SolveOptions::Pack(::flatbuffers::Fla
   auto _allow_rotation = _o->allow_rotation;
   auto _timeout_ms = _o->timeout_ms;
   auto _strategy = _o->strategy;
+  auto _balance_weight = _o->balance_weight;
   return fbs::CreateSolveOptions(
       _fbb,
       _max_boxes,
       _allow_rotation,
       _timeout_ms,
-      _strategy);
+      _strategy,
+      _balance_weight);
 }
 
 inline ItemPlacementT *ItemPlacement::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {

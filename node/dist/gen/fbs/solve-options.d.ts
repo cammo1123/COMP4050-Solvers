@@ -9,13 +9,15 @@ export declare class SolveOptions implements flatbuffers.IUnpackableObject<Solve
     allowRotation(): boolean;
     timeoutMs(): number | null;
     strategy(): number | null;
+    balanceWeight(): boolean | null;
     static startSolveOptions(builder: flatbuffers.Builder): void;
     static addMaxBoxes(builder: flatbuffers.Builder, maxBoxes: number): void;
     static addAllowRotation(builder: flatbuffers.Builder, allowRotation: boolean): void;
     static addTimeoutMs(builder: flatbuffers.Builder, timeoutMs: number): void;
     static addStrategy(builder: flatbuffers.Builder, strategy: number): void;
+    static addBalanceWeight(builder: flatbuffers.Builder, balanceWeight: boolean): void;
     static endSolveOptions(builder: flatbuffers.Builder): flatbuffers.Offset;
-    static createSolveOptions(builder: flatbuffers.Builder, maxBoxes: number | null, allowRotation: boolean, timeoutMs: number | null, strategy: number | null): flatbuffers.Offset;
+    static createSolveOptions(builder: flatbuffers.Builder, maxBoxes: number | null, allowRotation: boolean, timeoutMs: number | null, strategy: number | null, balanceWeight: boolean | null): flatbuffers.Offset;
     unpack(): SolveOptionsT;
     unpackTo(_o: SolveOptionsT): void;
 }
@@ -24,7 +26,8 @@ export declare class SolveOptionsT implements flatbuffers.IGeneratedObject {
     allowRotation: boolean;
     timeoutMs: number | null;
     strategy: number | null;
-    constructor(maxBoxes?: number | null, allowRotation?: boolean, timeoutMs?: number | null, strategy?: number | null);
+    balanceWeight: boolean | null;
+    constructor(maxBoxes?: number | null, allowRotation?: boolean, timeoutMs?: number | null, strategy?: number | null, balanceWeight?: boolean | null);
     pack(builder: flatbuffers.Builder): flatbuffers.Offset;
 }
 //# sourceMappingURL=solve-options.d.ts.map

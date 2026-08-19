@@ -51,6 +51,7 @@ export type SolveOptionsT = {
     allowRotation?: boolean;
     timeoutMs?: number;
     strategy?: number;
+    balanceWeight?: boolean;
 };
 export type SolveRequest = {
     boxes: BoxTypeT[];

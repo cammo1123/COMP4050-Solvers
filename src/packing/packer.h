@@ -14,6 +14,7 @@ struct Options {
 	std::optional<uint32_t> max_boxes;
 	bool allow_rotation = true;
 	std::optional<uint32_t> timeout_ms;
+	bool balance_weight = false;
 };
 
 struct Result {

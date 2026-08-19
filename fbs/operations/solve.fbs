@@ -15,6 +15,7 @@ table SolveOptions {
   allow_rotation: bool = true;
   timeout_ms: uint = null;
   strategy: byte = null;
+  balance_weight: bool = null;
 }
 
 table ItemPlacement {

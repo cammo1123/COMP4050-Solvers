@@ -19,6 +19,7 @@ struct SolveOptions {
 	bool allow_rotation = true;
 	std::optional<uint32_t> timeout_ms = std::nullopt;
 	std::optional<int8_t> strategy = std::nullopt;
+	std::optional<bool> balance_weight = std::nullopt;
 };
 
 struct SolveRequest {
@@ -68,6 +69,10 @@ inline SolveOptions toDomain(fbs::SolveOptionsT const& value)
 		out.strategy = *value.strategy;
 	}
 
+	if (value.balance_weight.has_value()) {
+		out.balance_weight = *value.balance_weight;
+	}
+
 	return out;
 }
 
@@ -87,6 +92,10 @@ inline fbs::SolveOptionsT fromDomain(SolveOptions const& value)
 
 	if (value.strategy.has_value()) {
 		out.strategy = *value.strategy;
+	}
+
+	if (value.balance_weight.has_value()) {
+		out.balance_weight = *value.balance_weight;
 	}
 
 	return out;

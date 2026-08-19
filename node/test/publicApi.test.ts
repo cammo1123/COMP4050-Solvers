@@ -21,7 +21,7 @@ describe("package public API (typed entry)", () => {
 		};
 		const result: SolveResponse = await solve(request);
 		expect(result).toEqual({
-			results: [{ boxReference: "A", placements: [{ itemCode: "A", itemReference: "A", depth: 10, length: 10, width: 10, x: 0, y: 0, z: 0 }] }],
+			results: [{ boxReference: "A", totalWeight: 10, utilization: 1, placements: [{ itemCode: "A", itemReference: "A", depth: 10, length: 10, width: 10, x: 0, y: 0, z: 0 }] }],
 			failed: [],
 		});
 	});
@@ -49,7 +49,7 @@ describe("package public API (typed entry)", () => {
 
 		expect(await solve({ boxes, items })).toEqual({
 			failed: [],
-		results: [{ boxReference: "A", placements: [{ itemCode: "A", itemReference: "A", depth: 10, length: 10, width: 10, x: 0, y: 0, z: 0 }] }],
+		results: [{ boxReference: "A", totalWeight: 10, utilization: 1, placements: [{ itemCode: "A", itemReference: "A", depth: 10, length: 10, width: 10, x: 0, y: 0, z: 0 }] }],
 		});
 	});
 });
