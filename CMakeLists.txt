@@ -19,7 +19,6 @@ set(BUILDINFO_PROJECT_VERSION "${PROJECT_VERSION}")
 set(BUILDINFO_PLATFORM "${CMAKE_SYSTEM_NAME}")
 set(BUILDINFO_GIT_HASH "unknown")
 set(BUILDINFO_GIT_BRANCH "unknown")
-set(BUILDINFO_GIT_DIRTY 0)
 set(BUILDINFO_BUILD_TIME "")
 
 if(GIT_FOUND)
@@ -37,20 +36,13 @@ if(GIT_FOUND)
         OUTPUT_STRIP_TRAILING_WHITESPACE
         RESULT_VARIABLE buildinfo_git_branch_result
     )
-    execute_process(
-        COMMAND "${GIT_EXECUTABLE}" status --porcelain
-        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-        OUTPUT_VARIABLE buildinfo_git_status
-    )
 
     if(NOT buildinfo_git_hash_result EQUAL 0 OR NOT BUILDINFO_GIT_HASH)
         set(BUILDINFO_GIT_HASH "unknown")
     endif()
+
     if(NOT buildinfo_git_branch_result EQUAL 0 OR NOT BUILDINFO_GIT_BRANCH)
         set(BUILDINFO_GIT_BRANCH "unknown")
-    endif()
-    if(buildinfo_git_status)
-        set(BUILDINFO_GIT_DIRTY 1)
     endif()
 endif()
 
@@ -74,6 +66,7 @@ function(comp4050_fetch_archive url dest)
     if(NOT EXISTS "${archive}")
         file(DOWNLOAD "${url}" "${archive}" STATUS download_status)
         list(GET download_status 0 status_code)
+
         if(NOT status_code EQUAL 0)
             list(GET download_status 1 error_msg)
             message(FATAL_ERROR "Failed to download ${url}: ${error_msg}")
@@ -104,12 +97,14 @@ file(GLOB_RECURSE SCHEMA_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/fb
 file(GLOB_RECURSE OPERATION_SCHEMA_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/fbs/operations/*.fbs")
 
 set(GENERATED_HEADERS)
+
 foreach(schema IN LISTS SCHEMA_FILES)
     get_filename_component(schema_name "${schema}" NAME_WE)
     list(APPEND GENERATED_HEADERS
         "${GENERATED_DIR}/${schema_name}_generated.h"
         "${GENERATED_DIR}/${schema_name}_domain_generated.h")
 endforeach()
+
 foreach(schema IN LISTS OPERATION_SCHEMA_FILES)
     get_filename_component(schema_name "${schema}" NAME_WE)
     list(APPEND GENERATED_HEADERS
@@ -194,6 +189,7 @@ if(COMP4050_BUILD_ADDON)
                 STATUS download_status
             )
             list(GET download_status 0 status_code)
+
             if(NOT status_code EQUAL 0)
                 message(FATAL_ERROR "Failed to download node.lib: ${node_lib}")
             endif()
