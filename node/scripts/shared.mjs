@@ -12,16 +12,16 @@ export const TS_OUT = path.join(nodeRoot, 'src', 'gen')
 export const FBS_DIR = path.join(repoRoot, 'fbs')
 
 export function fail(prefix, message) {
-	console.error(`[ ${prefix.padEnd(9) }] ${message}`)
+	console.error(`[ ${prefix} ] ${message}`)
 	process.exit(1)
 }
 
 export function log(prefix, message) {
-	console.log(`[ ${prefix.padEnd(9) }] ${message}`)
+	console.log(`[ ${prefix} ] ${message}`)
 }
 
 export function warn(prefix, message) {
-	console.warn(`[ ${prefix.padEnd(9) }] ${message}`)
+	console.warn(`[ ${prefix} ] ${message}`)
 }
 
 export function findOnPath(name) {

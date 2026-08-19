@@ -1,5 +1,4 @@
 #include "solve_domain_generated.h"
-#include "solve_generated.h"
 #include "solve_translation_generated.h"
 #include "solver.h"
 #include <cstddef>
