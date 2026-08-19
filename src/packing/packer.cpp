@@ -80,6 +80,21 @@ bool valid_result(Result const& result)
 	return true;
 }
 
+size_t linked_count(std::vector<Item> const& items, std::string const& group)
+{
+	return static_cast<size_t>(std::count_if(items.begin(), items.end(), [&](auto const& item) { return item.linked_group == group; }));
+}
+
+size_t packed_linked_count(PackedBox const& box, std::string const& group)
+{
+	return static_cast<size_t>(std::count_if(box.items.begin(), box.items.end(), [&](auto const& item) { return item.item.linked_group == group; }));
+}
+
+bool excluded(std::vector<std::string> const& groups, std::string const& group)
+{
+	return std::find(groups.begin(), groups.end(), group) != groups.end();
+}
+
 std::optional<PackedItem> place(Box const& box, Dimensions box_dimensions, Item const& item, std::vector<PackedItem> const& placed,
 	float weight, Clock::time_point deadline)
 {
@@ -149,15 +164,41 @@ std::optional<PackedBox> try_box_once(Box const& box, std::vector<Item> const& i
 	return best;
 }
 
+PackedBox enforce_linked_groups(Box const& box, std::vector<Item> const& items, PackedBox candidate, bool allow_rotation,
+	Clock::time_point deadline)
+{
+	std::vector<std::string> excluded_groups;
+	while (true) {
+		std::vector<std::string> incomplete_groups;
+		for (auto const& item : items) {
+			if (item.linked_group.empty() || excluded(excluded_groups, item.linked_group) || excluded(incomplete_groups, item.linked_group)) continue;
+			if (packed_linked_count(candidate, item.linked_group) > 0 && packed_linked_count(candidate, item.linked_group) < linked_count(items, item.linked_group))
+				incomplete_groups.push_back(item.linked_group);
+		}
+		if (incomplete_groups.empty()) return candidate;
+		excluded_groups.insert(excluded_groups.end(), incomplete_groups.begin(), incomplete_groups.end());
+		std::vector<Item> eligible;
+		for (auto const& item : items) if (item.linked_group.empty() || !excluded(excluded_groups, item.linked_group)) eligible.push_back(item);
+		if (eligible.empty()) return PackedBox{box, box.dimensions, {}, box.empty_weight};
+		const auto repacked = try_box_once(box, eligible, allow_rotation, deadline, nullptr);
+		if (!repacked) return PackedBox{box, box.dimensions, {}, box.empty_weight};
+		candidate = *repacked;
+	}
+}
+
 std::optional<PackedBox> try_box(Box const& box, std::vector<Item> const& items, bool allow_rotation, bool best_subset,
 	Clock::time_point deadline, ProgressCallback progress)
 {
-	if (!best_subset) return try_box_once(box, items, allow_rotation, deadline, progress);
+	if (!best_subset) {
+		auto candidate = try_box_once(box, items, allow_rotation, deadline, progress);
+		return candidate ? std::optional<PackedBox>(enforce_linked_groups(box, items, *candidate, allow_rotation, deadline)) : std::nullopt;
+	}
 
 	std::optional<PackedBox> best;
 	for (size_t first = 0; first < items.size() && Clock::now() < deadline; ++first) {
 		std::vector<Item> subset(items.begin() + static_cast<std::ptrdiff_t>(first), items.end());
 		auto candidate = try_box_once(box, subset, allow_rotation, deadline, nullptr);
+		if (candidate) candidate = enforce_linked_groups(box, items, *candidate, allow_rotation, deadline);
 		const auto packed_count = candidate ? candidate->items.size() : 0;
 		if (candidate && (!best || candidate->used_volume() > best->used_volume() ||
 			(candidate->used_volume() == best->used_volume() && packed_count > best->items.size()))) best = std::move(candidate);

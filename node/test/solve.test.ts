@@ -365,6 +365,51 @@ describe("packing invariants", () => {
 		expect(result.failed.map((item) => item.itemCode)).toEqual(["linked-a", "linked-b"]);
 	});
 
+	it("removes partial linked groups and repacks newly eligible items", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 40, length: 10, depth: 10, maximumBoxes: 1 }],
+			items: [
+				{ itemCode: "group-large", itemReference: "group-large", linkedGroup: "group-a", width: 30, length: 10, depth: 10, weight: 1, rotationPolicy: RotationPolicy.Never },
+				{ itemCode: "group-small", itemReference: "group-small", linkedGroup: "group-a", width: 20, length: 10, depth: 10, weight: 1, rotationPolicy: RotationPolicy.Never },
+				{ itemCode: "regular", itemReference: "regular", width: 20, length: 10, depth: 10, weight: 1, rotationPolicy: RotationPolicy.Never },
+			],
+			options: { bestSubset: true },
+		});
+
+		expect(result.results[0].placements.map((item) => item.itemCode)).toEqual(["regular"]);
+		expect(result.failed.map((item) => item.itemCode).sort()).toEqual(["group-large", "group-small"]);
+	});
+
+	it("preserves every quantity instance across placements and failures", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 20, length: 10, depth: 10, maximumBoxes: 1 }],
+			items: [{ itemCode: "repeat", itemReference: "source-1", width: 10, length: 10, depth: 10, weight: 1, quantity: 3, rotationPolicy: RotationPolicy.Never }],
+		});
+
+		const all = [...result.results.flatMap((box) => box.placements), ...result.failed];
+		expect(all).toHaveLength(3);
+		expect(all.every((item) => item.itemCode === "repeat" && item.itemReference === "source-1")).toBe(true);
+	});
+
+	it("keeps mixed linked groups together across multiple boxes", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 20, length: 10, depth: 10 }, { reference: "B", width: 20, length: 10, depth: 10 }],
+			items: [
+				{ itemCode: "a1", itemReference: "a1", linkedGroup: "a", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: RotationPolicy.Never },
+				{ itemCode: "a2", itemReference: "a2", linkedGroup: "a", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: RotationPolicy.Never },
+				{ itemCode: "b1", itemReference: "b1", linkedGroup: "b", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: RotationPolicy.Never },
+				{ itemCode: "b2", itemReference: "b2", linkedGroup: "b", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: RotationPolicy.Never },
+			],
+		});
+
+		expect(result.failed).toHaveLength(0);
+		for (const group of [["a1", "a2"], ["b1", "b2"]]) {
+			const boxIndexes = new Set(result.results.flatMap((box, index) =>
+				box.placements.some((item) => group.includes(item.itemCode)) ? [index] : []));
+			expect(boxIndexes.size).toBe(1);
+		}
+	});
+
 	it("enforces declarative placement constraints", async () => {
 		const result = await solve({
 			boxes: [{ reference: "A", width: 20, length: 10, depth: 10 }],
