@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { findOnPath, nodeRoot, repoRoot } from './shared.mjs'
+import { fail, findOnPath, log, nodeRoot, repoRoot, warn } from './shared.mjs'
 
 const TARGETS = ['addon', 'core']
 const BUILD_TYPES = ['Debug', 'Release']
@@ -13,11 +13,6 @@ const args = process.argv.slice(2)
 
 const isWin = process.platform === 'win32'
 const pathVar = isWin ? 'Path' : 'PATH'
-
-function fail (message) {
-  console.error(`[build] ${message}`)
-  process.exit(1)
-}
 
 function findCMake () {
   const onPath = findOnPath('cmake')
@@ -78,25 +73,25 @@ function prebuildAddonPath () {
 function copyAddon (dest) {
   fs.mkdirSync(path.dirname(dest), { recursive: true })
   fs.copyFileSync(builtAddonPath('build/addon'), dest)
-  console.log(`[build] wrote ${dest}`)
+  log("build", `wrote ${dest}`)
 }
 
 function run (command, cmdArgs, options = {}) {
   const result = spawnSync(command, cmdArgs, { cwd: repoRoot, ...options, stdio: 'inherit' })
-  if (result.error) fail(`failed to run ${command}: ${result.error.message}`)
-  if (result.status !== 0) fail(`${command} exited with code ${result.status}`)
+  if (result.error) fail("build", `failed to run ${command}: ${result.error.message}`)
+  if (result.status !== 0) fail("build", `${command} exited with code ${result.status}`)
 }
 
 function format (check) {
   const clangFormat = findOnPath('clang-format')
-  if (!clangFormat) fail('clang-format not found on PATH')
+  if (!clangFormat) fail("build", 'clang-format not found on PATH')
   const srcDir = path.join(repoRoot, 'src')
   const files = fs.readdirSync(srcDir).filter(f => f.endsWith('.cpp') || f.endsWith('.h')).map(f => path.join('src', f))
   const flags = check ? ['--dry-run', '--Werror'] : ['-i']
   for (const file of files) {
     run(clangFormat, [...flags, file])
   }
-  console.log(check ? '[build] formatting check passed' : '[build] formatted src/')
+  log("build", check ? 'formatting check passed' : 'formatted src/')
 }
 
 const first = args.find((a) => !a.startsWith('--'))
@@ -107,11 +102,11 @@ if (first === 'format') {
 
 const target = first ?? 'addon'
 if (!TARGETS.includes(target)) {
-  fail(`unknown target "${target}"; expected one of ${TARGETS.join(', ')} or format [--check]`)
+  fail("build", `unknown target "${target}"; expected one of ${TARGETS.join(', ')} or format [--check]`)
 }
 const buildType = args.includes('--release') || args.includes('--optimize') ? 'Release' : 'Debug'
 if (!BUILD_TYPES.includes(buildType)) {
-  fail(`unknown build type "${buildType}"`)
+  fail("build", `unknown build type "${buildType}"`)
 }
 const ifNeeded = args.includes('--if-needed')
 const doPrebuild = args.includes('--prebuild')
@@ -122,15 +117,15 @@ const buildsAddon = target === 'addon'
 if (ifNeeded) {
   const available = [releaseAddonPath(), prebuildAddonPath()].some((file) => fs.existsSync(file))
   if (available) {
-    console.log('[build] addon.node already available; skipping build')
+    log("build", 'addon.node already available; skipping build')
     process.exit(0)
   }
-  console.log('[build] no addon.node found; building before tests run')
+  log("build", 'no addon.node found; building before tests run')
 }
 
 if (doPrebuild && first === undefined) {
   if (!fs.existsSync(builtAddonPath(buildDir))) {
-    fail('addon.node not found in build/addon. Run "pnpm build" first.')
+    fail("build", 'addon.node not found in build/addon. Run "pnpm build" first.')
   }
   copyAddon(prebuildAddonPath())
   process.exit(0)
@@ -138,7 +133,7 @@ if (doPrebuild && first === undefined) {
 
 const cmake = findCMake()
 if (!cmake) {
-  fail(
+  fail("build",
     isWin
       ? 'cmake not found on PATH or in a Visual Studio install.'
       : 'cmake not found on PATH. Install it (e.g. apt install cmake or brew install cmake).'
@@ -147,7 +142,7 @@ if (!cmake) {
 
 const ninja = findNinja(cmake)
 if (!ninja) {
-  console.warn('[build] ninja not found; install ninja or add it to PATH.')
+  warn("build", 'ninja not found; install ninja or add it to PATH.')
 }
 
 const env = { ...process.env }
@@ -167,18 +162,18 @@ run(cmake, configure, { env })
 run(cmake, ['--build', buildDir], { env })
 
 const binary = path.join(repoRoot, buildDir, isWin ? 'solvers.exe' : 'solvers')
-console.log(`[build] wrote ${binary}`)
+log("build", `wrote ${binary}`)
 
 if (buildsAddon) {
   if (!fs.existsSync(builtAddonPath(buildDir))) {
-    fail(`addon.node was not produced by the "${target}" target.`)
+    fail("build", `addon.node was not produced by the "${target}" target.`)
   }
   copyAddon(releaseAddonPath())
 }
 
 if (doPrebuild) {
   if (!fs.existsSync(builtAddonPath(buildDir))) {
-    fail(`addon.node was not produced by the "${target}" target.`)
+    fail("build", `addon.node was not produced by the "${target}" target.`)
   }
   copyAddon(prebuildAddonPath())
 }
