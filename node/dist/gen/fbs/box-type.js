@@ -98,6 +98,7 @@ export class BoxType {
     }
     static endBoxType(builder) {
         const offset = builder.endObject();
+        builder.requiredField(offset, 4); // reference
         return offset;
     }
     static createBoxType(builder, referenceOffset, width, length, depth, maxWeight, boxWeight, active, maximumBoxes, outerWidth, outerLength, outerDepth) {

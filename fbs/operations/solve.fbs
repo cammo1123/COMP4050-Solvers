@@ -10,8 +10,8 @@ enum SolveStrategy : byte {
 }
 
 table SolveRequest {
-  boxes: [BoxType];
-  items: [ItemType];
+  boxes: [BoxType] (required);
+  items: [ItemType] (required);
   options: SolveOptions (optional);
 }
 

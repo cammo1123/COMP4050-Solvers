@@ -99,6 +99,8 @@ export class ItemType {
     }
     static endItemType(builder) {
         const offset = builder.endObject();
+        builder.requiredField(offset, 4); // item_code
+        builder.requiredField(offset, 6); // item_reference
         return offset;
     }
     unpack() {

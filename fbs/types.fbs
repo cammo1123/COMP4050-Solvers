@@ -20,7 +20,7 @@ table PlacementConstraint {
 }
 
 table BoxType {
-  reference: string;
+  reference: string (required);
   width: uint;
   length: uint;
   depth: uint;
@@ -35,8 +35,8 @@ table BoxType {
 }
 
 table ItemType {
-  item_code: string;
-  item_reference: string;
+  item_code: string (required);
+  item_reference: string (required);
   width: uint;
   length: uint;
   depth: uint;

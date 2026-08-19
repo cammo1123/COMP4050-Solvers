@@ -98,10 +98,10 @@ struct SolveRequest FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyOffset(verifier, VT_BOXES) &&
+           VerifyOffsetRequired(verifier, VT_BOXES) &&
            verifier.VerifyVector(boxes()) &&
            verifier.VerifyVectorOfTables(boxes()) &&
-           VerifyOffset(verifier, VT_ITEMS) &&
+           VerifyOffsetRequired(verifier, VT_ITEMS) &&
            verifier.VerifyVector(items()) &&
            verifier.VerifyVectorOfTables(items()) &&
            VerifyOffset(verifier, VT_OPTIONS) &&
@@ -133,6 +133,8 @@ struct SolveRequestBuilder {
   ::flatbuffers::Offset<SolveRequest> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<SolveRequest>(end);
+    fbb_.Required(o, SolveRequest::VT_BOXES);
+    fbb_.Required(o, SolveRequest::VT_ITEMS);
     return o;
   }
 };
@@ -731,8 +733,8 @@ inline ::flatbuffers::Offset<SolveRequest> SolveRequest::Pack(::flatbuffers::Fla
   (void)_rehasher;
   (void)_o;
   struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const SolveRequestT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
-  auto _boxes = _o->boxes.size() ? _fbb.CreateVector<::flatbuffers::Offset<fbs::BoxType>> (_o->boxes.size(), [](size_t i, _VectorArgs *__va) { return CreateBoxType(*__va->__fbb, __va->__o->boxes[i].get(), __va->__rehasher); }, &_va ) : 0;
-  auto _items = _o->items.size() ? _fbb.CreateVector<::flatbuffers::Offset<fbs::ItemType>> (_o->items.size(), [](size_t i, _VectorArgs *__va) { return CreateItemType(*__va->__fbb, __va->__o->items[i].get(), __va->__rehasher); }, &_va ) : 0;
+  auto _boxes = _fbb.CreateVector<::flatbuffers::Offset<fbs::BoxType>> (_o->boxes.size(), [](size_t i, _VectorArgs *__va) { return CreateBoxType(*__va->__fbb, __va->__o->boxes[i].get(), __va->__rehasher); }, &_va );
+  auto _items = _fbb.CreateVector<::flatbuffers::Offset<fbs::ItemType>> (_o->items.size(), [](size_t i, _VectorArgs *__va) { return CreateItemType(*__va->__fbb, __va->__o->items[i].get(), __va->__rehasher); }, &_va );
   auto _options = _o->options ? CreateSolveOptions(_fbb, _o->options.get(), _rehasher) : 0;
   return fbs::CreateSolveRequest(
       _fbb,
