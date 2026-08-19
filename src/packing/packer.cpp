@@ -1,6 +1,7 @@
 #include "packer.h"
 
 #include "orientation.h"
+#include "void_finder.h"
 
 #include <algorithm>
 #include <array>
@@ -36,28 +37,16 @@ std::optional<PackedItem> place(Box const& box, Dimensions box_dimensions, Item 
 {
 	PackedBox state{box, box_dimensions, placed, weight};
 	for (auto dimensions : orientations(item.dimensions, item.rotation)) {
-		std::vector<uint32_t> x_edges{0};
-		std::vector<uint32_t> y_edges{0};
-		std::vector<uint32_t> z_edges{0};
-		x_edges.push_back(item.constraint.min_x);
-		y_edges.push_back(item.constraint.min_y);
-		z_edges.push_back(item.constraint.min_z);
-		for (auto const& existing : placed) {
-			x_edges.push_back(existing.x);
-			x_edges.push_back(existing.x + existing.dimensions.width);
-			y_edges.push_back(existing.y);
-			y_edges.push_back(existing.y + existing.dimensions.height);
-			z_edges.push_back(existing.z);
-			z_edges.push_back(existing.z + existing.dimensions.length);
-		}
-		std::vector<std::array<uint32_t, 3>> positions;
-		for (auto x : x_edges) for (auto y : y_edges) for (auto z : z_edges) positions.push_back({x, y, z});
-		std::sort(positions.begin(), positions.end(), [](auto const& a, auto const& b) { return a[1] != b[1] ? a[1] < b[1] : a[2] != b[2] ? a[2] < b[2] : a[0] < b[0]; });
-		positions.erase(std::unique(positions.begin(), positions.end()), positions.end());
-		for (auto position : positions) {
+		for (auto const& space : VoidFinder::find(box_dimensions, placed)) {
 			if (Clock::now() >= deadline) return std::nullopt;
-			PackedItem candidate{item, dimensions, position[0], position[1], position[2]};
-			if (supported(state, candidate)) return candidate;
+			std::array<std::vector<uint32_t>, 3> coordinates{{{space.x}, {space.y}, {space.z}}};
+			if (item.constraint.min_x > space.x && item.constraint.min_x < space.x + space.dimensions.width) coordinates[0].push_back(item.constraint.min_x);
+			if (item.constraint.min_y > space.y && item.constraint.min_y < space.y + space.dimensions.height) coordinates[1].push_back(item.constraint.min_y);
+			if (item.constraint.min_z > space.z && item.constraint.min_z < space.z + space.dimensions.length) coordinates[2].push_back(item.constraint.min_z);
+			for (auto x : coordinates[0]) for (auto y : coordinates[1]) for (auto z : coordinates[2]) {
+				PackedItem candidate{item, dimensions, x, y, z};
+				if (supported(state, candidate)) return candidate;
+			}
 		}
 	}
 	return std::nullopt;

@@ -100,6 +100,20 @@ describe("packing invariants", () => {
 		expect(result.results[0].placements[1].x).toBe(10);
 	});
 
+	it("fills a residual rectangular void before stacking", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 10, length: 10, depth: 10 }],
+			items: [
+				{ itemCode: "wide", itemReference: "wide", width: 6, length: 10, depth: 5, weight: 1, rotationPolicy: 0 },
+				{ itemCode: "narrow", itemReference: "narrow", width: 4, length: 10, depth: 5, weight: 1, rotationPolicy: 0 },
+				{ itemCode: "top", itemReference: "top", width: 10, length: 10, depth: 2, weight: 1, rotationPolicy: 0 },
+			],
+		});
+		expect(result.failed).toHaveLength(0);
+		expect(result.results[0].placements).toHaveLength(3);
+		expect(result.results[0].placements.find((item) => item.itemCode === "top")).toMatchObject({ y: 5 });
+	});
+
 	it("keeps flat rotation on the Y axis", async () => {
 		const result = await solve({
 			boxes: [{ reference: "A", width: 10, length: 20, depth: 5 }],
