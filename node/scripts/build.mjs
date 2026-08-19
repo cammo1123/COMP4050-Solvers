@@ -7,7 +7,7 @@ import path from 'node:path'
 import { fail, findOnPath, log, nodeRoot, repoRoot, warn } from './shared.mjs'
 
 const TARGETS = ['addon', 'core']
-const BUILD_TYPES = ['Debug', 'Release']
+const BUILD_TYPES = ['Debug', 'Release', 'RelWithDebInfo']
 
 const args = process.argv.slice(2)
 
@@ -104,7 +104,9 @@ const target = first ?? 'addon'
 if (!TARGETS.includes(target)) {
 	fail("build", `unknown target "${target}"; expected one of ${TARGETS.join(', ')} or format [--check]`)
 }
-const buildType = args.includes('--release') || args.includes('--optimize') ? 'Release' : 'Debug'
+const buildType = args.includes('--debug')
+	? 'Debug'
+	: args.includes('--release') || args.includes('--optimize') ? 'Release' : 'RelWithDebInfo'
 if (!BUILD_TYPES.includes(buildType)) {
 	fail("build", `unknown build type "${buildType}"`)
 }

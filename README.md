@@ -33,10 +33,25 @@ and the header-only FlatBuffers runtime):
 pnpm build
 ```
 
+The default build is `RelWithDebInfo`: optimized code with debug symbols. Use
+`pnpm build:debug` when an unoptimized Debug build is needed.
+
 Release build with maximum optimizations (LTO; used by CI):
 
 ```sh
 pnpm build:optimized
+```
+
+Unoptimized build with debug symbols:
+
+```sh
+pnpm build:debug
+```
+
+For the standalone CLI:
+
+```sh
+pnpm build:core:debug
 ```
 
 Standalone CLI only (no addon; fetches the header-only FlatBuffers runtime):
