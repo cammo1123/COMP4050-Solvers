@@ -20,6 +20,8 @@ struct SolveOptions {
 	std::optional<uint32_t> timeout_ms = std::nullopt;
 	std::optional<int8_t> strategy = std::nullopt;
 	std::optional<bool> balance_weight = std::nullopt;
+	std::optional<bool> all_permutations = std::nullopt;
+	std::optional<bool> single_box = std::nullopt;
 };
 
 struct SolveRequest {
@@ -73,6 +75,14 @@ inline SolveOptions toDomain(fbs::SolveOptionsT const& value)
 		out.balance_weight = *value.balance_weight;
 	}
 
+	if (value.all_permutations.has_value()) {
+		out.all_permutations = *value.all_permutations;
+	}
+
+	if (value.single_box.has_value()) {
+		out.single_box = *value.single_box;
+	}
+
 	return out;
 }
 
@@ -96,6 +106,14 @@ inline fbs::SolveOptionsT fromDomain(SolveOptions const& value)
 
 	if (value.balance_weight.has_value()) {
 		out.balance_weight = *value.balance_weight;
+	}
+
+	if (value.all_permutations.has_value()) {
+		out.all_permutations = *value.all_permutations;
+	}
+
+	if (value.single_box.has_value()) {
+		out.single_box = *value.single_box;
 	}
 
 	return out;

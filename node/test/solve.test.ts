@@ -158,4 +158,30 @@ describe("packing invariants", () => {
 		expect(result.results.map((box) => box.totalWeight)).toEqual([6, 8]);
 		expect(result.failed).toHaveLength(0);
 	});
+
+	it("limits packing to one box and preserves failed items", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 10, length: 10, depth: 10 }, { reference: "B", width: 10, length: 10, depth: 10 }],
+			items: [
+				{ itemCode: "one", itemReference: "one", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: 0 },
+				{ itemCode: "two", itemReference: "two", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: 0 },
+			],
+			options: { singleBox: true },
+		});
+		expect(result.results).toHaveLength(1);
+		expect(result.failed).toHaveLength(1);
+	});
+
+	it("supports bounded permutation mode without dropping items", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 10, length: 10, depth: 10 }],
+			items: [
+				{ itemCode: "one", itemReference: "one", width: 10, length: 10, depth: 5, weight: 1, rotationPolicy: 0 },
+				{ itemCode: "two", itemReference: "two", width: 10, length: 10, depth: 5, weight: 1, rotationPolicy: 0 },
+			],
+			options: { allPermutations: true, timeoutMs: 1000 },
+		});
+		expect(result.failed).toHaveLength(0);
+		expect(result.results[0].placements).toHaveLength(2);
+	});
 });

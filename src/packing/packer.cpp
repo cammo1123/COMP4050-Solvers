@@ -167,13 +167,11 @@ void balance_weights(std::vector<PackedBox>& boxes, Clock::time_point deadline)
 
 } // namespace
 
-Result pack(std::vector<Box> boxes, std::vector<Item> items, Options options, ProgressCallback progress)
+Result pack_ordered(std::vector<Box> boxes, std::vector<Item> items, Options options, Clock::time_point deadline, ProgressCallback progress)
 {
 	std::sort(boxes.begin(), boxes.end(), [](auto const& a, auto const& b) { return a.dimensions.volume() < b.dimensions.volume(); });
-	std::sort(items.begin(), items.end(), [](auto const& a, auto const& b) { return a.dimensions.volume() > b.dimensions.volume(); });
 	Result result;
 	std::vector<Item> remaining = std::move(items);
-	const auto deadline = Clock::now() + std::chrono::milliseconds(options.timeout_ms.value_or(std::numeric_limits<uint32_t>::max()));
 	const size_t total = remaining.size();
 	if (progress) progress(0, total);
 	std::vector<uint32_t> used(boxes.size());
@@ -202,6 +200,41 @@ Result pack(std::vector<Box> boxes, std::vector<Item> items, Options options, Pr
 	if (options.balance_weight) balance_weights(result.boxes, deadline);
 	if (progress) progress(total - result.failed.size(), total);
 	return result;
+}
+
+Result pack(std::vector<Box> boxes, std::vector<Item> items, Options options, ProgressCallback progress)
+{
+	const auto deadline = Clock::now() + std::chrono::milliseconds(options.timeout_ms.value_or(std::numeric_limits<uint32_t>::max()));
+	if (options.single_box) options.max_boxes = 1;
+	std::sort(items.begin(), items.end(), [](auto const& a, auto const& b) {
+		return a.dimensions.volume() != b.dimensions.volume() ? a.dimensions.volume() > b.dimensions.volume() : a.code < b.code;
+	});
+	if (!options.all_permutations || items.size() < 2) return pack_ordered(std::move(boxes), std::move(items), options, deadline, progress);
+
+	Result best;
+	size_t best_packed = 0;
+	bool has_best = false;
+	auto consider = [&](std::vector<Item> const& order) {
+		if (Clock::now() >= deadline) return;
+		auto candidate = pack_ordered(boxes, order, options, deadline, nullptr);
+		size_t packed = order.size() - candidate.failed.size();
+		if (!has_best || packed > best_packed || (packed == best_packed && candidate.boxes.size() < best.boxes.size())) {
+			best_packed = packed;
+			best = std::move(candidate);
+			has_best = true;
+		}
+	};
+	consider(items);
+	std::sort(items.begin(), items.end(), [](auto const& a, auto const& b) { return a.code < b.code || (a.code == b.code && a.reference < b.reference); });
+	size_t attempts = 1;
+	while (attempts < 256 && std::next_permutation(items.begin(), items.end(), [](auto const& a, auto const& b) {
+		return a.code < b.code || (a.code == b.code && a.reference < b.reference);
+	})) {
+		consider(items);
+		++attempts;
+	}
+	if (progress) progress(best_packed, best_packed + best.failed.size());
+	return best;
 }
 
 } // namespace packing

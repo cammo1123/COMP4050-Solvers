@@ -49,8 +49,18 @@ balanceWeight():boolean|null {
   return offset ? !!this.bb!.readInt8(this.bb_pos + offset) : null;
 }
 
+allPermutations():boolean|null {
+  const offset = this.bb!.__offset(this.bb_pos, 14);
+  return offset ? !!this.bb!.readInt8(this.bb_pos + offset) : null;
+}
+
+singleBox():boolean|null {
+  const offset = this.bb!.__offset(this.bb_pos, 16);
+  return offset ? !!this.bb!.readInt8(this.bb_pos + offset) : null;
+}
+
 static startSolveOptions(builder:flatbuffers.Builder) {
-  builder.startObject(5);
+  builder.startObject(7);
 }
 
 static addMaxBoxes(builder:flatbuffers.Builder, maxBoxes:number) {
@@ -73,12 +83,20 @@ static addBalanceWeight(builder:flatbuffers.Builder, balanceWeight:boolean) {
   builder.addFieldInt8(4, +balanceWeight, null);
 }
 
+static addAllPermutations(builder:flatbuffers.Builder, allPermutations:boolean) {
+  builder.addFieldInt8(5, +allPermutations, null);
+}
+
+static addSingleBox(builder:flatbuffers.Builder, singleBox:boolean) {
+  builder.addFieldInt8(6, +singleBox, null);
+}
+
 static endSolveOptions(builder:flatbuffers.Builder):flatbuffers.Offset {
   const offset = builder.endObject();
   return offset;
 }
 
-static createSolveOptions(builder:flatbuffers.Builder, maxBoxes:number|null, allowRotation:boolean, timeoutMs:number|null, strategy:number|null, balanceWeight:boolean|null):flatbuffers.Offset {
+static createSolveOptions(builder:flatbuffers.Builder, maxBoxes:number|null, allowRotation:boolean, timeoutMs:number|null, strategy:number|null, balanceWeight:boolean|null, allPermutations:boolean|null, singleBox:boolean|null):flatbuffers.Offset {
   SolveOptions.startSolveOptions(builder);
   if (maxBoxes !== null)
     SolveOptions.addMaxBoxes(builder, maxBoxes);
@@ -89,6 +107,10 @@ static createSolveOptions(builder:flatbuffers.Builder, maxBoxes:number|null, all
     SolveOptions.addStrategy(builder, strategy);
   if (balanceWeight !== null)
     SolveOptions.addBalanceWeight(builder, balanceWeight);
+  if (allPermutations !== null)
+    SolveOptions.addAllPermutations(builder, allPermutations);
+  if (singleBox !== null)
+    SolveOptions.addSingleBox(builder, singleBox);
   return SolveOptions.endSolveOptions(builder);
 }
 
@@ -98,7 +120,9 @@ unpack(): SolveOptionsT {
     this.allowRotation(),
     this.timeoutMs(),
     this.strategy(),
-    this.balanceWeight()
+    this.balanceWeight(),
+    this.allPermutations(),
+    this.singleBox()
   );
 }
 
@@ -109,6 +133,8 @@ unpackTo(_o: SolveOptionsT): void {
   _o.timeoutMs = this.timeoutMs();
   _o.strategy = this.strategy();
   _o.balanceWeight = this.balanceWeight();
+  _o.allPermutations = this.allPermutations();
+  _o.singleBox = this.singleBox();
 }
 }
 
@@ -118,7 +144,9 @@ constructor(
   public allowRotation: boolean = true,
   public timeoutMs: number|null = null,
   public strategy: number|null = null,
-  public balanceWeight: boolean|null = null
+  public balanceWeight: boolean|null = null,
+  public allPermutations: boolean|null = null,
+  public singleBox: boolean|null = null
 ){}
 
 
@@ -128,7 +156,9 @@ pack(builder:flatbuffers.Builder): flatbuffers.Offset {
     this.allowRotation,
     this.timeoutMs,
     this.strategy,
-    this.balanceWeight
+    this.balanceWeight,
+    this.allPermutations,
+    this.singleBox
   );
 }
 }

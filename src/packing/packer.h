@@ -15,6 +15,8 @@ struct Options {
 	bool allow_rotation = true;
 	std::optional<uint32_t> timeout_ms;
 	bool balance_weight = false;
+	bool all_permutations = false;
+	bool single_box = false;
 };
 
 struct Result {

@@ -16,6 +16,8 @@ table SolveOptions {
   timeout_ms: uint = null;
   strategy: byte = null;
   balance_weight: bool = null;
+  all_permutations: bool = null;
+  single_box: bool = null;
 }
 
 table ItemPlacement {

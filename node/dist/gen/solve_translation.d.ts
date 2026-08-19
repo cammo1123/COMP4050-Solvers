@@ -52,6 +52,8 @@ export type SolveOptionsT = {
     timeoutMs?: number;
     strategy?: number;
     balanceWeight?: boolean;
+    allPermutations?: boolean;
+    singleBox?: boolean;
 };
 export type SolveRequest = {
     boxes: BoxTypeT[];

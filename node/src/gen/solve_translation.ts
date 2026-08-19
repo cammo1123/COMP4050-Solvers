@@ -73,6 +73,8 @@ export type SolveOptionsT = {
 	timeoutMs?: number;
 	strategy?: number;
 	balanceWeight?: boolean;
+	allPermutations?: boolean;
+	singleBox?: boolean;
 };
 
 export type SolveRequest = {
@@ -91,7 +93,7 @@ export function encodeRequest(request: SolveRequest): Uint8Array {
 	const message = new SolveRequestObject(
 		(request.boxes ?? []).map((item) => new BoxTypeObject(item.reference, item.width, item.length, item.depth, item.maxWeight, item.boxWeight, item.active, item.maximumBoxes)),
 		(request.items ?? []).map((item) => new ItemTypeObject(item.itemCode, item.itemReference, item.width, item.length, item.depth, item.weight, item.boxGroup, item.rotationPolicy, item.linkedGroup, item.constraint ? new PlacementConstraintObject(item.constraint.noStacking, item.constraint.requiredVertical, item.constraint.minX, item.constraint.minY, item.constraint.minZ, item.constraint.maxX, item.constraint.maxY, item.constraint.maxZ) : null)),
-		request.options ? new SolveOptionsObject(request.options.maxBoxes, request.options.allowRotation, request.options.timeoutMs, request.options.strategy, request.options.balanceWeight) : null
+		request.options ? new SolveOptionsObject(request.options.maxBoxes, request.options.allowRotation, request.options.timeoutMs, request.options.strategy, request.options.balanceWeight, request.options.allPermutations, request.options.singleBox) : null
 	);
 
 	const builder = new flatbuffers.Builder();
