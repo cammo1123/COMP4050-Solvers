@@ -231,6 +231,19 @@ describe("packing invariants", () => {
 		expect(result.results[0].placements.map((item) => item.x)).toEqual([0, 5]);
 	});
 
+	it("uses upstream default priority for equal-volume items", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 20, length: 10, depth: 10 }],
+			items: [
+				{ itemCode: "light", itemReference: "light", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: RotationPolicy.Never },
+				{ itemCode: "heavy", itemReference: "heavy", width: 10, length: 10, depth: 10, weight: 2, rotationPolicy: RotationPolicy.Never },
+			],
+		});
+
+		expect(result.failed).toHaveLength(0);
+		expect(result.results[0].placements.map((item) => item.itemCode)).toEqual(["heavy", "light"]);
+	});
+
 	it("selects a denser best subset when requested", async () => {
 		const result = await solve({
 			boxes: [{ reference: "A", width: 10, length: 10, depth: 10, maximumBoxes: 1 }],

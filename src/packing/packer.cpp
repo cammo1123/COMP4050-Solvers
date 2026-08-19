@@ -191,7 +191,16 @@ Result pack_ordered(std::vector<Box> boxes, std::vector<Item> items, Options opt
 				auto best_utilization = best->dimensions.volume() == 0 ? 0.0 : static_cast<double>(best->used_volume()) / best->dimensions.volume();
 				better = utilization > best_utilization || (utilization == best_utilization && candidate->items.size() > best->items.size());
 			} else if (best) {
-				better = candidate->items.size() > best->items.size() || (candidate->items.size() == best->items.size() && candidate->box.dimensions.volume() < best->box.dimensions.volume());
+				auto utilization = candidate->dimensions.volume() == 0
+					? 0.0
+					: static_cast<double>(candidate->used_volume()) / candidate->dimensions.volume();
+				auto best_utilization = best->dimensions.volume() == 0
+					? 0.0
+					: static_cast<double>(best->used_volume()) / best->dimensions.volume();
+				better = candidate->items.size() > best->items.size() ||
+					(candidate->items.size() == best->items.size() &&
+						(utilization > best_utilization ||
+							(utilization == best_utilization && candidate->used_volume() > best->used_volume())));
 			}
 			if (better) { best = std::move(candidate); best_box = i; }
 		}
@@ -220,7 +229,10 @@ Result pack(std::vector<Box> boxes, std::vector<Item> items, Options options, Pr
 	if (options.single_box) options.max_boxes = 1;
 	if (!options.strict_item_order) {
 		std::sort(items.begin(), items.end(), [](auto const& a, auto const& b) {
-			return a.dimensions.volume() != b.dimensions.volume() ? a.dimensions.volume() > b.dimensions.volume() : a.code < b.code;
+			if (a.linked_group.empty() != b.linked_group.empty()) return a.linked_group.empty();
+			if (a.dimensions.volume() != b.dimensions.volume()) return a.dimensions.volume() > b.dimensions.volume();
+			if (a.weight != b.weight) return a.weight > b.weight;
+			return a.code < b.code || (a.code == b.code && a.reference < b.reference);
 		});
 	}
 	if (options.strict_item_order) options.all_permutations = false;
