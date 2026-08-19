@@ -394,6 +394,7 @@ Result pack_ordered(std::vector<Box> boxes, std::vector<Item> items, Options opt
 	}
 	result.failed = std::move(remaining);
 	if (options.balance_weight) balance_weights(result.boxes, deadline);
+	result.boxes.erase(std::remove_if(result.boxes.begin(), result.boxes.end(), [](auto const& box) { return box.items.empty(); }), result.boxes.end());
 	if (!valid_result(result)) {
 		for (auto const& box : result.boxes) for (auto const& item : box.items) result.failed.push_back(item.item);
 		result.boxes.clear();
@@ -405,6 +406,15 @@ Result pack_ordered(std::vector<Box> boxes, std::vector<Item> items, Options opt
 Result pack(std::vector<Box> boxes, std::vector<Item> items, Options options, ProgressCallback progress)
 {
 	const auto deadline = Clock::now() + std::chrono::milliseconds(options.timeout_ms.value_or(std::numeric_limits<uint32_t>::max()));
+	ProgressCallback monotonic_progress;
+	if (progress) {
+		monotonic_progress = [progress = std::move(progress), last_done = size_t{0}](size_t done, size_t total) mutable {
+			done = std::min(done, total);
+			if (done < last_done) done = last_done;
+			last_done = done;
+			progress(done, total);
+		};
+	}
 	if (options.single_box) options.max_boxes = 1;
 	if (!options.strict_item_order) {
 		std::sort(items.begin(), items.end(), [](auto const& a, auto const& b) {
@@ -415,14 +425,14 @@ Result pack(std::vector<Box> boxes, std::vector<Item> items, Options options, Pr
 		});
 	}
 	if (options.strict_item_order) options.all_permutations = false;
-	if (!options.all_permutations || items.size() < 2) return pack_ordered(std::move(boxes), std::move(items), options, deadline, progress);
+	if (!options.all_permutations || items.size() < 2) return pack_ordered(std::move(boxes), std::move(items), options, deadline, monotonic_progress);
 
 	Result best;
 	size_t best_packed = 0;
 	bool has_best = false;
 	auto consider = [&](std::vector<Item> const& order) {
 		if (Clock::now() >= deadline) return;
-		auto candidate = pack_ordered(boxes, order, options, deadline, progress);
+		auto candidate = pack_ordered(boxes, order, options, deadline, monotonic_progress);
 		size_t packed = order.size() - candidate.failed.size();
 		if (!has_best || packed > best_packed || (packed == best_packed && candidate.boxes.size() < best.boxes.size())) {
 			best_packed = packed;
@@ -439,7 +449,7 @@ Result pack(std::vector<Box> boxes, std::vector<Item> items, Options options, Pr
 		consider(items);
 		++attempts;
 	}
-	if (progress) progress(best_packed, best_packed + best.failed.size());
+	if (monotonic_progress) monotonic_progress(best_packed, best_packed + best.failed.size());
 	return best;
 }
 

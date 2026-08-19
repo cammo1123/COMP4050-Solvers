@@ -363,6 +363,7 @@ describe("packing invariants", () => {
 		expect(result.failed).toHaveLength(1);
 		expect(progress.length).toBeGreaterThan(2);
 		expect(progress.every(([done, total]) => done >= 0 && done <= total && total === 1)).toBe(true);
+		expect(progress.every(([done], index) => index === 0 || done >= progress[index - 1][0])).toBe(true);
 	});
 
 	it("preserves every item when the timeout expires before packing", async () => {
