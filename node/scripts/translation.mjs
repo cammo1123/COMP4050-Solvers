@@ -343,7 +343,7 @@ function generateTs (schema, label) {
 		...nested.map((t) => tsTypeExport(`${t}T`, resolveTable(t, tables))),
 		tsTypeExport(request, requestFields),
 		tsTypeExport(response, resolveTable(response, tables)),
-	].join('\n')
+	].join('\n\n')
 
 	const checks = tsChecks(requestFields)
 	const constructorArgs = requestFields.map((f) => tsArg('request', f, schema)).join(',\n\t\t')
