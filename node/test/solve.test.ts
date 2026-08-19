@@ -342,4 +342,23 @@ describe("packing invariants", () => {
 		expect(result.failed).toHaveLength(0);
 		expect(result.results[0].placements).toHaveLength(2);
 	});
+
+	it("distinguishes default and utilization strategies", async () => {
+		const request = {
+			boxes: [
+				{ reference: "small", width: 10, length: 10, depth: 10 },
+				{ reference: "large", width: 20, length: 10, depth: 20 },
+			],
+			items: [
+				{ itemCode: "one", itemReference: "one", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: RotationPolicy.Never },
+				{ itemCode: "two", itemReference: "two", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: RotationPolicy.Never },
+			],
+		};
+		const defaultResult = await solve(request);
+		const utilizationResult = await solve({ ...request, options: { strategy: SolveStrategy.Utilization } });
+		expect(defaultResult.results).toHaveLength(1);
+		expect(defaultResult.results[0].boxReference).toBe("large");
+		expect(utilizationResult.results).toHaveLength(2);
+		expect(utilizationResult.results.every((box) => box.boxReference === "small")).toBe(true);
+	});
 });
