@@ -5,9 +5,9 @@
 namespace packing {
 namespace {
 
-uint32_t end(uint32_t start, uint32_t size)
+uint64_t end(uint32_t start, uint32_t size)
 {
-	return start + size;
+	return static_cast<uint64_t>(start) + size;
 }
 
 bool overlaps(RectangularVoid const& space, PackedItem const& item)
@@ -45,11 +45,11 @@ std::vector<RectangularVoid> subtract(RectangularVoid const& space, PackedItem c
 	// Partition around the intersection into disjoint slabs. The middle
 	// slabs are restricted to the intersection footprint on preceding axes.
 	add_if_nonempty(result, space.x, space.y, space.z, {ix1 - space.x, space.dimensions.height, space.dimensions.length});
-	add_if_nonempty(result, ix2, space.y, space.z, {sx2 - ix2, space.dimensions.height, space.dimensions.length});
-	add_if_nonempty(result, ix1, space.y, space.z, {ix2 - ix1, iy1 - space.y, space.dimensions.length});
-	add_if_nonempty(result, ix1, iy2, space.z, {ix2 - ix1, sy2 - iy2, space.dimensions.length});
-	add_if_nonempty(result, ix1, iy1, space.z, {ix2 - ix1, iy2 - iy1, iz1 - space.z});
-	add_if_nonempty(result, ix1, iy1, iz2, {ix2 - ix1, iy2 - iy1, sz2 - iz2});
+	add_if_nonempty(result, ix2, space.y, space.z, {static_cast<uint32_t>(sx2 - ix2), space.dimensions.height, space.dimensions.length});
+	add_if_nonempty(result, ix1, space.y, space.z, {static_cast<uint32_t>(ix2 - ix1), static_cast<uint32_t>(iy1 - space.y), space.dimensions.length});
+	add_if_nonempty(result, ix1, iy2, space.z, {static_cast<uint32_t>(ix2 - ix1), static_cast<uint32_t>(sy2 - iy2), space.dimensions.length});
+	add_if_nonempty(result, ix1, iy1, space.z, {static_cast<uint32_t>(ix2 - ix1), static_cast<uint32_t>(iy2 - iy1), static_cast<uint32_t>(iz1 - space.z)});
+	add_if_nonempty(result, ix1, iy1, iz2, {static_cast<uint32_t>(ix2 - ix1), static_cast<uint32_t>(iy2 - iy1), static_cast<uint32_t>(sz2 - iz2)});
 	return result;
 }
 

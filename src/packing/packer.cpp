@@ -14,17 +14,70 @@ namespace {
 
 using Clock = std::chrono::steady_clock;
 
+bool fits(uint32_t origin, uint32_t size, uint32_t bound)
+{
+	return static_cast<uint64_t>(origin) + size <= bound;
+}
+
+bool valid_rotation(Item const& item, Dimensions dimensions)
+{
+	for (auto allowed : orientations(item.dimensions, item.rotation)) if (allowed == dimensions) return true;
+	return false;
+}
+
 bool supported(PackedBox const& box, PackedItem const& item)
 {
 	auto const& constraint = item.item.constraint;
-	if (item.x + item.dimensions.width > box.dimensions.width || item.y + item.dimensions.height > box.dimensions.height ||
-		item.z + item.dimensions.length > box.dimensions.length) return false;
+	if (!fits(item.x, item.dimensions.width, box.dimensions.width) || !fits(item.y, item.dimensions.height, box.dimensions.height) ||
+		!fits(item.z, item.dimensions.length, box.dimensions.length)) return false;
+	if (item.dimensions.width == 0 || item.dimensions.height == 0 || item.dimensions.length == 0 || !valid_rotation(item.item, item.dimensions)) return false;
 	if (item.x < constraint.min_x || item.y < constraint.min_y || item.z < constraint.min_z ||
 		item.x > constraint.max_x || item.y > constraint.max_y || item.z > constraint.max_z) return false;
 	if (constraint.required_vertical && item.dimensions.height != item.item.dimensions.height) return false;
 	if (constraint.no_stacking && item.y != 0) return false;
 	for (auto const& existing : box.items) if (overlaps(existing, item)) return false;
 	return stable(box, item);
+}
+
+void normalize_rotated(PackedBox& box)
+{
+	for (auto& item : box.items) {
+		const auto x = item.x;
+		const auto z = item.z;
+		const auto dimensions = item.dimensions;
+		item.x = z;
+		item.z = x;
+		item.dimensions = {dimensions.length, dimensions.height, dimensions.width};
+		std::swap(item.item.constraint.min_x, item.item.constraint.min_z);
+		std::swap(item.item.constraint.max_x, item.item.constraint.max_z);
+	}
+	box.dimensions = {box.dimensions.length, box.dimensions.height, box.dimensions.width};
+}
+
+bool valid_box(PackedBox const& box)
+{
+	if (box.dimensions.width == 0 || box.dimensions.height == 0 || box.dimensions.length == 0) return false;
+	float weight = box.box.empty_weight;
+	for (size_t i = 0; i < box.items.size(); ++i) {
+		auto const& item = box.items[i];
+		if (!fits(item.x, item.dimensions.width, box.dimensions.width) || !fits(item.y, item.dimensions.height, box.dimensions.height) ||
+			!fits(item.z, item.dimensions.length, box.dimensions.length) || !valid_rotation(item.item, item.dimensions)) return false;
+		if (item.dimensions.width == 0 || item.dimensions.height == 0 || item.dimensions.length == 0) return false;
+		auto const& constraint = item.item.constraint;
+		if (item.x < constraint.min_x || item.y < constraint.min_y || item.z < constraint.min_z ||
+			item.x > constraint.max_x || item.y > constraint.max_y || item.z > constraint.max_z ||
+			(constraint.required_vertical && item.dimensions.height != item.item.dimensions.height) ||
+			(constraint.no_stacking && item.y != 0) || !stable(box, item)) return false;
+		weight += item.item.weight;
+		for (size_t j = 0; j < i; ++j) if (overlaps(box.items[j], item)) return false;
+	}
+	return box.box.max_weight <= 0 || weight <= box.box.max_weight;
+}
+
+bool valid_result(Result const& result)
+{
+	for (auto const& box : result.boxes) if (!valid_box(box)) return false;
+	return true;
 }
 
 std::optional<PackedItem> place(Box const& box, Dimensions box_dimensions, Item const& item, std::vector<PackedItem> const& placed,
@@ -50,7 +103,9 @@ std::optional<PackedItem> place(Box const& box, Dimensions box_dimensions, Item 
 std::optional<PackedBox> try_box_once(Box const& box, std::vector<Item> const& items, bool allow_rotation, Clock::time_point deadline,
 	ProgressCallback progress)
 {
-	std::vector<Dimensions> box_orientations{{box.dimensions}, {box.dimensions.length, box.dimensions.height, box.dimensions.width}};
+	std::vector<Dimensions> box_orientations{{box.dimensions}};
+	if (std::all_of(items.begin(), items.end(), [](auto const& item) { return item.rotation != RotationPolicy::Never; }))
+		box_orientations.push_back({box.dimensions.length, box.dimensions.height, box.dimensions.width});
 	std::optional<PackedBox> best;
 	for (auto box_dimensions : box_orientations) {
 		PackedBox candidate{box, box_dimensions, {}, box.empty_weight};
@@ -69,6 +124,10 @@ std::optional<PackedBox> try_box_once(Box const& box, std::vector<Item> const& i
 			bool group_placed = true;
 			for (auto index : group_indices) {
 				Item adjusted = items[index];
+				if (box_dimensions.width != box.dimensions.width) {
+					std::swap(adjusted.constraint.min_x, adjusted.constraint.min_z);
+					std::swap(adjusted.constraint.max_x, adjusted.constraint.max_z);
+				}
 				if (!allow_rotation) adjusted.rotation = RotationPolicy::Never;
 				if (candidate.total_weight + adjusted.weight > box.max_weight && box.max_weight > 0) { group_placed = false; break; }
 				auto placed = place(box, box_dimensions, adjusted, candidate.items, candidate.total_weight, deadline);
@@ -83,6 +142,8 @@ std::optional<PackedBox> try_box_once(Box const& box, std::vector<Item> const& i
 			for (auto index : group_indices) considered[index] = true;
 			if (progress) progress(candidate.items.size(), items.size());
 		}
+		if (box_dimensions.width != box.dimensions.width) normalize_rotated(candidate);
+		if (!valid_box(candidate)) continue;
 		if (!best || candidate.items.size() > best->items.size() || (candidate.items.size() == best->items.size() && candidate.used_volume() > best->used_volume())) best = candidate;
 	}
 	return best;
@@ -219,6 +280,10 @@ Result pack_ordered(std::vector<Box> boxes, std::vector<Item> items, Options opt
 	}
 	result.failed = std::move(remaining);
 	if (options.balance_weight) balance_weights(result.boxes, deadline);
+	if (!valid_result(result)) {
+		for (auto const& box : result.boxes) for (auto const& item : box.items) result.failed.push_back(item.item);
+		result.boxes.clear();
+	}
 	if (progress) progress(total - result.failed.size(), total);
 	return result;
 }

@@ -43,6 +43,27 @@ function decodeResponse(bytes: Buffer) {
 	return SolveResponse.getRootAsSolveResponse(new flatbuffers.ByteBuffer(bytes)).unpack();
 }
 
+function assertLegalPlacements(result: Awaited<ReturnType<typeof solve>>) {
+	for (const packed of result.results) {
+		const placements = packed.placements;
+		for (const item of placements) {
+			expect(item.width).toBeGreaterThan(0);
+			expect(item.depth).toBeGreaterThan(0);
+			expect(item.length).toBeGreaterThan(0);
+			expect(item.x + item.width).toBeLessThanOrEqual(20);
+			expect(item.y + item.depth).toBeLessThanOrEqual(20);
+			expect(item.z + item.length).toBeLessThanOrEqual(20);
+		}
+		for (let i = 0; i < placements.length; ++i) for (let j = i + 1; j < placements.length; ++j) {
+			const a = placements[i];
+			const b = placements[j];
+			expect(a.x >= b.x + b.width || b.x >= a.x + a.width ||
+				a.y >= b.y + b.depth || b.y >= a.y + a.depth ||
+				a.z >= b.z + b.length || b.z >= a.z + a.length).toBe(true);
+		}
+	}
+}
+
 describe("solve() wrapper", () => {
 	it("handles an empty box list", async () => {
 		expect(await solve({ boxes: [], items: [] })).toEqual({ failed: [], results: [] });
@@ -155,6 +176,46 @@ describe("packing invariants", () => {
 		});
 		expect(result.failed).toHaveLength(0);
 		expect(result.results[0].placements[0]).toMatchObject({ width: 5, depth: 3, length: 4 });
+	});
+
+	it("normalizes placements after rotating an asymmetric box", async () => {
+		const result = await solve({
+			boxes: [{ reference: "rotated-box", width: 4, length: 8, depth: 6 }],
+			items: [{ itemCode: "item", itemReference: "item", width: 7, length: 3, depth: 2, weight: 1, rotationPolicy: RotationPolicy.KeepFlat }],
+		});
+
+		expect(result.failed).toHaveLength(0);
+		expect(result.results[0].placements[0]).toMatchObject({ width: 3, depth: 2, length: 7 });
+		const placement = result.results[0].placements[0];
+		expect(placement.x + placement.width).toBeLessThanOrEqual(4);
+		expect(placement.y + placement.depth).toBeLessThanOrEqual(6);
+		expect(placement.z + placement.length).toBeLessThanOrEqual(8);
+	});
+
+	it("transforms declarative constraints with a rotated box", async () => {
+		const result = await solve({
+			boxes: [{ reference: "rotated-box", width: 4, length: 8, depth: 6 }],
+			items: [{
+				itemCode: "item", itemReference: "item", width: 7, length: 3, depth: 2, weight: 1,
+				rotationPolicy: RotationPolicy.KeepFlat, constraint: { minZ: 1, maxZ: 1 },
+			}],
+		});
+
+		expect(result.failed).toHaveLength(0);
+		expect(result.results[0].placements[0].z).toBe(1);
+	});
+
+	it("keeps every emitted placement legal", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 20, length: 20, depth: 20 }],
+			items: [
+				{ itemCode: "a", itemReference: "a", width: 10, length: 10, depth: 10, weight: 1 },
+				{ itemCode: "b", itemReference: "b", width: 10, length: 10, depth: 10, weight: 1 },
+				{ itemCode: "c", itemReference: "c", width: 10, length: 10, depth: 10, weight: 1 },
+			],
+		});
+
+		assertLegalPlacements(result);
 	});
 
 	it("places items front-to-back along the Z axis", async () => {
