@@ -16,25 +16,25 @@ int main()
 
 	solve.boxes.push_back({
 		.reference = "Small",
-		.width = 10.0f,
-		.length = 10.0f,
-		.depth = 10.0f,
+		.width = 10,
+		.length = 10,
+		.depth = 10,
 
 		.maximum_boxes = 2,
 	});
 
 	solve.boxes.push_back({
 		.reference = "Medium",
-		.width = 50.0f,
-		.length = 50.0f,
-		.depth = 50.0f,
+		.width = 50,
+		.length = 50,
+		.depth = 50,
 	});
 
 	solve.boxes.push_back({
 		.reference = "Large",
-		.width = 100.0f,
-		.length = 100.0f,
-		.depth = 100.0f,
+		.width = 100,
+		.length = 100,
+		.depth = 100,
 	});
 
 	for (auto i = 1; i <= 65; i++) {
@@ -50,8 +50,8 @@ int main()
 
 	for (auto i = 1; i <= 25; i++) {
 		solve.items.push_back({
-			.item_code = std::string("S") + std::to_string(i),
-			.item_reference = std::string("Small") + std::to_string(i),
+			.item_code = std::string("M") + std::to_string(i),
+			.item_reference = std::string("Medium") + std::to_string(i),
 			.width = 10,
 			.length = 10,
 			.depth = 10,

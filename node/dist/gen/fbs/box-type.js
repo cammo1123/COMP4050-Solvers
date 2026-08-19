@@ -22,15 +22,15 @@ export class BoxType {
     }
     width() {
         const offset = this.bb.__offset(this.bb_pos, 6);
-        return offset ? this.bb.readFloat32(this.bb_pos + offset) : 0.0;
+        return offset ? this.bb.readUint32(this.bb_pos + offset) : 0;
     }
     length() {
         const offset = this.bb.__offset(this.bb_pos, 8);
-        return offset ? this.bb.readFloat32(this.bb_pos + offset) : 0.0;
+        return offset ? this.bb.readUint32(this.bb_pos + offset) : 0;
     }
     depth() {
         const offset = this.bb.__offset(this.bb_pos, 10);
-        return offset ? this.bb.readFloat32(this.bb_pos + offset) : 0.0;
+        return offset ? this.bb.readUint32(this.bb_pos + offset) : 0;
     }
     maxWeight() {
         const offset = this.bb.__offset(this.bb_pos, 12);
@@ -55,13 +55,13 @@ export class BoxType {
         builder.addFieldOffset(0, referenceOffset, 0);
     }
     static addWidth(builder, width) {
-        builder.addFieldFloat32(1, width, 0.0);
+        builder.addFieldInt32(1, width, 0);
     }
     static addLength(builder, length) {
-        builder.addFieldFloat32(2, length, 0.0);
+        builder.addFieldInt32(2, length, 0);
     }
     static addDepth(builder, depth) {
-        builder.addFieldFloat32(3, depth, 0.0);
+        builder.addFieldInt32(3, depth, 0);
     }
     static addMaxWeight(builder, maxWeight) {
         builder.addFieldFloat32(4, maxWeight, null);
@@ -118,7 +118,7 @@ export class BoxTypeT {
     boxWeight;
     active;
     maximumBoxes;
-    constructor(reference = null, width = 0.0, length = 0.0, depth = 0.0, maxWeight = null, boxWeight = null, active = null, maximumBoxes = null) {
+    constructor(reference = null, width = 0, length = 0, depth = 0, maxWeight = null, boxWeight = null, active = null, maximumBoxes = null) {
         this.reference = reference;
         this.width = width;
         this.length = length;

@@ -33,17 +33,17 @@ reference(optionalEncoding?:any):string|Uint8Array|null {
 
 width():number {
   const offset = this.bb!.__offset(this.bb_pos, 6);
-  return offset ? this.bb!.readFloat32(this.bb_pos + offset) : 0.0;
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
 }
 
 length():number {
   const offset = this.bb!.__offset(this.bb_pos, 8);
-  return offset ? this.bb!.readFloat32(this.bb_pos + offset) : 0.0;
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
 }
 
 depth():number {
   const offset = this.bb!.__offset(this.bb_pos, 10);
-  return offset ? this.bb!.readFloat32(this.bb_pos + offset) : 0.0;
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
 }
 
 maxWeight():number|null {
@@ -75,15 +75,15 @@ static addReference(builder:flatbuffers.Builder, referenceOffset:flatbuffers.Off
 }
 
 static addWidth(builder:flatbuffers.Builder, width:number) {
-  builder.addFieldFloat32(1, width, 0.0);
+  builder.addFieldInt32(1, width, 0);
 }
 
 static addLength(builder:flatbuffers.Builder, length:number) {
-  builder.addFieldFloat32(2, length, 0.0);
+  builder.addFieldInt32(2, length, 0);
 }
 
 static addDepth(builder:flatbuffers.Builder, depth:number) {
-  builder.addFieldFloat32(3, depth, 0.0);
+  builder.addFieldInt32(3, depth, 0);
 }
 
 static addMaxWeight(builder:flatbuffers.Builder, maxWeight:number) {
@@ -153,9 +153,9 @@ unpackTo(_o: BoxTypeT): void {
 export class BoxTypeT implements flatbuffers.IGeneratedObject {
 constructor(
   public reference: string|Uint8Array|null = null,
-  public width: number = 0.0,
-  public length: number = 0.0,
-  public depth: number = 0.0,
+  public width: number = 0,
+  public length: number = 0,
+  public depth: number = 0,
   public maxWeight: number|null = null,
   public boxWeight: number|null = null,
   public active: boolean|null = null,
