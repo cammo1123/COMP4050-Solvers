@@ -1,5 +1,6 @@
 #include <cstddef>
 #include <cstdio>
+#include <iomanip>
 #include <iostream>
 #include <stdio.h>
 
@@ -70,10 +71,25 @@ int main()
 		});
 	}
 
+	std::cout << "\033[?25l";
 	auto res = solver::solve(solve, [](size_t done, size_t total) {
-		std::cout << "\rprogress: " << ((static_cast<float>(done) / total) * 100) << "%" << std::flush;
+		if (total == 0)
+			return;
+
+		constexpr int barWidth = 40;
+		float progress = static_cast<float>(done) / total;
+		int filled = static_cast<int>(progress * barWidth);
+
+		std::string bar(filled, '#');
+		bar += std::string(barWidth - filled, '-');
+
+		std::cout << "\r[" << bar << "] "
+				  << std::fixed << std::setprecision(1)
+				  << (progress * 100.0f) << "% "
+				  << "(" << done << "/" << total << ")"
+				  << std::flush;
 	});
-	std::cout << "\n";
+	std::cout << "\033[?25h\n";
 
 	auto f = res.failed.size();
 	int i = 0;
