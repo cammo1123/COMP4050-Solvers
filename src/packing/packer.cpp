@@ -80,6 +80,58 @@ bool valid_result(Result const& result)
 	return true;
 }
 
+bool has_positional_constraints(PackedBox const& box)
+{
+	for (auto const& item : box.items) {
+		auto const& constraint = item.item.constraint;
+		if (constraint.no_stacking || constraint.required_vertical || constraint.min_x || constraint.min_y || constraint.min_z ||
+			constraint.max_x != UINT32_MAX || constraint.max_y != UINT32_MAX || constraint.max_z != UINT32_MAX) return true;
+	}
+	return false;
+}
+
+void stabilize_layers(PackedBox& box)
+{
+	struct Layer {
+		uint32_t start_y = 0;
+		uint32_t height = 0;
+		uint64_t footprint = 0;
+		std::vector<size_t> items;
+	};
+	std::vector<Layer> layers;
+	for (size_t index = 0; index < box.items.size(); ++index) {
+		auto const& item = box.items[index];
+		auto layer = std::find_if(layers.begin(), layers.end(), [&](auto const& value) { return value.start_y == item.y; });
+		if (layer == layers.end()) {
+			layers.push_back({item.y, item.dimensions.height, 0, {index}});
+			layer = std::prev(layers.end());
+		} else {
+			layer->items.push_back(index);
+			layer->height = std::max(layer->height, item.dimensions.height);
+		}
+		uint32_t max_x = 0;
+		uint32_t max_z = 0;
+		uint32_t min_x = UINT32_MAX;
+		uint32_t min_z = UINT32_MAX;
+		for (auto item_index : layer->items) {
+			auto const& member = box.items[item_index];
+			min_x = std::min(min_x, member.x);
+			min_z = std::min(min_z, member.z);
+			max_x = std::max(max_x, member.x + member.dimensions.width);
+			max_z = std::max(max_z, member.z + member.dimensions.length);
+		}
+		layer->footprint = static_cast<uint64_t>(max_x - min_x) * (max_z - min_z);
+	}
+	std::sort(layers.begin(), layers.end(), [](auto const& a, auto const& b) {
+		return a.footprint != b.footprint ? a.footprint > b.footprint : a.height > b.height;
+	});
+	uint32_t current_y = 0;
+	for (auto const& layer : layers) {
+		for (auto index : layer.items) box.items[index].y = current_y + (box.items[index].y - layer.start_y);
+		current_y += layer.height;
+	}
+}
+
 size_t linked_count(std::vector<Item> const& items, std::string const& group)
 {
 	return static_cast<size_t>(std::count_if(items.begin(), items.end(), [&](auto const& item) { return item.linked_group == group; }));
@@ -274,7 +326,12 @@ void balance_weights(std::vector<PackedBox>& boxes, Clock::time_point deadline)
 
 Result pack_ordered(std::vector<Box> boxes, std::vector<Item> items, Options options, Clock::time_point deadline, ProgressCallback progress)
 {
-	std::sort(boxes.begin(), boxes.end(), [](auto const& a, auto const& b) { return a.dimensions.volume() < b.dimensions.volume(); });
+	std::sort(boxes.begin(), boxes.end(), [](auto const& a, auto const& b) {
+		if (a.dimensions.volume() != b.dimensions.volume()) return a.dimensions.volume() < b.dimensions.volume();
+		if (a.empty_weight != b.empty_weight) return a.empty_weight < b.empty_weight;
+		const auto capacity = [](auto const& box) { return box.max_weight > 0 ? box.max_weight - box.empty_weight : std::numeric_limits<float>::infinity(); };
+		return capacity(a) < capacity(b);
+	});
 	Result result;
 	std::vector<Item> remaining = std::move(items);
 	const size_t total = remaining.size();
@@ -307,6 +364,11 @@ Result pack_ordered(std::vector<Box> boxes, std::vector<Item> items, Options opt
 			if (better) { best = std::move(candidate); best_box = i; }
 		}
 		if (!best || best->items.empty() || (options.max_boxes && result.boxes.size() >= *options.max_boxes)) break;
+		if (!options.strict_item_order && !has_positional_constraints(*best)) {
+			auto stabilized = *best;
+			stabilize_layers(stabilized);
+			if (valid_box(stabilized)) best = std::move(stabilized);
+		}
 		std::vector<bool> packed(remaining.size());
 		for (auto const& item : best->items) for (size_t i = 0; i < remaining.size(); ++i) if (!packed[i] && remaining[i].code == item.item.code && remaining[i].reference == item.item.reference) { packed[i] = true; break; }
 		std::vector<Item> next;

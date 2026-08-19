@@ -480,4 +480,17 @@ describe("packing invariants", () => {
 		expect(utilizationResult.results).toHaveLength(2);
 		expect(utilizationResult.results.every((box) => box.boxReference === "small")).toBe(true);
 	});
+
+	it("uses empty weight and usable capacity to break equal-volume box ties", async () => {
+		const result = await solve({
+			boxes: [
+				{ reference: "heavy", width: 10, length: 10, depth: 10, boxWeight: 5, maxWeight: 100 },
+				{ reference: "light", width: 10, length: 10, depth: 10, boxWeight: 1, maxWeight: 20 },
+			],
+			items: [{ itemCode: "item", itemReference: "item", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: RotationPolicy.Never }],
+		});
+
+		expect(result.results).toHaveLength(1);
+		expect(result.results[0].boxReference).toBe("light");
+	});
 });
