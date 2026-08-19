@@ -4,6 +4,11 @@ namespace fbs;
 
 attribute "optional";
 
+enum SolveStrategy : byte {
+  Default = 0,
+  Utilization = 1
+}
+
 table SolveRequest {
   boxes: [BoxType];
   items: [ItemType];
@@ -14,7 +19,7 @@ table SolveOptions {
   max_boxes: uint = null;
   allow_rotation: bool = true;
   timeout_ms: uint = null;
-  strategy: byte = null;
+  strategy: SolveStrategy = null;
   balance_weight: bool = null;
   all_permutations: bool = null;
   single_box: bool = null;

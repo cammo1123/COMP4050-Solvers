@@ -68,7 +68,7 @@ inline SolveOptions toDomain(fbs::SolveOptionsT const& value)
 	}
 
 	if (value.strategy.has_value()) {
-		out.strategy = *value.strategy;
+		out.strategy = static_cast<int8_t>(*value.strategy);
 	}
 
 	if (value.balance_weight.has_value()) {
@@ -101,7 +101,7 @@ inline fbs::SolveOptionsT fromDomain(SolveOptions const& value)
 	}
 
 	if (value.strategy.has_value()) {
-		out.strategy = *value.strategy;
+		out.strategy = static_cast<fbs::SolveStrategy>(*value.strategy);
 	}
 
 	if (value.balance_weight.has_value()) {

@@ -4,6 +4,7 @@
 
 import * as flatbuffers from 'flatbuffers';
 
+import { SolveStrategy } from '../fbs/solve-strategy.js';
 
 
 export class SolveOptions implements flatbuffers.IUnpackableObject<SolveOptionsT> {
@@ -39,7 +40,7 @@ timeoutMs():number|null {
   return offset ? this.bb!.readUint32(this.bb_pos + offset) : null;
 }
 
-strategy():number|null {
+strategy():SolveStrategy|null {
   const offset = this.bb!.__offset(this.bb_pos, 10);
   return offset ? this.bb!.readInt8(this.bb_pos + offset) : null;
 }
@@ -75,7 +76,7 @@ static addTimeoutMs(builder:flatbuffers.Builder, timeoutMs:number) {
   builder.addFieldInt32(2, timeoutMs, null);
 }
 
-static addStrategy(builder:flatbuffers.Builder, strategy:number) {
+static addStrategy(builder:flatbuffers.Builder, strategy:SolveStrategy) {
   builder.addFieldInt8(3, strategy, null);
 }
 
@@ -96,7 +97,7 @@ static endSolveOptions(builder:flatbuffers.Builder):flatbuffers.Offset {
   return offset;
 }
 
-static createSolveOptions(builder:flatbuffers.Builder, maxBoxes:number|null, allowRotation:boolean, timeoutMs:number|null, strategy:number|null, balanceWeight:boolean|null, allPermutations:boolean|null, singleBox:boolean|null):flatbuffers.Offset {
+static createSolveOptions(builder:flatbuffers.Builder, maxBoxes:number|null, allowRotation:boolean, timeoutMs:number|null, strategy:SolveStrategy|null, balanceWeight:boolean|null, allPermutations:boolean|null, singleBox:boolean|null):flatbuffers.Offset {
   SolveOptions.startSolveOptions(builder);
   if (maxBoxes !== null)
     SolveOptions.addMaxBoxes(builder, maxBoxes);
@@ -143,7 +144,7 @@ constructor(
   public maxBoxes: number|null = null,
   public allowRotation: boolean = true,
   public timeoutMs: number|null = null,
-  public strategy: number|null = null,
+  public strategy: SolveStrategy|null = null,
   public balanceWeight: boolean|null = null,
   public allPermutations: boolean|null = null,
   public singleBox: boolean|null = null

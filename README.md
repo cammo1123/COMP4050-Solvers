@@ -74,8 +74,9 @@ Packing dimensions use millimetres and weights use grams. The native engine uses
 Y-up coordinates: `width` is X, `depth` is vertical Y, and `length` is Z. Item
 rotation policies are `0` (never), `1` (keep flat around Y), and `2` (best fit).
 Solve options include `singleBox`, `allPermutations`, `balanceWeight`, and
-`strategy: 0` (pack the most items, preferring smaller boxes) or `strategy: 1`
-(prefer utilization). Permutation search is bounded and always observes
+`strategy: SolveStrategy.Default` (pack the most items, preferring smaller
+boxes) or `strategy: SolveStrategy.Utilization` (prefer utilization).
+Permutation search is bounded and always observes
 `timeoutMs`.
 The heuristic is a native C++17 adaptation of the MIT-licensed BoxPacker project
 by Doug Wright; see `C:\Users\camer\src\BoxPacker\license.txt` for the source

@@ -2,7 +2,7 @@ import * as flatbuffers from "flatbuffers";
 import { describe, expect, it } from "vitest";
 
 import addon from "../index.cjs";
-import { solve } from "../src/addon.js";
+import { solve, SolveStrategy } from "../src/addon.js";
 import { BoxType, ItemType, SolveRequest, SolveResponse } from "../src/gen/fbs.js";
 
 // Encodes a request into a raw FlatBuffers Buffer using the generated code, so
@@ -179,7 +179,7 @@ describe("packing invariants", () => {
 				{ itemCode: "one", itemReference: "one", width: 10, length: 10, depth: 5, weight: 1, rotationPolicy: 0 },
 				{ itemCode: "two", itemReference: "two", width: 10, length: 10, depth: 5, weight: 1, rotationPolicy: 0 },
 			],
-			options: { allPermutations: true, timeoutMs: 1000 },
+			options: { allPermutations: true, timeoutMs: 1000, strategy: SolveStrategy.Utilization },
 		});
 		expect(result.failed).toHaveLength(0);
 		expect(result.results[0].placements).toHaveLength(2);

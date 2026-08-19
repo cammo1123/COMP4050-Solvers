@@ -8,4 +8,5 @@ export { PlacementConstraint, PlacementConstraintT } from './fbs/placement-const
 export { SolveOptions, SolveOptionsT } from './fbs/solve-options.js';
 export { SolveRequest, SolveRequestT } from './fbs/solve-request.js';
 export { SolveResponse, SolveResponseT } from './fbs/solve-response.js';
+export { SolveStrategy } from './fbs/solve-strategy.js';
 //# sourceMappingURL=fbs.js.map

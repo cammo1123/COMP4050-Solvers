@@ -119,9 +119,23 @@ export function parseSchema (text, label, { requireRoot = true } = {}) {
 		tables[name] = parseFields(clean.slice(start, i - 1))
 	}
 
+	const enums = {}
+	const enumRe = /enum\s+(\w+)\s*:\s*(\w+)\s*\{([^}]*)\}/g
+	while ((m = enumRe.exec(clean)) !== null) {
+		enums[m[1]] = m[2]
+	}
+	for (const fields of Object.values(tables)) {
+		for (const field of fields) {
+			if (enums[field.type]) {
+				field.enumName = field.type
+				field.type = enums[field.type]
+			}
+		}
+	}
+
 	if (!root) {
 		if (requireRoot) fail("translation", `no root_type declared in ${label}`)
-		return { namespace: namespace ?? 'myaddon', request: undefined, response: undefined, tables }
+		return { namespace: namespace ?? 'myaddon', request: undefined, response: undefined, tables, enums }
 	}
 	if (!tables[root]) fail("translation", `root_type "${root}" is not a table in ${label}`)
 	if (!root.endsWith('Request')) {
@@ -130,7 +144,7 @@ export function parseSchema (text, label, { requireRoot = true } = {}) {
 	const response = root.replace(/Request$/, 'Response')
 	if (!tables[response]) fail("translation", `expected a "${response}" table to pair with root_type "${root}"`)
 
-	return { namespace: namespace ?? 'myaddon', request: root, response, tables }
+	return { namespace: namespace ?? 'myaddon', request: root, response, tables, enums }
 }
 
 function resolveField (field, tables) {
@@ -245,7 +259,7 @@ function tsArg (prefix, field, schema) {
 	switch (field.kind) {
 		case 'scalar':
 		case 'string':
-			return access
+			return field.enumName ? `${access} as any` : access
 		case 'vector-scalar':
 		case 'vector-string':
 			return `[...(${access} ?? [])]`
@@ -307,7 +321,7 @@ function tsChecks (fields) {
 function tsFieldType (field) {
 	switch (field.kind) {
 		case 'scalar':
-			return field.scalar === 'bool' ? 'boolean' : 'number'
+			return field.enumName ?? (field.scalar === 'bool' ? 'boolean' : 'number')
 		case 'string':
 			return field.optional ? 'string | Uint8Array' : 'string'
 		case 'vector-scalar':
@@ -332,10 +346,12 @@ function generateTs (schema, label) {
 	const { request, response, tables } = schema
 	const nested = collectNestedTables(schema)
 	const requestFields = resolveTable(request, tables)
+	const enumNames = Object.keys(schema.enums ?? {})
 	const classTables = [...new Set([request, ...nested])].sort()
 
 	const valueImports = [
 		...classTables.map((t) => `\t${t}T as ${t}Object,`),
+		...enumNames.map((name) => `\t${name},`),
 		`\t${response} as ${response}Message,`,
 		`\t${response}T as ${response}Object,`,
 	].join('\n')
@@ -449,9 +465,9 @@ function cppFieldToDomain (field) {
 	switch (field.kind) {
 		case 'scalar':
 			if (field.nullable) {
-				return `\tif (${access}.has_value()) {\n\t\t${out} = *${access};\n\t}`
+				return `\tif (${access}.has_value()) {\n\t\t${out} = ${field.enumName ? `static_cast<int8_t>(*${access})` : `*${access}`};\n\t}`
 			}
-			return `\t${out} = ${access};`
+			return `\t${out} = ${field.enumName ? `static_cast<int8_t>(${access})` : access};`
 		case 'string':
 			if (field.nullable) {
 				// FlatBuffers T objects store optional strings as empty strings,
@@ -481,9 +497,9 @@ function cppFieldFromDomain (field, namespace) {
 		case 'scalar':
 		case 'string':
 			if (field.nullable) {
-				return `\tif (${access}.has_value()) {\n\t\t${out} = *${access};\n\t}`
+				return `\tif (${access}.has_value()) {\n\t\t${out} = ${field.enumName ? `static_cast<${namespace}::${field.enumName}>(*${access})` : `*${access}`};\n\t}`
 			}
-			return `\t${out} = ${access};`
+			return `\t${out} = ${field.enumName ? `static_cast<${namespace}::${field.enumName}>(${access})` : access};`
 		case 'vector-scalar':
 		case 'vector-string':
 			return `\t${out} = ${access};`

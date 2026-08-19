@@ -37,6 +37,36 @@ struct SolveResponse;
 struct SolveResponseBuilder;
 struct SolveResponseT;
 
+enum SolveStrategy : int8_t {
+  SolveStrategy_Default = 0,
+  SolveStrategy_Utilization = 1,
+  SolveStrategy_MIN = SolveStrategy_Default,
+  SolveStrategy_MAX = SolveStrategy_Utilization
+};
+
+inline const SolveStrategy (&EnumValuesSolveStrategy())[2] {
+  static const SolveStrategy values[] = {
+    SolveStrategy_Default,
+    SolveStrategy_Utilization
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesSolveStrategy() {
+  static const char * const names[3] = {
+    "Default",
+    "Utilization",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNameSolveStrategy(SolveStrategy e) {
+  if (::flatbuffers::IsOutRange(e, SolveStrategy_Default, SolveStrategy_Utilization)) return "";
+  const size_t index = static_cast<size_t>(e);
+  return EnumNamesSolveStrategy()[index];
+}
+
 struct SolveRequestT : public ::flatbuffers::NativeTable {
   typedef SolveRequest TableType;
   std::vector<std::unique_ptr<fbs::BoxTypeT>> boxes{};
@@ -140,7 +170,7 @@ struct SolveOptionsT : public ::flatbuffers::NativeTable {
   ::flatbuffers::Optional<uint32_t> max_boxes = ::flatbuffers::nullopt;
   bool allow_rotation = true;
   ::flatbuffers::Optional<uint32_t> timeout_ms = ::flatbuffers::nullopt;
-  ::flatbuffers::Optional<int8_t> strategy = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<fbs::SolveStrategy> strategy = ::flatbuffers::nullopt;
   ::flatbuffers::Optional<bool> balance_weight = ::flatbuffers::nullopt;
   ::flatbuffers::Optional<bool> all_permutations = ::flatbuffers::nullopt;
   ::flatbuffers::Optional<bool> single_box = ::flatbuffers::nullopt;
@@ -167,8 +197,8 @@ struct SolveOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   ::flatbuffers::Optional<uint32_t> timeout_ms() const {
     return GetOptional<uint32_t, uint32_t>(VT_TIMEOUT_MS);
   }
-  ::flatbuffers::Optional<int8_t> strategy() const {
-    return GetOptional<int8_t, int8_t>(VT_STRATEGY);
+  ::flatbuffers::Optional<fbs::SolveStrategy> strategy() const {
+    return GetOptional<int8_t, fbs::SolveStrategy>(VT_STRATEGY);
   }
   ::flatbuffers::Optional<bool> balance_weight() const {
     return GetOptional<uint8_t, bool>(VT_BALANCE_WEIGHT);
@@ -209,8 +239,8 @@ struct SolveOptionsBuilder {
   void add_timeout_ms(uint32_t timeout_ms) {
     fbb_.AddElement<uint32_t>(SolveOptions::VT_TIMEOUT_MS, timeout_ms);
   }
-  void add_strategy(int8_t strategy) {
-    fbb_.AddElement<int8_t>(SolveOptions::VT_STRATEGY, strategy);
+  void add_strategy(fbs::SolveStrategy strategy) {
+    fbb_.AddElement<int8_t>(SolveOptions::VT_STRATEGY, static_cast<int8_t>(strategy));
   }
   void add_balance_weight(bool balance_weight) {
     fbb_.AddElement<uint8_t>(SolveOptions::VT_BALANCE_WEIGHT, static_cast<uint8_t>(balance_weight));
@@ -237,7 +267,7 @@ inline ::flatbuffers::Offset<SolveOptions> CreateSolveOptions(
     ::flatbuffers::Optional<uint32_t> max_boxes = ::flatbuffers::nullopt,
     bool allow_rotation = true,
     ::flatbuffers::Optional<uint32_t> timeout_ms = ::flatbuffers::nullopt,
-    ::flatbuffers::Optional<int8_t> strategy = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<fbs::SolveStrategy> strategy = ::flatbuffers::nullopt,
     ::flatbuffers::Optional<bool> balance_weight = ::flatbuffers::nullopt,
     ::flatbuffers::Optional<bool> all_permutations = ::flatbuffers::nullopt,
     ::flatbuffers::Optional<bool> single_box = ::flatbuffers::nullopt) {

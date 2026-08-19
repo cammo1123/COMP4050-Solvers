@@ -183,7 +183,7 @@ Result pack_ordered(std::vector<Box> boxes, std::vector<Item> items, Options opt
 			auto candidate = try_box(boxes[i], remaining, options.allow_rotation, deadline);
 			if (!candidate) continue;
 			bool better = !best;
-			if (best && options.strategy == 1) {
+			if (best && options.strategy == Strategy::Utilization) {
 				auto utilization = candidate->dimensions.volume() == 0 ? 0.0 : static_cast<double>(candidate->used_volume()) / candidate->dimensions.volume();
 				auto best_utilization = best->dimensions.volume() == 0 ? 0.0 : static_cast<double>(best->used_volume()) / best->dimensions.volume();
 				better = utilization > best_utilization || (utilization == best_utilization && candidate->items.size() > best->items.size());

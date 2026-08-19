@@ -10,6 +10,8 @@ namespace packing {
 
 using ProgressCallback = std::function<void(size_t, size_t)>;
 
+enum class Strategy : int8_t { Default = 0, Utilization = 1 };
+
 struct Options {
 	std::optional<uint32_t> max_boxes;
 	bool allow_rotation = true;
@@ -17,7 +19,7 @@ struct Options {
 	bool balance_weight = false;
 	bool all_permutations = false;
 	bool single_box = false;
-	int8_t strategy = 0; // 0 = default item count, 1 = utilization first.
+	Strategy strategy = Strategy::Default;
 };
 
 struct Result {

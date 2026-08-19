@@ -1,3 +1,4 @@
+import { SolveStrategy } from "./fbs.js";
 export type BoxResultT = {
     boxReference: string;
     placements: ItemPlacementT[];
@@ -50,7 +51,7 @@ export type SolveOptionsT = {
     maxBoxes?: number;
     allowRotation?: boolean;
     timeoutMs?: number;
-    strategy?: number;
+    strategy?: SolveStrategy;
     balanceWeight?: boolean;
     allPermutations?: boolean;
     singleBox?: boolean;
