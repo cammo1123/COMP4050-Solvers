@@ -2,6 +2,17 @@ namespace fbs;
 
 attribute "optional";
 
+table PlacementConstraint {
+  no_stacking: bool = null;
+  required_vertical: bool = null;
+  min_x: uint = null;
+  min_y: uint = null;
+  min_z: uint = null;
+  max_x: uint = null;
+  max_y: uint = null;
+  max_z: uint = null;
+}
+
 table BoxType {
   reference: string;
   width: uint;
@@ -25,4 +36,6 @@ table ItemType {
   box_group: string (optional);
   // 0 = never, 1 = keep flat (Y axis fixed), 2 = best fit.
   rotation_policy: byte = null;
+  linked_group: string (optional);
+  constraint: PlacementConstraint (optional);
 }

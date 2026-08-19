@@ -7,6 +7,7 @@ import {
 	BoxTypeT as BoxTypeObject,
 	ItemPlacementT as ItemPlacementObject,
 	ItemTypeT as ItemTypeObject,
+	PlacementConstraintT as PlacementConstraintObject,
 	SolveOptionsT as SolveOptionsObject,
 	SolveRequestT as SolveRequestObject,
 	SolveResponse as SolveResponseMessage,
@@ -51,6 +52,19 @@ export type ItemTypeT = {
 	weight: number;
 	boxGroup?: string | Uint8Array;
 	rotationPolicy?: number;
+	linkedGroup?: string | Uint8Array;
+	constraint?: PlacementConstraintT | null;
+};
+
+export type PlacementConstraintT = {
+	noStacking?: boolean;
+	requiredVertical?: boolean;
+	minX?: number;
+	minY?: number;
+	minZ?: number;
+	maxX?: number;
+	maxY?: number;
+	maxZ?: number;
 };
 
 export type SolveOptionsT = {
@@ -75,7 +89,7 @@ export function encodeRequest(request: SolveRequest): Uint8Array {
 
 	const message = new SolveRequestObject(
 		(request.boxes ?? []).map((item) => new BoxTypeObject(item.reference, item.width, item.length, item.depth, item.maxWeight, item.boxWeight, item.active, item.maximumBoxes)),
-		(request.items ?? []).map((item) => new ItemTypeObject(item.itemCode, item.itemReference, item.width, item.length, item.depth, item.weight, item.boxGroup, item.rotationPolicy)),
+		(request.items ?? []).map((item) => new ItemTypeObject(item.itemCode, item.itemReference, item.width, item.length, item.depth, item.weight, item.boxGroup, item.rotationPolicy, item.linkedGroup, item.constraint ? new PlacementConstraintObject(item.constraint.noStacking, item.constraint.requiredVertical, item.constraint.minX, item.constraint.minY, item.constraint.minZ, item.constraint.maxX, item.constraint.maxY, item.constraint.maxZ) : null)),
 		request.options ? new SolveOptionsObject(request.options.maxBoxes, request.options.allowRotation, request.options.timeoutMs, request.options.strategy) : null
 	);
 
@@ -89,6 +103,6 @@ export function decodeResponse(bytes: Uint8Array): SolveResponse {
 	const unpacked = message.unpack();
 	return {
 		results: (unpacked.results ?? []).map((item) => ({ boxReference: item.boxReference as string, placements: (item.placements ?? []).map((item) => ({ itemCode: item.itemCode as string, itemReference: item.itemReference as string, x: item.x, y: item.y, z: item.z, width: item.width, length: item.length, depth: item.depth })), ...(item.totalWeight !== null && item.totalWeight !== undefined ? { totalWeight: item.totalWeight } : {}), ...(item.utilization !== null && item.utilization !== undefined ? { utilization: item.utilization } : {}) })),
-		failed: (unpacked.failed ?? []).map((item) => ({ itemCode: item.itemCode as string, itemReference: item.itemReference as string, width: item.width, length: item.length, depth: item.depth, weight: item.weight, ...(item.boxGroup !== null && item.boxGroup !== undefined ? { boxGroup: item.boxGroup } : {}), ...(item.rotationPolicy !== null && item.rotationPolicy !== undefined ? { rotationPolicy: item.rotationPolicy } : {}) }))
+		failed: (unpacked.failed ?? []).map((item) => ({ itemCode: item.itemCode as string, itemReference: item.itemReference as string, width: item.width, length: item.length, depth: item.depth, weight: item.weight, ...(item.boxGroup !== null && item.boxGroup !== undefined ? { boxGroup: item.boxGroup } : {}), ...(item.rotationPolicy !== null && item.rotationPolicy !== undefined ? { rotationPolicy: item.rotationPolicy } : {}), ...(item.linkedGroup !== null && item.linkedGroup !== undefined ? { linkedGroup: item.linkedGroup } : {}), ...(item.constraint !== null && item.constraint !== undefined ? { constraint: { ...(item.constraint.noStacking !== null && item.constraint.noStacking !== undefined ? { noStacking: item.constraint.noStacking } : {}), ...(item.constraint.requiredVertical !== null && item.constraint.requiredVertical !== undefined ? { requiredVertical: item.constraint.requiredVertical } : {}), ...(item.constraint.minX !== null && item.constraint.minX !== undefined ? { minX: item.constraint.minX } : {}), ...(item.constraint.minY !== null && item.constraint.minY !== undefined ? { minY: item.constraint.minY } : {}), ...(item.constraint.minZ !== null && item.constraint.minZ !== undefined ? { minZ: item.constraint.minZ } : {}), ...(item.constraint.maxX !== null && item.constraint.maxX !== undefined ? { maxX: item.constraint.maxX } : {}), ...(item.constraint.maxY !== null && item.constraint.maxY !== undefined ? { maxY: item.constraint.maxY } : {}), ...(item.constraint.maxZ !== null && item.constraint.maxZ !== undefined ? { maxZ: item.constraint.maxZ } : {}) } } : {}) }))
 	};
 }

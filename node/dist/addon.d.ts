@@ -1,5 +1,5 @@
 import { type SolveRequest, type SolveResponse } from "./gen/solve_translation.js";
-export type { SolveRequest, SolveResponse, BoxTypeT, ItemTypeT, SolveOptionsT, ItemPlacementT, BoxResultT } from "./gen/solve_translation.js";
+export type { SolveRequest, SolveResponse, BoxTypeT, ItemTypeT, SolveOptionsT, ItemPlacementT, BoxResultT, PlacementConstraintT } from "./gen/solve_translation.js";
 export type SolveInput = SolveRequest & {
     onProgress?: (done: number, total: number) => void;
 };

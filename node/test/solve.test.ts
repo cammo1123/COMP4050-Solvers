@@ -19,7 +19,14 @@ function encodeRequest(boxRefs: string[], itemRefs: string[] = []): Buffer {
 	const itemOffsets = itemRefs.map((reference) => {
 		const itemCodeOffset = builder.createString(reference);
 		const itemRefOffset = builder.createString(reference);
-		return ItemType.createItemType(builder, itemCodeOffset, itemRefOffset, 10, 10, 10, 0, 10, null);
+		ItemType.startItemType(builder);
+		ItemType.addItemCode(builder, itemCodeOffset);
+		ItemType.addItemReference(builder, itemRefOffset);
+		ItemType.addWidth(builder, 10);
+		ItemType.addLength(builder, 10);
+		ItemType.addDepth(builder, 10);
+		ItemType.addWeight(builder, 10);
+		return ItemType.endItemType(builder);
 	});
 	const itemsVector = SolveRequest.createItemsVector(builder, itemOffsets);
 
@@ -112,5 +119,29 @@ describe("packing invariants", () => {
 		});
 		expect(result.results).toHaveLength(1);
 		expect(result.failed.map((item) => item.itemCode)).toEqual(["two"]);
+	});
+
+	it("packs linked items atomically", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 10, length: 10, depth: 10 }],
+			items: [
+				{ itemCode: "linked-a", itemReference: "linked-a", linkedGroup: "pair", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: 0 },
+				{ itemCode: "linked-b", itemReference: "linked-b", linkedGroup: "pair", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: 0 },
+			],
+		});
+		expect(result.results).toHaveLength(0);
+		expect(result.failed.map((item) => item.itemCode)).toEqual(["linked-a", "linked-b"]);
+	});
+
+	it("enforces declarative placement constraints", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 20, length: 10, depth: 10 }],
+			items: [
+				{ itemCode: "floor", itemReference: "floor", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: 0, constraint: { minX: 10, noStacking: true } },
+				{ itemCode: "blocked", itemReference: "blocked", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: 0, constraint: { minX: 11, maxX: 11, noStacking: true } },
+			],
+		});
+		expect(result.results[0].placements[0]).toMatchObject({ itemCode: "floor", x: 10, y: 0 });
+		expect(result.failed.map((item) => item.itemCode)).toEqual(["blocked"]);
 	});
 });

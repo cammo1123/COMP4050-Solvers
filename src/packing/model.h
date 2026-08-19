@@ -20,9 +20,20 @@ enum class RotationPolicy : int8_t { Never = 0, KeepFlat = 1, BestFit = 2 };
 struct Item {
 	std::string code;
 	std::string reference;
+	std::string linked_group;
 	Dimensions dimensions;
 	float weight = 0;
 	RotationPolicy rotation = RotationPolicy::BestFit;
+	struct Constraint {
+		bool no_stacking = false;
+		bool required_vertical = false;
+		uint32_t min_x = 0;
+		uint32_t min_y = 0;
+		uint32_t min_z = 0;
+		uint32_t max_x = UINT32_MAX;
+		uint32_t max_y = UINT32_MAX;
+		uint32_t max_z = UINT32_MAX;
+	} constraint;
 };
 
 struct Box {

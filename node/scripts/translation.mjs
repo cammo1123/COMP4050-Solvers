@@ -276,6 +276,7 @@ function tsPlainObject (prefix, field, schema) {
 			return `${name}: ${access}`
 		case 'table': {
 			const sub = tables[field.table].map((raw) => tsPlainObject(access, resolveField(raw, tables), schema)).join(', ')
+			if (field.optional) return `...(${access} !== null && ${access} !== undefined ? { ${name}: { ${sub} } } : {})`
 			return `${name}: ${access} ? { ${sub} } : null`
 		}
 		case 'vector-table': {

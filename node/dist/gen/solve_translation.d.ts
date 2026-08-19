@@ -33,6 +33,18 @@ export type ItemTypeT = {
     weight: number;
     boxGroup?: string | Uint8Array;
     rotationPolicy?: number;
+    linkedGroup?: string | Uint8Array;
+    constraint?: PlacementConstraintT | null;
+};
+export type PlacementConstraintT = {
+    noStacking?: boolean;
+    requiredVertical?: boolean;
+    minX?: number;
+    minY?: number;
+    minZ?: number;
+    maxX?: number;
+    maxY?: number;
+    maxZ?: number;
 };
 export type SolveOptionsT = {
     maxBoxes?: number;

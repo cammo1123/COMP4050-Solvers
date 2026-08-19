@@ -13,6 +13,17 @@
 namespace fbs {
 namespace domain {
 
+struct PlacementConstraint {
+	std::optional<bool> no_stacking = std::nullopt;
+	std::optional<bool> required_vertical = std::nullopt;
+	std::optional<uint32_t> min_x = std::nullopt;
+	std::optional<uint32_t> min_y = std::nullopt;
+	std::optional<uint32_t> min_z = std::nullopt;
+	std::optional<uint32_t> max_x = std::nullopt;
+	std::optional<uint32_t> max_y = std::nullopt;
+	std::optional<uint32_t> max_z = std::nullopt;
+};
+
 struct BoxType {
 	std::string reference{};
 	uint32_t width = 0;
@@ -33,7 +44,87 @@ struct ItemType {
 	float weight = 0.0f;
 	std::optional<std::string> box_group = std::nullopt;
 	std::optional<int8_t> rotation_policy = std::nullopt;
+	std::optional<std::string> linked_group = std::nullopt;
+	std::optional<PlacementConstraint> constraint = std::nullopt;
 };
+
+inline PlacementConstraint toDomain(fbs::PlacementConstraintT const& value)
+{
+	PlacementConstraint out;
+
+	if (value.no_stacking.has_value()) {
+		out.no_stacking = *value.no_stacking;
+	}
+
+	if (value.required_vertical.has_value()) {
+		out.required_vertical = *value.required_vertical;
+	}
+
+	if (value.min_x.has_value()) {
+		out.min_x = *value.min_x;
+	}
+
+	if (value.min_y.has_value()) {
+		out.min_y = *value.min_y;
+	}
+
+	if (value.min_z.has_value()) {
+		out.min_z = *value.min_z;
+	}
+
+	if (value.max_x.has_value()) {
+		out.max_x = *value.max_x;
+	}
+
+	if (value.max_y.has_value()) {
+		out.max_y = *value.max_y;
+	}
+
+	if (value.max_z.has_value()) {
+		out.max_z = *value.max_z;
+	}
+
+	return out;
+}
+
+inline fbs::PlacementConstraintT fromDomain(PlacementConstraint const& value)
+{
+	fbs::PlacementConstraintT out;
+
+	if (value.no_stacking.has_value()) {
+		out.no_stacking = *value.no_stacking;
+	}
+
+	if (value.required_vertical.has_value()) {
+		out.required_vertical = *value.required_vertical;
+	}
+
+	if (value.min_x.has_value()) {
+		out.min_x = *value.min_x;
+	}
+
+	if (value.min_y.has_value()) {
+		out.min_y = *value.min_y;
+	}
+
+	if (value.min_z.has_value()) {
+		out.min_z = *value.min_z;
+	}
+
+	if (value.max_x.has_value()) {
+		out.max_x = *value.max_x;
+	}
+
+	if (value.max_y.has_value()) {
+		out.max_y = *value.max_y;
+	}
+
+	if (value.max_z.has_value()) {
+		out.max_z = *value.max_z;
+	}
+
+	return out;
+}
 
 inline BoxType toDomain(fbs::BoxTypeT const& value)
 {
@@ -121,6 +212,14 @@ inline ItemType toDomain(fbs::ItemTypeT const& value)
 		out.rotation_policy = *value.rotation_policy;
 	}
 
+	if (!value.linked_group.empty()) {
+		out.linked_group = value.linked_group;
+	}
+
+	if (value.constraint) {
+		out.constraint = toDomain(*value.constraint);
+	}
+
 	return out;
 }
 
@@ -146,6 +245,14 @@ inline fbs::ItemTypeT fromDomain(ItemType const& value)
 
 	if (value.rotation_policy.has_value()) {
 		out.rotation_policy = *value.rotation_policy;
+	}
+
+	if (value.linked_group.has_value()) {
+		out.linked_group = *value.linked_group;
+	}
+
+	if (value.constraint.has_value()) {
+		out.constraint = std::make_unique<fbs::PlacementConstraintT>(fromDomain(*value.constraint));
 	}
 
 	return out;
