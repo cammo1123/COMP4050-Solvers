@@ -228,6 +228,19 @@ describe("packing invariants", () => {
 		expect(progress.every(([done, total]) => done >= 0 && done <= total && total === 1)).toBe(true);
 	});
 
+	it("preserves every item when the timeout expires before packing", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 10, length: 10, depth: 10 }],
+			items: [
+				{ itemCode: "one", itemReference: "one", width: 1, length: 1, depth: 1, weight: 1 },
+				{ itemCode: "two", itemReference: "two", width: 1, length: 1, depth: 1, weight: 1 },
+			],
+			options: { timeoutMs: 0 },
+		});
+		expect(result.results).toEqual([]);
+		expect(result.failed.map((item) => item.itemCode)).toEqual(["one", "two"]);
+	});
+
 	it("packs linked items atomically", async () => {
 		const result = await solve({
 			boxes: [{ reference: "A", width: 10, length: 10, depth: 10 }],
