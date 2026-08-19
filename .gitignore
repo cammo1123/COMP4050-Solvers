@@ -69,5 +69,7 @@ Testing/
 .cache/
 
 prebuilds
+# Node
 node_modules
 node/.flatc/
+package-lock.json
