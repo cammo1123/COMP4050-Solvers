@@ -1,6 +1,7 @@
 #include "packer.h"
 
 #include "orientation.h"
+#include "stability.h"
 #include "void_finder.h"
 
 #include <algorithm>
@@ -23,13 +24,7 @@ bool supported(PackedBox const& box, PackedItem const& item)
 	if (constraint.required_vertical && item.dimensions.height != item.item.dimensions.height) return false;
 	if (constraint.no_stacking && item.y != 0) return false;
 	for (auto const& existing : box.items) if (overlaps(existing, item)) return false;
-	if (item.y == 0) return true;
-	for (auto const& existing : box.items) {
-		if (existing.y + existing.dimensions.height != item.y) continue;
-		if (existing.x < item.x + item.dimensions.width && item.x < existing.x + existing.dimensions.width &&
-			existing.z < item.z + item.dimensions.length && item.z < existing.z + existing.dimensions.length) return true;
-	}
-	return false;
+	return stable(box, item);
 }
 
 std::optional<PackedItem> place(Box const& box, Dimensions box_dimensions, Item const& item, std::vector<PackedItem> const& placed,

@@ -17,6 +17,12 @@ bool overlaps(RectangularVoid const& space, PackedItem const& item)
 		space.z < end(item.z, item.dimensions.length) && item.z < end(space.z, space.dimensions.length);
 }
 
+bool empty(RectangularVoid const& space, std::vector<PackedItem> const& packed)
+{
+	for (auto const& item : packed) if (overlaps(space, item)) return false;
+	return true;
+}
+
 void add_if_nonempty(std::vector<RectangularVoid>& result, uint32_t x, uint32_t y, uint32_t z, Dimensions dimensions)
 {
 	if (dimensions.width && dimensions.height && dimensions.length) result.push_back({x, y, z, dimensions});
@@ -65,9 +71,28 @@ std::vector<RectangularVoid> VoidFinder::find(Dimensions container, std::vector<
 		}
 		spaces = std::move(next);
 	}
+	std::vector<uint32_t> x_edges{0};
+	std::vector<uint32_t> y_edges{0};
+	std::vector<uint32_t> z_edges{0};
+	for (auto const& item : packed) {
+		x_edges.push_back(item.x);
+		x_edges.push_back(item.x + item.dimensions.width);
+		y_edges.push_back(item.y);
+		y_edges.push_back(item.y + item.dimensions.height);
+		z_edges.push_back(item.z);
+		z_edges.push_back(item.z + item.dimensions.length);
+	}
+	for (auto x : x_edges) for (auto y : y_edges) for (auto z : z_edges) {
+		if (x >= container.width || y >= container.height || z >= container.length) continue;
+		RectangularVoid candidate{x, y, z, {container.width - x, container.height - y, container.length - z}};
+		if (empty(candidate, packed)) spaces.push_back(candidate);
+	}
 	std::sort(spaces.begin(), spaces.end(), [](auto const& a, auto const& b) {
 		return a.y != b.y ? a.y < b.y : a.z != b.z ? a.z < b.z : a.x != b.x ? a.x < b.x : a.volume() > b.volume();
 	});
+	spaces.erase(std::unique(spaces.begin(), spaces.end(), [](auto const& a, auto const& b) {
+		return a.x == b.x && a.y == b.y && a.z == b.z && a.dimensions == b.dimensions;
+	}), spaces.end());
 	return spaces;
 }
 

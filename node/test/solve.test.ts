@@ -114,6 +114,31 @@ describe("packing invariants", () => {
 		expect(result.results[0].placements.find((item) => item.itemCode === "top")).toMatchObject({ y: 5 });
 	});
 
+	it("accepts partial support when the item center is supported", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 20, length: 10, depth: 12 }],
+			items: [
+				{ itemCode: "support", itemReference: "support", width: 4, length: 10, depth: 10, weight: 1, rotationPolicy: 0, constraint: { minX: 8, maxX: 8 } },
+				{ itemCode: "overhang", itemReference: "overhang", width: 10, length: 10, depth: 2, weight: 1, rotationPolicy: 0, constraint: { minX: 5, maxX: 5 } },
+			],
+			options: { maxBoxes: 1 },
+		});
+		expect(result.failed).toHaveLength(0);
+		expect(result.results[0].placements.find((item) => item.itemCode === "overhang")).toMatchObject({ x: 5, y: 10 });
+	});
+
+	it("rejects an unstable edge overhang", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 20, length: 10, depth: 12 }],
+			items: [
+				{ itemCode: "support", itemReference: "support", width: 4, length: 10, depth: 10, weight: 1, rotationPolicy: 0, constraint: { minX: 8, maxX: 8 } },
+				{ itemCode: "overhang", itemReference: "overhang", width: 10, length: 10, depth: 2, weight: 1, rotationPolicy: 0, constraint: { minX: 0, maxX: 0 } },
+			],
+			options: { maxBoxes: 1 },
+		});
+		expect(result.failed.map((item) => item.itemCode)).toEqual(["overhang"]);
+	});
+
 	it("keeps flat rotation on the Y axis", async () => {
 		const result = await solve({
 			boxes: [{ reference: "A", width: 10, length: 20, depth: 5 }],
