@@ -45,7 +45,7 @@ void SolveWorker::Execute()
 		on_progress = [tsfn](size_t done, size_t total) {
 			auto* value = new std::pair<size_t, size_t>(done, total);
 			auto const status = tsfn.NonBlockingCall(value, [](Napi::Env env, Napi::Function jsCallback, std::pair<size_t, size_t>* value) {
-				jsCallback.Call({Napi::Number::New(env, value->first), Napi::Number::New(env, value->second)});
+				jsCallback.Call({ Napi::Number::New(env, value->first), Napi::Number::New(env, value->second) });
 				delete value;
 			});
 			if (status != napi_ok)
@@ -60,13 +60,15 @@ void SolveWorker::Execute()
 
 void SolveWorker::OnOK()
 {
-	if (_tsfn) _tsfn.Release();
+	if (_tsfn)
+		_tsfn.Release();
 	_deferred.Resolve(Napi::Buffer<uint8_t>::Copy(Env(), _response.data(), _response.size()));
 }
 
 void SolveWorker::OnError(Napi::Error const& error)
 {
-	if (_tsfn) _tsfn.Release();
+	if (_tsfn)
+		_tsfn.Release();
 	_deferred.Reject(Napi::Error::New(Env(), error.Message()).Value());
 }
 

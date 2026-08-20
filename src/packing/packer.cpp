@@ -553,8 +553,7 @@ Result pack_ordered(std::vector<Box> boxes, std::vector<Item> items, Options opt
 		std::vector<bool> packed(remaining.size());
 		for (auto const& item : best->items)
 			for (size_t i = 0; i < remaining.size(); ++i)
-				if (!packed[i] && remaining[i].code == item.item.code && remaining[i].reference == item.item.reference &&
-					remaining[i].dimensions == item.item.dimensions && remaining[i].weight == item.item.weight) {
+				if (!packed[i] && remaining[i].code == item.item.code && remaining[i].reference == item.item.reference && remaining[i].dimensions == item.item.dimensions && remaining[i].weight == item.item.weight) {
 					packed[i] = true;
 					break;
 				}

@@ -8,7 +8,7 @@
 namespace packing {
 
 struct Dimensions {
-	uint32_t width = 0;  // X axis.
+	uint32_t width = 0;	 // X axis.
 	uint32_t height = 0; // Y axis (up).
 	uint32_t length = 0; // Z axis.
 
@@ -16,7 +16,11 @@ struct Dimensions {
 	bool operator==(Dimensions const& other) const;
 };
 
-enum class RotationPolicy : int8_t { Never = 0, KeepFlat = 1, BestFit = 2 };
+enum class RotationPolicy : int8_t {
+	Never = 0,
+	KeepFlat = 1,
+	BestFit = 2
+};
 
 struct Item {
 	std::string code;

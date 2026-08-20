@@ -57,7 +57,7 @@ int main()
 	linked_a.weight = 1;
 	linked_a.linked_group = "demo-pair";
 	linked_a.rotation_policy = static_cast<int8_t>(fbs::RotationPolicy_KeepFlat);
-	linked_a.constraint = fbs::domain::PlacementConstraint{};
+	linked_a.constraint = fbs::domain::PlacementConstraint { };
 	linked_a.constraint->no_stacking = true;
 	solve.items.push_back(linked_a);
 

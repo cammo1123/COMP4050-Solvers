@@ -10,7 +10,10 @@ namespace packing {
 
 using ProgressCallback = std::function<void(size_t, size_t)>;
 
-enum class Strategy : int8_t { Default = 0, Utilization = 1 };
+enum class Strategy : int8_t {
+	Default = 0,
+	Utilization = 1
+};
 
 struct Options {
 	std::optional<uint32_t> max_boxes;

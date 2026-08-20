@@ -86,7 +86,9 @@ function format (check) {
 	const clangFormat = findOnPath('clang-format')
 	if (!clangFormat) fail("build", 'clang-format not found on PATH')
 	const srcDir = path.join(repoRoot, 'src')
-	const files = fs.readdirSync(srcDir).filter(f => f.endsWith('.cpp') || f.endsWith('.h')).map(f => path.join('src', f))
+	const files = fs.readdirSync(srcDir, { recursive: true })
+		.filter(f => f.endsWith('.cpp') || f.endsWith('.h'))
+		.map(f => path.join('src', f))
 	const flags = check ? ['--dry-run', '--Werror'] : ['-i']
 	for (const file of files) {
 		run(clangFormat, [...flags, file])
