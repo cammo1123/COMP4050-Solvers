@@ -353,7 +353,7 @@ describe("packing invariants", () => {
 		expect(result.results[0]).toMatchObject({ outerWidth: 12, outerLength: 14, outerDepth: 13 });
 	});
 
-	it("reports progress while evaluating an unpackable item", async () => {
+	it("reports completed-item progress for an unpackable item", async () => {
 		const progress: Array<[number, number]> = [];
 		const result = await solve({
 			boxes: [{ reference: "A", width: 10, length: 10, depth: 10 }],
@@ -361,9 +361,23 @@ describe("packing invariants", () => {
 			onProgress: (done, total) => progress.push([done, total]),
 		});
 		expect(result.failed).toHaveLength(1);
-		expect(progress.length).toBeGreaterThan(2);
+		expect(progress).toEqual([[0, 1]]);
 		expect(progress.every(([done, total]) => done >= 0 && done <= total && total === 1)).toBe(true);
-		expect(progress.every(([done], index) => index === 0 || done >= progress[index - 1][0])).toBe(true);
+	});
+
+	it("reports one global progress sequence across boxes", async () => {
+		const progress: Array<[number, number]> = [];
+		await solve({
+			boxes: [{ reference: "A", width: 1, length: 1, depth: 1, maximumBoxes: 4 }],
+			items: [
+				{ itemCode: "one", itemReference: "one", width: 1, length: 1, depth: 1, weight: 1 },
+				{ itemCode: "two", itemReference: "two", width: 1, length: 1, depth: 1, weight: 1 },
+				{ itemCode: "three", itemReference: "three", width: 1, length: 1, depth: 1, weight: 1 },
+				{ itemCode: "four", itemReference: "four", width: 1, length: 1, depth: 1, weight: 1 },
+			],
+			onProgress: (done, total) => progress.push([done, total]),
+		});
+		expect(progress).toEqual([[0, 4], [1, 4], [2, 4], [3, 4], [4, 4]]);
 	});
 
 	it("preserves every item when the timeout expires before packing", async () => {
@@ -486,6 +500,34 @@ describe("packing invariants", () => {
 		});
 		expect(result.failed).toHaveLength(0);
 		expect(result.results[0].placements).toHaveLength(2);
+	});
+
+	it("preserves failed items when permutation search times out immediately", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 10, length: 10, depth: 10 }],
+			items: [{ itemCode: "item", itemReference: "item", width: 1, length: 1, depth: 1, weight: 1 }],
+			options: { allPermutations: true, timeoutMs: 0 },
+		});
+
+		expect(result.results).toEqual([]);
+		expect(result.failed).toHaveLength(1);
+		expect(result.failed[0].itemCode).toBe("item");
+	});
+
+	it("matches packed instances by dimensions when identifiers repeat", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 10, length: 1, depth: 1 }],
+			items: [
+				{ itemCode: "same", itemReference: "same", width: 11, length: 1, depth: 1, weight: 1, rotationPolicy: RotationPolicy.Never },
+				{ itemCode: "same", itemReference: "same", width: 10, length: 1, depth: 1, weight: 1, rotationPolicy: RotationPolicy.Never },
+			],
+			options: { strictItemOrder: true },
+		});
+
+		expect(result.results[0].placements).toHaveLength(1);
+		expect(result.results[0].placements[0].width).toBe(10);
+		expect(result.failed).toHaveLength(1);
+		expect(result.failed[0].width).toBe(11);
 	});
 
 	it("distinguishes default and utilization strategies", async () => {

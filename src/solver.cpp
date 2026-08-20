@@ -31,9 +31,9 @@ SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
 	for (auto const& source : request.boxes) {
 		packing::Box box;
 		box.reference = source.reference;
-		box.dimensions = {source.width, source.depth, source.length};
+		box.dimensions = { source.width, source.depth, source.length };
 		if (source.outer_width && source.outer_length && source.outer_depth) {
-			box.outer_dimensions = packing::Dimensions{*source.outer_width, *source.outer_depth, *source.outer_length};
+			box.outer_dimensions = packing::Dimensions { *source.outer_width, *source.outer_depth, *source.outer_length };
 		}
 		box.empty_weight = source.box_weight.value_or(0);
 		box.max_weight = source.max_weight.value_or(0);
@@ -41,15 +41,16 @@ SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
 		box.active = source.active.value_or(true);
 		boxes.push_back(std::move(box));
 	}
+
 	std::vector<packing::Item> items;
 	for (auto const& source : request.items) {
-		const auto quantity = source.quantity.value_or(1);
+		auto const quantity = source.quantity.value_or(1);
 		for (uint32_t instance = 0; instance < quantity; ++instance) {
 			packing::Item item;
 			item.code = source.item_code;
 			item.reference = source.item_reference;
 			item.linked_group = source.linked_group.value_or("");
-			item.dimensions = {source.width, source.depth, source.length};
+			item.dimensions = { source.width, source.depth, source.length };
 			item.weight = source.weight;
 			item.rotation = source.rotation_policy.has_value() ? static_cast<packing::RotationPolicy>(*source.rotation_policy) : packing::RotationPolicy::BestFit;
 			if (source.constraint) {
@@ -65,6 +66,7 @@ SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
 			items.push_back(std::move(item));
 		}
 	}
+
 	packing::Options options;
 	if (request.options) {
 		options.max_boxes = request.options->max_boxes;
@@ -77,7 +79,9 @@ SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
 		options.best_subset = request.options->best_subset.value_or(false);
 		options.strategy = static_cast<packing::Strategy>(request.options->strategy.value_or(static_cast<int8_t>(fbs::SolveStrategy_Default)));
 	}
+
 	auto packed = packing::pack(std::move(boxes), std::move(items), options, std::move(on_progress));
+
 	SolveResponse response;
 	for (auto const& source : packed.boxes) {
 		BoxResult result;
@@ -90,14 +94,14 @@ SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
 			result.outer_depth = source.box.outer_dimensions->height;
 		}
 		for (auto const& item : source.items) {
-			result.placements.push_back({item.item.code, item.item.reference, item.x, item.y, item.z,
-				item.dimensions.width, item.dimensions.length, item.dimensions.height});
+			result.placements.push_back({ item.item.code, item.item.reference, item.x, item.y, item.z,
+				item.dimensions.width, item.dimensions.length, item.dimensions.height });
 		}
 		response.results.push_back(std::move(result));
 	}
 	for (auto const& item : packed.failed) {
-		response.failed.push_back({item.code, item.reference, item.dimensions.width, item.dimensions.length,
-			item.dimensions.height, item.weight});
+		response.failed.push_back({ item.code, item.reference, item.dimensions.width, item.dimensions.length,
+			item.dimensions.height, item.weight });
 	}
 	return response;
 }
