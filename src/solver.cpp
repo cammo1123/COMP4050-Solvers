@@ -61,13 +61,13 @@ SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
 
 	auto placements = std::vector<ItemPlacement>();
 	auto results = std::vector<BoxResult>();
-	
+
 	uint32_t y = 0;
 	size_t i = 0;
 	on_progress(i, request.items.size());
 	for (auto item : request.items) {
 
-		placements.push_back(ItemPlacement{
+		placements.push_back(ItemPlacement {
 			.x = 0,
 			.y = y,
 			.z = 0,
@@ -81,7 +81,7 @@ SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
 		on_progress(i, request.items.size());
 		y += item.depth;
 	}
-	
+
 	BoxResult placement = {
 		.box_reference = box.reference,
 		.placements = placements,

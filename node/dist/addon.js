@@ -1,5 +1,5 @@
 import native from "../index.cjs";
-import { decodeResponse, encodeRequest } from "./gen/solve_translation";
+import { decodeResponse, encodeRequest } from "./gen/solve_translation.js";
 export async function solve(input) {
     const { onProgress, ...request } = input;
     const encoded = encodeRequest(request);
