@@ -16,27 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 11.21.0
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Cache flatc
-        uses: actions/cache@v4
-        with:
-          path: node/.flatc
-          key: flatc-${{ runner.os }}-25.12.19
-
-      - name: Install flatc (FlatBuffers compiler)
-        run: node node/scripts/generate.mjs --version
+      - uses: ./.github/actions/setup-build
 
       - name: Build addon (CMake/Ninja, max optimization)
         run: pnpm build:optimized
