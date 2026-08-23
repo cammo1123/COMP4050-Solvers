@@ -48,11 +48,15 @@ SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
 
 	if (!maybe_box.has_value()) {
 		size_t i = 0;
-		on_progress(i, request.items.size());
+		if (on_progress) {
+			on_progress(i, request.items.size());
+		}
 		for (auto item : request.items) {
 			response.failed.push_back(item);
 			i++;
-			on_progress(i, request.items.size());
+			if (on_progress) {
+				on_progress(i, request.items.size());
+			}
 		}
 		return response;
 	}
@@ -64,7 +68,9 @@ SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
 
 	uint32_t y = 0;
 	size_t i = 0;
-	on_progress(i, request.items.size());
+	if (on_progress) {
+		on_progress(i, request.items.size());
+	}
 	for (auto item : request.items) {
 
 		placements.push_back(ItemPlacement {
@@ -78,7 +84,9 @@ SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
 		});
 
 		i++;
-		on_progress(i, request.items.size());
+		if (on_progress) {
+			on_progress(i, request.items.size());
+		}
 		y += item.depth;
 	}
 
