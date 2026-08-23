@@ -8,12 +8,47 @@
 #include <array>
 #include <chrono>
 #include <cmath>
+#include <cstdlib>
+#include <iostream>
 #include <limits>
 
 namespace packing {
 namespace {
 
 using Clock = std::chrono::steady_clock;
+
+bool debug_enabled()
+{
+	static bool const enabled = [] {
+#ifdef _WIN32
+		char* value = nullptr;
+		size_t length = 0;
+		if (_dupenv_s(&value, &length, "SOLVER_DEBUG") != 0)
+			return false;
+		std::free(value);
+		return length > 0;
+#else
+		return std::getenv("SOLVER_DEBUG") != nullptr;
+#endif
+	}();
+	return enabled;
+}
+
+Clock::time_point debug_started()
+{
+	static auto const started = Clock::now();
+	return started;
+}
+
+template<typename... Args>
+void debug(Args const&... args)
+{
+	if (!debug_enabled())
+		return;
+	auto const elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - debug_started()).count();
+	std::cerr << "[debug +" << elapsed << "ms] ";
+	(std::cerr << ... << args) << '\n';
+}
 
 bool fits(uint32_t origin, uint32_t size, uint32_t bound)
 {
@@ -52,9 +87,6 @@ std::optional<PackedItem> place_repeated(Dimensions box_dimensions, Item const& 
 {
 	if (placed.empty() || !simple_item(item))
 		return std::nullopt;
-	for (auto const& existing : placed)
-		if (!simple_item(existing.item) || !(existing.dimensions == item.dimensions))
-			return std::nullopt;
 	std::vector<uint32_t> x_edges { 0 };
 	std::vector<uint32_t> y_edges { 0 };
 	std::vector<uint32_t> z_edges { 0 };
@@ -224,6 +256,16 @@ bool excluded(std::vector<std::string> const& groups, std::string const& group)
 
 std::optional<PackedItem> place(Box const& box, Dimensions box_dimensions, Item const& item, std::vector<PackedItem> const& placed, float weight, Clock::time_point deadline)
 {
+	auto const box_volume = box_dimensions.volume();
+	uint64_t placed_volume = 0;
+	for (auto const& existing : placed) {
+		if (existing.dimensions.volume() > box_volume - std::min(box_volume, placed_volume))
+			return std::nullopt;
+		placed_volume += existing.dimensions.volume();
+	}
+	if (item.dimensions.volume() > box_volume - std::min(box_volume, placed_volume))
+		return std::nullopt;
+
 	PackedBox state { box, box_dimensions, placed, weight };
 
 	if (auto repeated = place_repeated(box_dimensions, item, placed))
@@ -236,7 +278,12 @@ std::optional<PackedItem> place(Box const& box, Dimensions box_dimensions, Item 
 		if (has_stable_orientation && !intrinsically_stable(dimensions, box_dimensions))
 			continue;
 
-		for (auto const& space : VoidFinder::find(box_dimensions, placed)) {
+		if (placed.size() <= 100)
+			debug("void_finder begin box=", box.reference, " placed=", placed.size(), " orientation=", dimensions.width, "x", dimensions.height, "x", dimensions.length);
+		auto spaces = VoidFinder::find(box_dimensions, placed);
+		if (placed.size() <= 100)
+			debug("void_finder end box=", box.reference, " placed=", placed.size(), " spaces=", spaces.size());
+		for (auto const& space : spaces) {
 			if (Clock::now() >= deadline)
 				return std::nullopt;
 
@@ -268,6 +315,7 @@ std::optional<PackedItem> place(Box const& box, Dimensions box_dimensions, Item 
 
 std::optional<PackedBox> try_box_once(Box const& box, std::vector<Item> const& items, bool allow_rotation, Clock::time_point deadline, ProgressCallback progress)
 {
+	debug("try_box_once begin box=", box.reference, " items=", items.size(), " dimensions=", box.dimensions.width, "x", box.dimensions.height, "x", box.dimensions.length);
 	std::vector<Dimensions> box_orientations { { box.dimensions } };
 	if (std::all_of(items.begin(), items.end(), [](auto const& item) { return item.rotation != RotationPolicy::Never; }))
 		box_orientations.push_back({ box.dimensions.length, box.dimensions.height, box.dimensions.width });
@@ -283,6 +331,8 @@ std::optional<PackedBox> try_box_once(Box const& box, std::vector<Item> const& i
 
 			if (Clock::now() >= deadline)
 				return best;
+			if (items.size() <= 100)
+				debug("try_box_once item begin box=", box.reference, " index=", item_index, "/", items.size(), " placed=", candidate.items.size());
 
 			std::vector<size_t> group_indices { item_index };
 			if (!items[item_index].linked_group.empty()) {
@@ -331,6 +381,8 @@ std::optional<PackedBox> try_box_once(Box const& box, std::vector<Item> const& i
 
 			if (progress)
 				progress(candidate.items.size(), items.size());
+			if (items.size() <= 100)
+				debug("try_box_once item end box=", box.reference, " index=", item_index, " placed=", candidate.items.size());
 		}
 
 		if (box_dimensions.width != box.dimensions.width)
@@ -343,6 +395,7 @@ std::optional<PackedBox> try_box_once(Box const& box, std::vector<Item> const& i
 			best = candidate;
 	}
 
+	debug("try_box_once end box=", box.reference, " packed=", best ? best->items.size() : 0);
 	return best;
 }
 
@@ -410,24 +463,31 @@ std::optional<PackedBox> try_box(Box const& box, std::vector<Item> const& items,
 
 void balance_weights(std::vector<PackedBox>& boxes, Clock::time_point deadline)
 {
+	debug("balance_weights begin boxes=", boxes.size());
 	while (Clock::now() < deadline && boxes.size() > 1) {
-		float current_spread = 0;
+		auto const spread = [](std::vector<float> const& weights) {
+			auto const [minimum, maximum] = std::minmax_element(weights.begin(), weights.end());
+			return *maximum - *minimum;
+		};
+
+		std::vector<float> weights;
+		weights.reserve(boxes.size());
 		for (auto const& box : boxes)
-			for (auto const& other : boxes)
-				current_spread = std::max(current_spread, box.total_weight - other.total_weight);
+			weights.push_back(box.total_weight);
+		float current_spread = spread(weights);
 		if (current_spread == 0)
 			return;
 
 		bool moved = false;
-		for (size_t source_index = 0; source_index < boxes.size() && !moved; ++source_index) {
-			for (size_t target_index = 0; target_index < boxes.size() && !moved; ++target_index) {
+		for (size_t source_index = 0; source_index < boxes.size() && !moved && Clock::now() < deadline; ++source_index) {
+			for (size_t target_index = 0; target_index < boxes.size() && !moved && Clock::now() < deadline; ++target_index) {
 				if (source_index == target_index)
 					continue;
 				auto const& source = boxes[source_index];
 				auto const& target = boxes[target_index];
 				if (source.total_weight <= target.total_weight)
 					continue;
-				for (size_t item_index = 0; item_index < source.items.size() && !moved; ++item_index) {
+				for (size_t item_index = 0; item_index < source.items.size() && !moved && Clock::now() < deadline; ++item_index) {
 					std::vector<size_t> group_indices { item_index };
 					auto const& selected = source.items[item_index].item;
 					if (!selected.linked_group.empty()) {
@@ -455,22 +515,11 @@ void balance_weights(std::vector<PackedBox>& boxes, Clock::time_point deadline)
 					}
 					if (!legal)
 						continue;
-					float new_spread = 0;
-					for (size_t i = 0; i < boxes.size(); ++i) {
-						float weight = boxes[i].total_weight;
-						if (i == source_index)
-							weight -= moved_weight;
-						if (i == target_index)
-							weight += moved_weight;
-						for (size_t j = 0; j < boxes.size(); ++j) {
-							float other = boxes[j].total_weight;
-							if (j == source_index)
-								other -= moved_weight;
-							if (j == target_index)
-								other += moved_weight;
-							new_spread = std::max(new_spread, weight - other);
-						}
-					}
+					weights[source_index] -= moved_weight;
+					weights[target_index] += moved_weight;
+					float new_spread = spread(weights);
+					weights[source_index] += moved_weight;
+					weights[target_index] -= moved_weight;
 					if (new_spread >= current_spread)
 						continue;
 					std::vector<bool> selected_items(source.items.size());
@@ -491,6 +540,7 @@ void balance_weights(std::vector<PackedBox>& boxes, Clock::time_point deadline)
 		if (!moved)
 			return;
 	}
+	debug("balance_weights end boxes=", boxes.size());
 }
 
 } // namespace
@@ -520,7 +570,11 @@ Result pack_ordered(std::vector<Box> boxes, std::vector<Item> items, Options opt
 				continue;
 			// Candidate evaluation is search work, not completed packing progress.
 			// Reporting it makes the item-based denominator reset for each box.
+			if (remaining.size() <= 100)
+				debug("candidate begin box=", boxes[i].reference, " remaining=", remaining.size());
 			auto candidate = try_box(boxes[i], remaining, options.allow_rotation, options.best_subset, deadline, nullptr);
+			if (remaining.size() <= 100)
+				debug("candidate end box=", boxes[i].reference, " remaining=", remaining.size(), " packed=", candidate ? candidate->items.size() : 0);
 			if (!candidate)
 				continue;
 			bool better = !best;

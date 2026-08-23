@@ -88,21 +88,24 @@ SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
 		result.box_reference = source.box.reference;
 		result.total_weight = source.total_weight;
 		result.utilization = source.dimensions.volume() == 0 ? 0.0f : static_cast<float>(source.used_volume()) / source.dimensions.volume();
+
 		if (source.box.outer_dimensions) {
 			result.outer_width = source.box.outer_dimensions->width;
 			result.outer_length = source.box.outer_dimensions->length;
 			result.outer_depth = source.box.outer_dimensions->height;
 		}
+
 		for (auto const& item : source.items) {
-			result.placements.push_back({ item.item.code, item.item.reference, item.x, item.y, item.z,
-				item.dimensions.width, item.dimensions.length, item.dimensions.height });
+			result.placements.push_back({ item.item.code, item.item.reference, item.x, item.y, item.z, item.dimensions.width, item.dimensions.length, item.dimensions.height });
 		}
+
 		response.results.push_back(std::move(result));
 	}
+
 	for (auto const& item : packed.failed) {
-		response.failed.push_back({ item.code, item.reference, item.dimensions.width, item.dimensions.length,
-			item.dimensions.height, item.weight });
+		response.failed.push_back({ item.code, item.reference, item.dimensions.width, item.dimensions.length, item.dimensions.height, item.weight });
 	}
+
 	return response;
 }
 

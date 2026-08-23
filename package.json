@@ -28,6 +28,7 @@
 		"build:ts": "tsc -p node/tsconfig.build.json",
 		"clean": "node node/scripts/clean.mjs",
 		"run:core": "node node/scripts/build.mjs core && node node/scripts/run-core.mjs",
+		"run:core:o": "node node/scripts/build.mjs core --optimize && node node/scripts/run-core.mjs",
 		"prebuild:binaries": "node node/scripts/build.mjs --prebuild",
 		"prepublishOnly": "npm run build",
 		"lint:check": "node node/scripts/build.mjs format --check",

@@ -1,8 +1,6 @@
 #include <cstddef>
-#include <cstdio>
 #include <iomanip>
 #include <iostream>
-#include <stdio.h>
 
 #include "solve_domain_generated.h"
 #include "solver.h"
@@ -42,10 +40,9 @@ int main()
 	});
 
 	fbs::domain::SolveOptions options;
-	options.timeout_ms = 1000;
 	options.strategy = static_cast<int8_t>(fbs::SolveStrategy_Utilization);
 	options.balance_weight = true;
-	options.best_subset = true;
+	options.best_subset = false;
 	solve.options = options;
 
 	fbs::domain::ItemType linked_a;
