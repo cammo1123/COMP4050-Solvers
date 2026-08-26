@@ -1,4 +1,5 @@
 #include "solve_worker.h"
+#include "solver.h"
 
 #include <napi.h>
 
