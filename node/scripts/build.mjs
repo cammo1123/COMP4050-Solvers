@@ -7,7 +7,7 @@ import path from 'node:path'
 import { fail, findOnPath, log, nodeRoot, repoRoot, warn } from './shared.mjs'
 
 const TARGETS = ['addon', 'core']
-const BUILD_TYPES = ['Debug', 'Release']
+const BUILD_TYPES = ['Debug', 'Release', 'RelWithDebInfo']
 
 const args = process.argv.slice(2)
 
@@ -86,7 +86,9 @@ function format (check) {
 	const clangFormat = findOnPath('clang-format')
 	if (!clangFormat) fail("build", 'clang-format not found on PATH')
 	const srcDir = path.join(repoRoot, 'src')
-	const files = fs.readdirSync(srcDir).filter(f => f.endsWith('.cpp') || f.endsWith('.h')).map(f => path.join('src', f))
+	const files = fs.readdirSync(srcDir, { recursive: true })
+		.filter(f => f.endsWith('.cpp') || f.endsWith('.h'))
+		.map(f => path.join('src', f))
 	const flags = check ? ['--dry-run', '--Werror'] : ['-i']
 	for (const file of files) {
 		run(clangFormat, [...flags, file])
@@ -104,7 +106,9 @@ const target = first ?? 'addon'
 if (!TARGETS.includes(target)) {
 	fail("build", `unknown target "${target}"; expected one of ${TARGETS.join(', ')} or format [--check]`)
 }
-const buildType = args.includes('--release') || args.includes('--optimize') ? 'Release' : 'Debug'
+const buildType = args.includes('--debug')
+	? 'Debug'
+	: args.includes('--release') || args.includes('--optimize') ? 'Release' : 'RelWithDebInfo'
 if (!BUILD_TYPES.includes(buildType)) {
 	fail("build", `unknown build type "${buildType}"`)
 }
