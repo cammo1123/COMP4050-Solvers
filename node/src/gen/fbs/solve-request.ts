@@ -94,6 +94,8 @@ static addOptions(builder:flatbuffers.Builder, optionsOffset:flatbuffers.Offset)
 
 static endSolveRequest(builder:flatbuffers.Builder):flatbuffers.Offset {
   const offset = builder.endObject();
+  builder.requiredField(offset, 4) // boxes
+  builder.requiredField(offset, 6) // items
   return offset;
 }
 

@@ -11,7 +11,7 @@ export function decodeResponse(bytes) {
     const message = SolveResponseMessage.getRootAsSolveResponse(new flatbuffers.ByteBuffer(bytes));
     const unpacked = message.unpack();
     return {
-        results: (unpacked.results ?? []).map((item) => ({ boxReference: item.boxReference, placements: (item.placements ?? []).map((item) => ({ x: item.x, y: item.y, z: item.z, width: item.width, length: item.length, depth: item.depth })) })),
+        results: (unpacked.results ?? []).map((item) => ({ boxReference: item.boxReference, placements: (item.placements ?? []).map((item) => ({ itemCode: item.itemCode, itemReference: item.itemReference, x: item.x, y: item.y, z: item.z, width: item.width, length: item.length, depth: item.depth })) })),
         failed: (unpacked.failed ?? []).map((item) => ({ itemCode: item.itemCode, itemReference: item.itemReference, width: item.width, length: item.length, depth: item.depth, weight: item.weight, ...(item.boxGroup !== null && item.boxGroup !== undefined ? { boxGroup: item.boxGroup } : {}) }))
     };
 }

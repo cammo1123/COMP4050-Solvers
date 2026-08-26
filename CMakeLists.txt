@@ -128,7 +128,7 @@ add_custom_command(
     VERBATIM
 )
 
-add_library(solver_core STATIC src/solver.cpp src/packing/model.cpp src/packing/orientation.cpp src/packing/void_finder.cpp src/packing/stability.cpp src/packing/packer.cpp ${GENERATED_HEADERS})
+add_library(solver_core STATIC src/solver.cpp ${GENERATED_HEADERS})
 target_include_directories(solver_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR} ${GENERATED_DIR} ${flatbuffers_include})
 
 add_executable(solver src/main.cpp)
@@ -205,8 +205,9 @@ if(COMP4050_BUILD_ADDON)
         )
     endif()
 
-    add_library(solver_addon MODULE src/addon.cpp src/solve_worker.cpp ${GENERATED_HEADERS})
+    add_library(solver_addon MODULE src/addon.cpp ${GENERATED_HEADERS})
     target_include_directories(solver_addon PRIVATE "${node_include}" "${napi_dir}" "${GENERATED_DIR}" "${flatbuffers_include}")
+
     # Target the lowest Node-API version required by ThreadSafeFunction.
     target_compile_definitions(solver_addon PRIVATE NAPI_VERSION=4)
     target_link_libraries(solver_addon PRIVATE solver_core)

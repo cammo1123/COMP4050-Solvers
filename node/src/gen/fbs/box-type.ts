@@ -104,6 +104,7 @@ static addMaximumBoxes(builder:flatbuffers.Builder, maximumBoxes:number) {
 
 static endBoxType(builder:flatbuffers.Builder):flatbuffers.Offset {
   const offset = builder.endObject();
+  builder.requiredField(offset, 4) // reference
   return offset;
 }
 
