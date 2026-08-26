@@ -5,8 +5,8 @@ namespace fbs;
 attribute "optional";
 
 table SolveRequest {
-  boxes: [BoxType];
-  items: [ItemType];
+  boxes: [BoxType] (required);
+  items: [ItemType] (required);
   options: SolveOptions (optional);
 }
 
@@ -18,6 +18,8 @@ table SolveOptions {
 }
 
 table ItemPlacement {
+item_code: string;
+  item_reference: string;
   x: uint;
   y: uint;
   z: uint;
