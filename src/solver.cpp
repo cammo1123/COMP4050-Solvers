@@ -74,6 +74,9 @@ SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
 	for (auto item : request.items) {
 
 		placements.push_back(ItemPlacement {
+			.item_code = item.item_code,
+			.item_reference = item.item_reference,
+
 			.x = 0,
 			.y = y,
 			.z = 0,
