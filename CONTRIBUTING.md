@@ -71,7 +71,7 @@ merge, rebase stale feature branches rather than merging `dev` into them.
 - **IntelliSense** — CMake exports `build/*/compile_commands.json`; clangd
   picks it up via `.clangd`.
 - **Formatting** — `.clang-format` defines the project style (tabs, Allman
-  braces). `pnpm format` applies it; `pnpm format --check` validates it.
+  braces). `pnpm lint:fix` applies it; `pnpm lint:check` validates it.
 - **Debugging** — **Run > Start Debugging (F5)** rebuilds the standalone binary
   (`build:core`) and points the debugger at `build/core/solver.exe`.
 
