@@ -1,7 +1,7 @@
 import * as flatbuffers from "flatbuffers";
 import { describe, expect, it } from "vitest";
 
-import addon from "../index.cjs";
+import addon from "../native.cjs";
 import { solve } from "../src/addon.js";
 import { BoxType, ItemType, SolveRequest, SolveResponse } from "../src/gen/fbs.js";
 
