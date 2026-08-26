@@ -205,7 +205,7 @@ if(COMP4050_BUILD_ADDON)
         )
     endif()
 
-    add_library(solver_addon MODULE src/addon.cpp ${GENERATED_HEADERS})
+    add_library(solver_addon MODULE src/addon.cpp src/solve_worker.cpp ${GENERATED_HEADERS})
     target_include_directories(solver_addon PRIVATE "${node_include}" "${napi_dir}" "${GENERATED_DIR}" "${flatbuffers_include}")
 
     # Target the lowest Node-API version required by ThreadSafeFunction.
