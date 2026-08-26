@@ -73,6 +73,8 @@ export class SolveRequest {
     }
     static endSolveRequest(builder) {
         const offset = builder.endObject();
+        builder.requiredField(offset, 4); // boxes
+        builder.requiredField(offset, 6); // items
         return offset;
     }
     static finishSolveRequestBuffer(builder, offset) {

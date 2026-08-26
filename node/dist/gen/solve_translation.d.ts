@@ -13,6 +13,8 @@ export type BoxTypeT = {
     maximumBoxes?: number;
 };
 export type ItemPlacementT = {
+    itemCode: string;
+    itemReference: string;
     x: number;
     y: number;
     z: number;

@@ -99,6 +99,8 @@ static addBoxGroup(builder:flatbuffers.Builder, boxGroupOffset:flatbuffers.Offse
 
 static endItemType(builder:flatbuffers.Builder):flatbuffers.Offset {
   const offset = builder.endObject();
+  builder.requiredField(offset, 4) // item_code
+  builder.requiredField(offset, 6) // item_reference
   return offset;
 }
 

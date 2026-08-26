@@ -16,57 +16,73 @@ export class ItemPlacement {
         bb.setPosition(bb.position() + flatbuffers.SIZE_PREFIX_LENGTH);
         return (obj || new ItemPlacement()).__init(bb.readInt32(bb.position()) + bb.position(), bb);
     }
-    x() {
+    itemCode(optionalEncoding) {
         const offset = this.bb.__offset(this.bb_pos, 4);
-        return offset ? this.bb.readUint32(this.bb_pos + offset) : 0;
+        return offset ? this.bb.__string(this.bb_pos + offset, optionalEncoding) : null;
     }
-    y() {
+    itemReference(optionalEncoding) {
         const offset = this.bb.__offset(this.bb_pos, 6);
-        return offset ? this.bb.readUint32(this.bb_pos + offset) : 0;
+        return offset ? this.bb.__string(this.bb_pos + offset, optionalEncoding) : null;
     }
-    z() {
+    x() {
         const offset = this.bb.__offset(this.bb_pos, 8);
         return offset ? this.bb.readUint32(this.bb_pos + offset) : 0;
     }
-    width() {
+    y() {
         const offset = this.bb.__offset(this.bb_pos, 10);
         return offset ? this.bb.readUint32(this.bb_pos + offset) : 0;
     }
-    length() {
+    z() {
         const offset = this.bb.__offset(this.bb_pos, 12);
         return offset ? this.bb.readUint32(this.bb_pos + offset) : 0;
     }
-    depth() {
+    width() {
         const offset = this.bb.__offset(this.bb_pos, 14);
         return offset ? this.bb.readUint32(this.bb_pos + offset) : 0;
     }
+    length() {
+        const offset = this.bb.__offset(this.bb_pos, 16);
+        return offset ? this.bb.readUint32(this.bb_pos + offset) : 0;
+    }
+    depth() {
+        const offset = this.bb.__offset(this.bb_pos, 18);
+        return offset ? this.bb.readUint32(this.bb_pos + offset) : 0;
+    }
     static startItemPlacement(builder) {
-        builder.startObject(6);
+        builder.startObject(8);
+    }
+    static addItemCode(builder, itemCodeOffset) {
+        builder.addFieldOffset(0, itemCodeOffset, 0);
+    }
+    static addItemReference(builder, itemReferenceOffset) {
+        builder.addFieldOffset(1, itemReferenceOffset, 0);
     }
     static addX(builder, x) {
-        builder.addFieldInt32(0, x, 0);
+        builder.addFieldInt32(2, x, 0);
     }
     static addY(builder, y) {
-        builder.addFieldInt32(1, y, 0);
+        builder.addFieldInt32(3, y, 0);
     }
     static addZ(builder, z) {
-        builder.addFieldInt32(2, z, 0);
+        builder.addFieldInt32(4, z, 0);
     }
     static addWidth(builder, width) {
-        builder.addFieldInt32(3, width, 0);
+        builder.addFieldInt32(5, width, 0);
     }
     static addLength(builder, length) {
-        builder.addFieldInt32(4, length, 0);
+        builder.addFieldInt32(6, length, 0);
     }
     static addDepth(builder, depth) {
-        builder.addFieldInt32(5, depth, 0);
+        builder.addFieldInt32(7, depth, 0);
     }
     static endItemPlacement(builder) {
         const offset = builder.endObject();
         return offset;
     }
-    static createItemPlacement(builder, x, y, z, width, length, depth) {
+    static createItemPlacement(builder, itemCodeOffset, itemReferenceOffset, x, y, z, width, length, depth) {
         ItemPlacement.startItemPlacement(builder);
+        ItemPlacement.addItemCode(builder, itemCodeOffset);
+        ItemPlacement.addItemReference(builder, itemReferenceOffset);
         ItemPlacement.addX(builder, x);
         ItemPlacement.addY(builder, y);
         ItemPlacement.addZ(builder, z);
@@ -76,9 +92,11 @@ export class ItemPlacement {
         return ItemPlacement.endItemPlacement(builder);
     }
     unpack() {
-        return new ItemPlacementT(this.x(), this.y(), this.z(), this.width(), this.length(), this.depth());
+        return new ItemPlacementT(this.itemCode(), this.itemReference(), this.x(), this.y(), this.z(), this.width(), this.length(), this.depth());
     }
     unpackTo(_o) {
+        _o.itemCode = this.itemCode();
+        _o.itemReference = this.itemReference();
         _o.x = this.x();
         _o.y = this.y();
         _o.z = this.z();
@@ -88,13 +106,17 @@ export class ItemPlacement {
     }
 }
 export class ItemPlacementT {
+    itemCode;
+    itemReference;
     x;
     y;
     z;
     width;
     length;
     depth;
-    constructor(x = 0, y = 0, z = 0, width = 0, length = 0, depth = 0) {
+    constructor(itemCode = null, itemReference = null, x = 0, y = 0, z = 0, width = 0, length = 0, depth = 0) {
+        this.itemCode = itemCode;
+        this.itemReference = itemReference;
         this.x = x;
         this.y = y;
         this.z = z;
@@ -103,7 +125,9 @@ export class ItemPlacementT {
         this.depth = depth;
     }
     pack(builder) {
-        return ItemPlacement.createItemPlacement(builder, this.x, this.y, this.z, this.width, this.length, this.depth);
+        const itemCode = (this.itemCode !== null ? builder.createString(this.itemCode) : 0);
+        const itemReference = (this.itemReference !== null ? builder.createString(this.itemReference) : 0);
+        return ItemPlacement.createItemPlacement(builder, itemCode, itemReference, this.x, this.y, this.z, this.width, this.length, this.depth);
     }
 }
 //# sourceMappingURL=item-placement.js.map

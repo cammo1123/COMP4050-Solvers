@@ -28,6 +28,8 @@ struct SolveRequest {
 };
 
 struct ItemPlacement {
+	std::string item_code{};
+	std::string item_reference{};
 	uint32_t x = 0;
 	uint32_t y = 0;
 	uint32_t z = 0;
@@ -134,6 +136,10 @@ inline ItemPlacement toDomain(fbs::ItemPlacementT const& value)
 {
 	ItemPlacement out;
 
+	out.item_code = value.item_code;
+
+	out.item_reference = value.item_reference;
+
 	out.x = value.x;
 
 	out.y = value.y;
@@ -152,6 +158,10 @@ inline ItemPlacement toDomain(fbs::ItemPlacementT const& value)
 inline fbs::ItemPlacementT fromDomain(ItemPlacement const& value)
 {
 	fbs::ItemPlacementT out;
+
+	out.item_code = value.item_code;
+
+	out.item_reference = value.item_reference;
 
 	out.x = value.x;
 

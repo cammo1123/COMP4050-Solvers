@@ -75,7 +75,7 @@ struct BoxType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyOffset(verifier, VT_REFERENCE) &&
+           VerifyOffsetRequired(verifier, VT_REFERENCE) &&
            verifier.VerifyString(reference()) &&
            VerifyField<uint32_t>(verifier, VT_WIDTH, 4) &&
            VerifyField<uint32_t>(verifier, VT_LENGTH, 4) &&
@@ -126,6 +126,7 @@ struct BoxTypeBuilder {
   ::flatbuffers::Offset<BoxType> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<BoxType>(end);
+    fbb_.Required(o, BoxType::VT_REFERENCE);
     return o;
   }
 };
@@ -224,9 +225,9 @@ struct ItemType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyOffset(verifier, VT_ITEM_CODE) &&
+           VerifyOffsetRequired(verifier, VT_ITEM_CODE) &&
            verifier.VerifyString(item_code()) &&
-           VerifyOffset(verifier, VT_ITEM_REFERENCE) &&
+           VerifyOffsetRequired(verifier, VT_ITEM_REFERENCE) &&
            verifier.VerifyString(item_reference()) &&
            VerifyField<uint32_t>(verifier, VT_WIDTH, 4) &&
            VerifyField<uint32_t>(verifier, VT_LENGTH, 4) &&
@@ -273,6 +274,8 @@ struct ItemTypeBuilder {
   ::flatbuffers::Offset<ItemType> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<ItemType>(end);
+    fbb_.Required(o, ItemType::VT_ITEM_CODE);
+    fbb_.Required(o, ItemType::VT_ITEM_REFERENCE);
     return o;
   }
 };
@@ -349,7 +352,7 @@ inline ::flatbuffers::Offset<BoxType> BoxType::Pack(::flatbuffers::FlatBufferBui
   (void)_rehasher;
   (void)_o;
   struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const BoxTypeT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
-  auto _reference = _o->reference.empty() ? 0 : _fbb.CreateString(_o->reference);
+  auto _reference = _fbb.CreateString(_o->reference);
   auto _width = _o->width;
   auto _length = _o->length;
   auto _depth = _o->depth;
@@ -395,8 +398,8 @@ inline ::flatbuffers::Offset<ItemType> ItemType::Pack(::flatbuffers::FlatBufferB
   (void)_rehasher;
   (void)_o;
   struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const ItemTypeT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
-  auto _item_code = _o->item_code.empty() ? 0 : _fbb.CreateString(_o->item_code);
-  auto _item_reference = _o->item_reference.empty() ? 0 : _fbb.CreateString(_o->item_reference);
+  auto _item_code = _fbb.CreateString(_o->item_code);
+  auto _item_reference = _fbb.CreateString(_o->item_reference);
   auto _width = _o->width;
   auto _length = _o->length;
   auto _depth = _o->depth;

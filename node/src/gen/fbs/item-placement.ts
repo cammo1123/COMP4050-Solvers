@@ -24,62 +24,84 @@ static getSizePrefixedRootAsItemPlacement(bb:flatbuffers.ByteBuffer, obj?:ItemPl
   return (obj || new ItemPlacement()).__init(bb.readInt32(bb.position()) + bb.position(), bb);
 }
 
-x():number {
+itemCode():string|null
+itemCode(optionalEncoding:flatbuffers.Encoding):string|Uint8Array|null
+itemCode(optionalEncoding?:any):string|Uint8Array|null {
   const offset = this.bb!.__offset(this.bb_pos, 4);
-  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
+  return offset ? this.bb!.__string(this.bb_pos + offset, optionalEncoding) : null;
 }
 
-y():number {
+itemReference():string|null
+itemReference(optionalEncoding:flatbuffers.Encoding):string|Uint8Array|null
+itemReference(optionalEncoding?:any):string|Uint8Array|null {
   const offset = this.bb!.__offset(this.bb_pos, 6);
-  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
+  return offset ? this.bb!.__string(this.bb_pos + offset, optionalEncoding) : null;
 }
 
-z():number {
+x():number {
   const offset = this.bb!.__offset(this.bb_pos, 8);
   return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
 }
 
-width():number {
+y():number {
   const offset = this.bb!.__offset(this.bb_pos, 10);
   return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
 }
 
-length():number {
+z():number {
   const offset = this.bb!.__offset(this.bb_pos, 12);
   return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
 }
 
-depth():number {
+width():number {
   const offset = this.bb!.__offset(this.bb_pos, 14);
   return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
 }
 
+length():number {
+  const offset = this.bb!.__offset(this.bb_pos, 16);
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
+}
+
+depth():number {
+  const offset = this.bb!.__offset(this.bb_pos, 18);
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
+}
+
 static startItemPlacement(builder:flatbuffers.Builder) {
-  builder.startObject(6);
+  builder.startObject(8);
+}
+
+static addItemCode(builder:flatbuffers.Builder, itemCodeOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(0, itemCodeOffset, 0);
+}
+
+static addItemReference(builder:flatbuffers.Builder, itemReferenceOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(1, itemReferenceOffset, 0);
 }
 
 static addX(builder:flatbuffers.Builder, x:number) {
-  builder.addFieldInt32(0, x, 0);
+  builder.addFieldInt32(2, x, 0);
 }
 
 static addY(builder:flatbuffers.Builder, y:number) {
-  builder.addFieldInt32(1, y, 0);
+  builder.addFieldInt32(3, y, 0);
 }
 
 static addZ(builder:flatbuffers.Builder, z:number) {
-  builder.addFieldInt32(2, z, 0);
+  builder.addFieldInt32(4, z, 0);
 }
 
 static addWidth(builder:flatbuffers.Builder, width:number) {
-  builder.addFieldInt32(3, width, 0);
+  builder.addFieldInt32(5, width, 0);
 }
 
 static addLength(builder:flatbuffers.Builder, length:number) {
-  builder.addFieldInt32(4, length, 0);
+  builder.addFieldInt32(6, length, 0);
 }
 
 static addDepth(builder:flatbuffers.Builder, depth:number) {
-  builder.addFieldInt32(5, depth, 0);
+  builder.addFieldInt32(7, depth, 0);
 }
 
 static endItemPlacement(builder:flatbuffers.Builder):flatbuffers.Offset {
@@ -87,8 +109,10 @@ static endItemPlacement(builder:flatbuffers.Builder):flatbuffers.Offset {
   return offset;
 }
 
-static createItemPlacement(builder:flatbuffers.Builder, x:number, y:number, z:number, width:number, length:number, depth:number):flatbuffers.Offset {
+static createItemPlacement(builder:flatbuffers.Builder, itemCodeOffset:flatbuffers.Offset, itemReferenceOffset:flatbuffers.Offset, x:number, y:number, z:number, width:number, length:number, depth:number):flatbuffers.Offset {
   ItemPlacement.startItemPlacement(builder);
+  ItemPlacement.addItemCode(builder, itemCodeOffset);
+  ItemPlacement.addItemReference(builder, itemReferenceOffset);
   ItemPlacement.addX(builder, x);
   ItemPlacement.addY(builder, y);
   ItemPlacement.addZ(builder, z);
@@ -100,6 +124,8 @@ static createItemPlacement(builder:flatbuffers.Builder, x:number, y:number, z:nu
 
 unpack(): ItemPlacementT {
   return new ItemPlacementT(
+    this.itemCode(),
+    this.itemReference(),
     this.x(),
     this.y(),
     this.z(),
@@ -111,6 +137,8 @@ unpack(): ItemPlacementT {
 
 
 unpackTo(_o: ItemPlacementT): void {
+  _o.itemCode = this.itemCode();
+  _o.itemReference = this.itemReference();
   _o.x = this.x();
   _o.y = this.y();
   _o.z = this.z();
@@ -122,6 +150,8 @@ unpackTo(_o: ItemPlacementT): void {
 
 export class ItemPlacementT implements flatbuffers.IGeneratedObject {
 constructor(
+  public itemCode: string|Uint8Array|null = null,
+  public itemReference: string|Uint8Array|null = null,
   public x: number = 0,
   public y: number = 0,
   public z: number = 0,
@@ -132,7 +162,12 @@ constructor(
 
 
 pack(builder:flatbuffers.Builder): flatbuffers.Offset {
+  const itemCode = (this.itemCode !== null ? builder.createString(this.itemCode!) : 0);
+  const itemReference = (this.itemReference !== null ? builder.createString(this.itemReference!) : 0);
+
   return ItemPlacement.createItemPlacement(builder,
+    itemCode,
+    itemReference,
     this.x,
     this.y,
     this.z,
