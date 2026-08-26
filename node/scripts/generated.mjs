@@ -23,15 +23,30 @@ function isUsable (binary) {
 	return run(binary, ['--version']).status === 0
 }
 
-function extractArchive (archive, extractDir) {
-	if (archive.endsWith('.zip')) {
-		if (!findOnPath('unzip')) {
-			fail("generated", "`unzip` is required to extract .zip archives but was not found on PATH")
-		}
-		const result = run('unzip', ['-o', '-q', archive, '-d', extractDir])
-		if (result.status === 0) return result
-	}
-	return run('tar', ['-xf', archive, '-C', extractDir])
+
+function extractArchive(archive, extractDir) {
+  fs.mkdirSync(extractDir, { recursive: true })
+
+  const isWindows = process.platform === 'win32'
+
+  if (archive.endsWith('.zip')) {
+    if (!isWindows) {
+      if (!findOnPath('unzip')) {
+        fail(
+          'generated',
+          '`unzip` is required to extract .zip archives but was not found on PATH'
+        )
+      }
+      const result = run('unzip', ['-o', '-q', archive, '-d', extractDir])
+      if (result.status === 0) return result
+    }
+
+    // Windows 10+ ships `tar.exe` (bsdtar), which can extract .zip files.
+    return run('tar', ['-xf', archive, '-C', extractDir])
+  }
+
+  // Handles .tar, .tar.gz, .tgz, etc. on both platforms.
+  return run('tar', ['-xf', archive, '-C', extractDir])
 }
 
 function downloadAsset (platform, arch) {
