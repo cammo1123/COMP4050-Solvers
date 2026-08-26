@@ -1,4 +1,5 @@
-import native from "../index.cjs";
+import native from "../native.cjs";
+import { Buffer } from "node:buffer";
 
 import { decodeResponse, encodeRequest, type SolveRequest, type SolveResponse } from "./gen/solve_translation.js";
 export type { SolveRequest, SolveResponse, BoxTypeT, ItemTypeT, SolveOptionsT, ItemPlacementT, BoxResultT } from "./gen/solve_translation.js";

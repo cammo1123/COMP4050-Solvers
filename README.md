@@ -33,10 +33,25 @@ and the header-only FlatBuffers runtime):
 pnpm build
 ```
 
+The default build is `RelWithDebInfo`: optimized code with debug symbols. Use
+`pnpm build:debug` when an unoptimized Debug build is needed.
+
 Release build with maximum optimizations (LTO; used by CI):
 
 ```sh
 pnpm build:optimized
+```
+
+Unoptimized build with debug symbols:
+
+```sh
+pnpm build:debug
+```
+
+For the standalone CLI:
+
+```sh
+pnpm build:core:debug
 ```
 
 Standalone CLI only (no addon; fetches the header-only FlatBuffers runtime):
@@ -62,13 +77,69 @@ addon.info();
 
 addon.solve({
   boxes: [
-    { reference: "a1", width: 120, length: 80, depth: 60, maxWeight: 25, active: true },
+    {
+      reference: "a1",
+      width: 120, length: 80, depth: 60,
+      outerWidth: 124, outerLength: 84, outerDepth: 64,
+      maxWeight: 25000, maximumBoxes: 2, active: true,
+    },
   ],
+  items: [
+    {
+      itemCode: "panel", itemReference: "panel",
+      width: 40, length: 30, depth: 5, weight: 1000,
+      quantity: 3, rotationPolicy: RotationPolicy.KeepFlat,
+      linkedGroup: "panel-set",
+      constraint: { noStacking: true, minX: 0 },
+    },
+  ],
+  options: {
+    strategy: SolveStrategy.Utilization,
+    balanceWeight: true,
+    strictItemOrder: false,
+    bestSubset: false,
+    timeoutMs: 1000,
+  },
 });
 ```
 
 `solve(request)` marshals a `SolveRequest` into a FlatBuffers buffer, runs the
 native addon, and returns the decoded `SolveResponse`.
+
+Packing dimensions use millimetres and weights use grams. The native engine uses
+Y-up coordinates: `width` is X, `depth` is vertical Y, and `length` is Z. A
+placement's `x`, `y`, and `z` are its minimum corner. Inner box dimensions are
+the packing bounds; optional `outerWidth`, `outerLength`, and `outerDepth` are
+returned as shipping dimensions and do not enlarge the usable interior.
+
+Use the generated `RotationPolicy` enum: `Never`, `KeepFlat` (rotate around Y
+without changing vertical depth), or `BestFit`. `quantity` expands one item
+record into instances; omitted means one and zero means none. `linkedGroup`
+requires instances in the group to remain together. Declarative constraints
+support no-stacking, required vertical orientation, and minimum/maximum start
+coordinates.
+
+Solve options include `singleBox`, `bestSubset`, `allPermutations`,
+`strictItemOrder`, `balanceWeight`, `timeoutMs`, and
+`strategy: SolveStrategy.Default` (pack the most items, preferring smaller
+boxes) or `SolveStrategy.Utilization` (prefer utilization). Permutation and
+best-subset searches are bounded and always observe `timeoutMs`. `onProgress`
+receives intermediate `(done, total)` callbacks while candidates are evaluated.
+The heuristic is a native C++17 adaptation of the MIT-licensed BoxPacker project
+by Doug Wright; see `C:\Users\camer\src\BoxPacker\license.txt` for the source
+license text. Results are deterministic for the same request, but exact
+coordinates can differ from PHP BoxPacker because this port uses explicit Y-up
+geometry, declarative constraints, center-support stability checks, and bounded
+search rather than PHP's recursive layer classes and callbacks.
+
+The standalone CLI exercises multiple box sizes, outer dimensions, linked
+items, keep-flat rotation, utilization strategy, balancing, best-subset mode,
+and the progress bar:
+
+```sh
+pnpm build:core
+build/core/solver.exe       # Windows: build/core/solver.exe
+```
 
 ## Testing
 

@@ -1,6 +1,8 @@
+import type { SolveInput, SolveResponse } from "./dist/addon.js";
+
 declare const addon: {
 	info(): string;
-	solve(buf: Uint8Array, onProgress?: (done: number, total: number) => void): Promise<Buffer>;
+	solve(input: SolveInput): Promise<SolveResponse>;
 };
 
 export = addon;
