@@ -1,23 +1,24 @@
+import { info } from "@bionic/solver";
 import { describe, expect, it } from "vitest";
-import addon from "../index.cjs";
 
-describe("addon.info()", () => {
+describe("package info()", () => {
 	it("describes the build", () => {
-		const info = addon.info();
-		expect(info).contains("comp4050-solver");
+		const buildInfo = info();
+		expect(buildInfo.projectName).toBeTypeOf("string");
+		expect(buildInfo.projectVersion).toBeTypeOf("string");
 	});
 
 	it("is deterministic across calls", () => {
-		expect(addon.info()).toBe(addon.info());
-		expect(addon.info()).toBe(addon.info());
+		expect(info()).toEqual(info());
+		expect(info()).toEqual(info());
 	});
 
 	it("does not throw", () => {
-		expect(() => addon.info()).not.toThrow();
+		expect(() => info()).not.toThrow();
 	});
 
 	it("ignores extraneous arguments", () => {
-		const result = Reflect.apply(addon.info, null, ["anything", 42, null]);
-		expect(result).toBe(addon.info());
+		const result = Reflect.apply(info, null, ["anything", 42, null]);
+		expect(result).toEqual(info());
 	});
 });

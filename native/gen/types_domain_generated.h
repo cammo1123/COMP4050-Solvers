@@ -39,7 +39,7 @@ struct ItemType {
 	std::optional<std::string> box_group = std::nullopt;
 };
 
-inline BoxType toDomain(fbs::BoxTypeT const& value)
+inline BoxType toDomain([[maybe_unused]] fbs::BoxTypeT const& value)
 {
 	BoxType out;
 
@@ -70,7 +70,7 @@ inline BoxType toDomain(fbs::BoxTypeT const& value)
 	return out;
 }
 
-inline fbs::BoxTypeT fromDomain(BoxType const& value)
+inline fbs::BoxTypeT fromDomain([[maybe_unused]] BoxType const& value)
 {
 	fbs::BoxTypeT out;
 
@@ -101,7 +101,7 @@ inline fbs::BoxTypeT fromDomain(BoxType const& value)
 	return out;
 }
 
-inline ItemType toDomain(fbs::ItemTypeT const& value)
+inline ItemType toDomain([[maybe_unused]] fbs::ItemTypeT const& value)
 {
 	ItemType out;
 
@@ -124,7 +124,7 @@ inline ItemType toDomain(fbs::ItemTypeT const& value)
 	return out;
 }
 
-inline fbs::ItemTypeT fromDomain(ItemType const& value)
+inline fbs::ItemTypeT fromDomain([[maybe_unused]] ItemType const& value)
 {
 	fbs::ItemTypeT out;
 

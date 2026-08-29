@@ -1,9 +1,6 @@
 #include "solver.h"
 
-#include <cstdint>
-#include <sstream>
 #include <stdexcept>
-#include <string>
 
 #include "buildinfo.h"
 #include "solve_domain_generated.h"
@@ -13,22 +10,20 @@ using namespace fbs::domain;
 
 namespace solver {
 
-std::string info()
+InfoResponse info()
 {
-	std::ostringstream out;
-
-	out << BUILDINFO_PROJECT_NAME << " " << BUILDINFO_PROJECT_VERSION;
-	out << " (" << BUILDINFO_BUILD_TYPE << ")\n";
-
-	out << "  git: " << BUILDINFO_GIT_HASH << " (" << BUILDINFO_GIT_BRANCH << ")";
-	out << "\n";
-
-	out << "  built: " << BUILDINFO_BUILD_TIME << "\n";
-	out << "  platform: " << BUILDINFO_PLATFORM << " " << BUILDINFO_ARCH << "\n";
-	out << "  compiler: " << BUILDINFO_COMPILER << "\n";
-	out << "  node: " << BUILDINFO_NODE_VERSION;
-
-	return out.str();
+	return {
+		.project_name = BUILDINFO_PROJECT_NAME,
+		.project_version = BUILDINFO_PROJECT_VERSION,
+		.build_type = BUILDINFO_BUILD_TYPE,
+		.git_hash = BUILDINFO_GIT_HASH,
+		.git_branch = BUILDINFO_GIT_BRANCH,
+		.build_time = BUILDINFO_BUILD_TIME,
+		.platform = BUILDINFO_PLATFORM,
+		.arch = BUILDINFO_ARCH,
+		.compiler = BUILDINFO_COMPILER,
+		.node_version = BUILDINFO_NODE_VERSION,
+	};
 }
 
 SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)

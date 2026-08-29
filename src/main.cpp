@@ -11,7 +11,14 @@ using namespace fbs::domain;
 
 int main()
 {
-	std::cout << solver::info() << '\n';
+	auto const build_info = solver::info();
+	std::cout << build_info.project_name << " " << build_info.project_version;
+	std::cout << " (" << build_info.build_type << ")\n";
+	std::cout << "  git: " << build_info.git_hash << " (" << build_info.git_branch << ")\n";
+	std::cout << "  built: " << build_info.build_time << "\n";
+	std::cout << "  platform: " << build_info.platform << " " << build_info.arch << "\n";
+	std::cout << "  compiler: " << build_info.compiler << "\n";
+	std::cout << "  node: " << build_info.node_version << '\n';
 
 	SolveRequest solve = { };
 

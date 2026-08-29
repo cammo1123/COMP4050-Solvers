@@ -1,5 +1,6 @@
 import { Buffer } from "node:buffer";
 import native from "../native.cjs";
+import { decodeResponse as decodeInfoResponse } from "./gen/info_translation.js";
 import { decodeResponse, encodeRequest } from "./gen/solve_translation.js";
 export { SolveAlgorithm } from "./gen/fbs.js";
 export async function solve(input) {
@@ -10,7 +11,7 @@ export async function solve(input) {
     return decodeResponse(bytes);
 }
 export function info() {
-    return native.info();
+    return decodeInfoResponse(native.info());
 }
 export default { info, solve };
 //# sourceMappingURL=addon.js.map
