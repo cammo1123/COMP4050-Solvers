@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.18)
-project(comp4050-solver VERSION 1.0.0 LANGUAGES CXX)
+project(bionic-solver VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -71,6 +71,7 @@ function(comp4050_fetch_archive url dest)
             OUTPUT_QUIET
             ERROR_QUIET
         )
+
         if(archive_status EQUAL 0)
             set(download_archive FALSE)
         endif()
@@ -93,6 +94,7 @@ function(comp4050_fetch_archive url dest)
             OUTPUT_QUIET
             ERROR_QUIET
         )
+
         if(NOT download_status EQUAL 0)
             file(REMOVE "${download}")
             message(FATAL_ERROR "Downloaded archive from ${url} is invalid")
