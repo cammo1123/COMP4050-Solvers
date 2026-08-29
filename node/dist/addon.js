@@ -1,6 +1,7 @@
-import native from "../native.cjs";
 import { Buffer } from "node:buffer";
+import native from "../native.cjs";
 import { decodeResponse, encodeRequest } from "./gen/solve_translation.js";
+export { SolveAlgorithm } from "./gen/fbs.js";
 export async function solve(input) {
     const { onProgress, ...request } = input;
     const encoded = encodeRequest(request);

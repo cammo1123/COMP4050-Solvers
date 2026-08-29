@@ -7,11 +7,16 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
 namespace fbs {
 namespace domain {
+
+
+
+
 
 struct BoxType {
 	std::string reference{};
