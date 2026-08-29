@@ -62,15 +62,43 @@ endif()
 
 function(comp4050_fetch_archive url dest)
     set(archive "${dest}.tar.gz")
+    set(download_archive TRUE)
 
-    if(NOT EXISTS "${archive}")
-        file(DOWNLOAD "${url}" "${archive}" STATUS download_status)
+    if(EXISTS "${archive}")
+        execute_process(
+            COMMAND "${CMAKE_COMMAND}" -E tar tzf "${archive}"
+            RESULT_VARIABLE archive_status
+            OUTPUT_QUIET
+            ERROR_QUIET
+        )
+        if(archive_status EQUAL 0)
+            set(download_archive FALSE)
+        endif()
+    endif()
+
+    if(download_archive)
+        set(download "${archive}.download")
+        file(DOWNLOAD "${url}" "${download}" STATUS download_status TLS_VERIFY ON)
         list(GET download_status 0 status_code)
 
         if(NOT status_code EQUAL 0)
             list(GET download_status 1 error_msg)
+            file(REMOVE "${download}")
             message(FATAL_ERROR "Failed to download ${url}: ${error_msg}")
         endif()
+
+        execute_process(
+            COMMAND "${CMAKE_COMMAND}" -E tar tzf "${download}"
+            RESULT_VARIABLE download_status
+            OUTPUT_QUIET
+            ERROR_QUIET
+        )
+        if(NOT download_status EQUAL 0)
+            file(REMOVE "${download}")
+            message(FATAL_ERROR "Downloaded archive from ${url} is invalid")
+        endif()
+
+        file(RENAME "${download}" "${archive}")
     endif()
 
     file(ARCHIVE_EXTRACT INPUT "${archive}" DESTINATION "${dest}")
@@ -128,7 +156,14 @@ add_custom_command(
     VERBATIM
 )
 
-add_library(solver_core STATIC src/solver.cpp ${GENERATED_HEADERS})
+add_library(solver_core STATIC
+    src/algo_extreme_point.cpp
+    src/algo_greedy.cpp
+    src/algo_shit_stack.cpp
+    src/solver.cpp
+    ${GENERATED_HEADERS}
+)
+set_target_properties(solver_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_include_directories(solver_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR} ${GENERATED_DIR} ${flatbuffers_include})
 
 add_executable(solver src/main.cpp)

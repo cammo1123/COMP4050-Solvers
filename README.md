@@ -6,8 +6,9 @@ schema.
 
 ## Layout
 
-- **`src/`** — C++ core: solver logic (`solver.h` / `solver.cpp`), a
-  standalone CLI (`main.cpp`), and the N-API addon (`addon.cpp`).
+- **`src/`** — C++ core: solver API and dispatcher (`solver.h` / `solver.cpp`),
+  separate algorithm translation units, a standalone CLI (`main.cpp`), and the
+  N-API addon (`addon.cpp`).
 - **`fbs/`** — FlatBuffers schemas. Each `*.fbs` generates C++ and TypeScript
   bindings, so it is the single source of truth for the binary boundary.
 - **`native/gen/`** — generated C++ bindings and translation layer, included by
@@ -119,12 +120,10 @@ requires instances in the group to remain together. Declarative constraints
 support no-stacking, required vertical orientation, and minimum/maximum start
 coordinates.
 
-Solve options include `singleBox`, `bestSubset`, `allPermutations`,
-`strictItemOrder`, `balanceWeight`, `timeoutMs`, and
-`strategy: SolveStrategy.Default` (pack the most items, preferring smaller
-boxes) or `SolveStrategy.Utilization` (prefer utilization). Permutation and
-best-subset searches are bounded and always observe `timeoutMs`. `onProgress`
-receives intermediate `(done, total)` callbacks while candidates are evaluated.
+Current solve options are `maxBoxes`, `allowRotation`, `timeoutMs`, and a numeric
+`strategy`. An omitted strategy uses the temporary stacking implementation;
+strategy `0` selects greedy and strategy `1` selects extreme-point, both of which
+remain unimplemented. `onProgress` receives intermediate `(done, total)` callbacks.
 The heuristic is a native C++17 adaptation of the MIT-licensed BoxPacker project
 by Doug Wright; see `C:\Users\camer\src\BoxPacker\license.txt` for the source
 license text. Results are deterministic for the same request, but exact
@@ -147,6 +146,7 @@ build/core/solver.exe       # Windows: build/core/solver.exe
 pnpm test        # one-shot run (builds the addon on demand if needed)
 pnpm test:watch  # watch mode
 pnpm typecheck   # TypeScript checker
+pnpm bench       # optimized end-to-end benchmarks
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the branch rules, build details, and
