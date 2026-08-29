@@ -28,6 +28,7 @@
 		"build:core": "node node/scripts/build.mjs core",
 		"build:core:debug": "node node/scripts/build.mjs core --debug",
 		"build:ts": "tsc -p node/tsconfig.build.json",
+		"bench": "node node/scripts/build.mjs --optimize && npm run build:ts && vitest bench --run --root node",
 		"clean": "node node/scripts/clean.mjs",
 		"run:core": "node node/scripts/build.mjs core && node node/scripts/run-core.mjs",
 		"run:core:o": "node node/scripts/build.mjs core --optimize && node node/scripts/run-core.mjs",

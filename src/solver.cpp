@@ -1,16 +1,35 @@
 #include "solver.h"
 
-#include <cstddef>
 #include <cstdint>
-#include <optional>
 #include <sstream>
-#include <vector>
+#include <stdexcept>
+#include <string>
 
 #include "buildinfo.h"
 #include "solve_domain_generated.h"
-#include "types_domain_generated.h"
+#include "solver_algo.h"
 
 using namespace fbs::domain;
+
+namespace {
+
+auto select_algorithm(SolveOptions const& options) -> solver::algo::Algorithm
+{
+	if (!options.strategy.has_value()) {
+		return solver::algo::Algorithm::shit_stack;
+	}
+
+	switch (*options.strategy) {
+	case static_cast<std::int8_t>(solver::algo::Algorithm::greedy):
+		return solver::algo::Algorithm::greedy;
+	case static_cast<std::int8_t>(solver::algo::Algorithm::extreme_point):
+		return solver::algo::Algorithm::extreme_point;
+	default:
+		throw std::invalid_argument("unsupported solver strategy: " + std::to_string(*options.strategy));
+	}
+}
+
+}
 
 namespace solver {
 
@@ -34,72 +53,19 @@ std::string info()
 
 SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
 {
-	SolveResponse response;
-	SolveOptions options = request.options.value_or(SolveOptions { });
+	auto const options = request.options.value_or(SolveOptions { });
+	auto const algorithm = select_algorithm(options);
 
-	(void)on_progress;
-	(void)options;
-
-	std::optional<BoxType> maybe_box = std::optional<BoxType>();
-	for (auto t_box : request.boxes) {
-		maybe_box = t_box;
-		break;
+	switch (algorithm) {
+	case algo::Algorithm::shit_stack:
+		return algo::solve_shit_stack(request, options, on_progress);
+	case algo::Algorithm::greedy:
+		return algo::solve_greedy(request, options, on_progress);
+	case algo::Algorithm::extreme_point:
+		return algo::solve_extreme_point(request, options, on_progress);
+	default:
+		throw std::logic_error("unhandled solver algorithm");
 	}
-
-	if (!maybe_box.has_value()) {
-		size_t i = 0;
-		if (on_progress) {
-			on_progress(i, request.items.size());
-		}
-		for (auto item : request.items) {
-			response.failed.push_back(item);
-			i++;
-			if (on_progress) {
-				on_progress(i, request.items.size());
-			}
-		}
-		return response;
-	}
-
-	auto box = maybe_box.value();
-
-	auto placements = std::vector<ItemPlacement>();
-	auto results = std::vector<BoxResult>();
-
-	uint32_t y = 0;
-	size_t i = 0;
-	if (on_progress) {
-		on_progress(i, request.items.size());
-	}
-	for (auto item : request.items) {
-
-		placements.push_back(ItemPlacement {
-			.item_code = item.item_code,
-			.item_reference = item.item_reference,
-
-			.x = 0,
-			.y = y,
-			.z = 0,
-
-			.width = item.width,
-			.length = item.length,
-			.depth = item.depth,
-		});
-
-		i++;
-		if (on_progress) {
-			on_progress(i, request.items.size());
-		}
-		y += item.depth;
-	}
-
-	BoxResult placement = {
-		.box_reference = box.reference,
-		.placements = placements,
-	};
-
-	response.results.push_back(placement);
-	return response;
 }
 
 }
