@@ -120,16 +120,11 @@ requires instances in the group to remain together. Declarative constraints
 support no-stacking, required vertical orientation, and minimum/maximum start
 coordinates.
 
-Current solve options are `maxBoxes`, `allowRotation`, `timeoutMs`, and a numeric
-`strategy`. An omitted strategy uses the temporary stacking implementation;
-strategy `0` selects greedy and strategy `1` selects extreme-point, both of which
-remain unimplemented. `onProgress` receives intermediate `(done, total)` callbacks.
-The heuristic is a native C++17 adaptation of the MIT-licensed BoxPacker project
-by Doug Wright; see `C:\Users\camer\src\BoxPacker\license.txt` for the source
-license text. Results are deterministic for the same request, but exact
-coordinates can differ from PHP BoxPacker because this port uses explicit Y-up
-geometry, declarative constraints, center-support stability checks, and bounded
-search rather than PHP's recursive layer classes and callbacks.
+Current solve options are `maxBoxes`, `allowRotation`, `timeoutMs`, and the
+generated `SolveAlgorithm` enum. An omitted algorithm uses the temporary stacking
+implementation; `SolveAlgorithm.Greedy` selects greedy and
+`SolveAlgorithm.ExtremePoint` selects extreme-point, both of which remain
+unimplemented. `onProgress` receives intermediate `(done, total)` callbacks.
 
 The standalone CLI exercises multiple box sizes, outer dimensions, linked
 items, keep-flat rotation, utilization strategy, balancing, best-subset mode,
