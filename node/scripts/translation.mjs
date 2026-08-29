@@ -122,13 +122,22 @@ export function parseSchema (text, label, { requireRoot = true } = {}) {
 	const enums = {}
 	const enumRe = /enum\s+(\w+)\s*:\s*(\w+)\s*\{([^}]*)\}/g
 	while ((m = enumRe.exec(clean)) !== null) {
-		enums[m[1]] = m[2]
+		let nextValue = 0
+		const values = {}
+		for (const entry of m[3].split(',')) {
+			const value = entry.trim()
+			if (!value) continue
+			const [name, explicit] = value.split('=').map((part) => part.trim())
+			if (explicit !== undefined) nextValue = Number(explicit)
+			values[name] = nextValue++
+		}
+		enums[m[1]] = { underlying: m[2], values }
 	}
 	for (const fields of Object.values(tables)) {
 		for (const field of fields) {
 			if (enums[field.type]) {
 				field.enumName = field.type
-				field.type = enums[field.type]
+				field.type = enums[field.type].underlying
 			}
 		}
 	}
@@ -259,7 +268,7 @@ function tsArg (prefix, field, schema) {
 	switch (field.kind) {
 		case 'scalar':
 		case 'string':
-			return field.enumName ? `${access} as any` : access
+			return access
 		case 'vector-scalar':
 		case 'vector-string':
 			return `[...(${access} ?? [])]`
@@ -401,7 +410,7 @@ function domainType (field) {
 	const optionalize = (type) => field.nullable ? `std::optional<${type}>` : type
 	switch (field.kind) {
 		case 'scalar':
-			return optionalize(DOMAIN_SCALAR_TYPES[field.scalar])
+			return optionalize(field.enumName ?? DOMAIN_SCALAR_TYPES[field.scalar])
 		case 'string':
 			return optionalize('std::string')
 		case 'vector-scalar':
@@ -463,11 +472,11 @@ function cppFieldToDomain (field) {
 	const access = `value.${field.name}`
 	const out = `out.${field.name}`
 	switch (field.kind) {
-		case 'scalar':
+	case 'scalar':
 			if (field.nullable) {
-				return `\tif (${access}.has_value()) {\n\t\t${out} = ${field.enumName ? `static_cast<int8_t>(*${access})` : `*${access}`};\n\t}`
+				return `\tif (${access}.has_value()) {\n\t\t${out} = ${field.enumName ? `toDomain(*${access})` : `*${access}`};\n\t}`
 			}
-			return `\t${out} = ${field.enumName ? `static_cast<int8_t>(${access})` : access};`
+			return `\t${out} = ${field.enumName ? `toDomain(${access})` : access};`
 		case 'string':
 			if (field.nullable) {
 				// FlatBuffers T objects store optional strings as empty strings,
@@ -495,11 +504,15 @@ function cppFieldFromDomain (field, namespace) {
 	const out = `out.${field.name}`
 	switch (field.kind) {
 		case 'scalar':
+			if (field.nullable) {
+				return `\tif (${access}.has_value()) {\n\t\t${out} = ${field.enumName ? `fromDomain(*${access})` : `*${access}`};\n\t}`
+			}
+			return `\t${out} = ${field.enumName ? `fromDomain(${access})` : access};`
 		case 'string':
 			if (field.nullable) {
-				return `\tif (${access}.has_value()) {\n\t\t${out} = ${field.enumName ? `static_cast<${namespace}::${field.enumName}>(*${access})` : `*${access}`};\n\t}`
+				return `\tif (${access}.has_value()) {\n\t\t${out} = *${access};\n\t}`
 			}
-			return `\t${out} = ${field.enumName ? `static_cast<${namespace}::${field.enumName}>(${access})` : access};`
+			return `\t${out} = ${access};`
 		case 'vector-scalar':
 		case 'vector-string':
 			return `\t${out} = ${access};`
@@ -543,6 +556,23 @@ function domainConversions (namespace, name, fields) {
 function generateDomain (schema, basename, label) {
 	const { namespace, tables } = schema
 	const order = domainOrder(tables, schema.declaredTables)
+	const enums = (schema.declaredEnums ?? []).map((name) => {
+		const enumInfo = schema.enums[name]
+		const values = Object.entries(enumInfo.values)
+			.map(([value, number]) => `\t${value} = ${number}`)
+			.join(',\n')
+		return `enum class ${name} : ${DOMAIN_SCALAR_TYPES[enumInfo.underlying]} {\n${values}\n};`
+	}).join('\n\n')
+	const enumConversions = (schema.declaredEnums ?? []).map((name) => {
+		const enumInfo = schema.enums[name]
+		const toDomainCases = Object.keys(enumInfo.values)
+			.map((value) => `\tcase ::${namespace}::${name}_${value}: return ${name}::${value};`)
+			.join('\n')
+		const fromDomainCases = Object.keys(enumInfo.values)
+			.map((value) => `\tcase ${name}::${value}: return ::${namespace}::${name}_${value};`)
+			.join('\n')
+		return `inline ${name} toDomain(::${namespace}::${name} value)\n{\n\tswitch (value) {\n${toDomainCases}\n\tdefault: throw std::invalid_argument("invalid ${name} value");\n\t}\n}\n\ninline ::${namespace}::${name} fromDomain(${name} value)\n{\n\tswitch (value) {\n${fromDomainCases}\n\tdefault: throw std::invalid_argument("invalid ${name} value");\n\t}\n}`
+	}).join('\n\n')
 	const structs = order.map((name) => domainStruct(name, resolveTable(name, tables))).join('\n\n')
 	const conversions = order.map((name) => domainConversions(namespace, name, resolveTable(name, tables))).join('\n\n')
 	const includedDomains = (schema.includes ?? [])
@@ -559,11 +589,16 @@ ${generatedIncludes}
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
 namespace ${namespace} {
 namespace domain {
+
+${enums}
+
+${enumConversions}
 
 ${structs}
 

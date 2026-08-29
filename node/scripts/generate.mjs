@@ -90,6 +90,7 @@ for (const schemaPath of schemaFiles) {
 	const localSchema = parseSchema(fs.readFileSync(schemaPath, 'utf8'), label, { requireRoot: false })
 	const schema = parseSchema(sources.join('\n'), label, { requireRoot: false })
 	schema.declaredTables = Object.keys(localSchema.tables)
+	schema.declaredEnums = Object.keys(localSchema.enums)
 	schema.includes = directIncludes
 	if (!schema.request && path.dirname(schemaPath) !== FBS_DIR) {
 		fail("generate", `operation schema ${label} must declare a root_type`)
