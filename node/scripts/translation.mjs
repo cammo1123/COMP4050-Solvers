@@ -533,7 +533,7 @@ function cppFieldFromDomain (field, namespace) {
 
 function domainConversions (namespace, name, fields) {
 	const lines = []
-	lines.push(`inline ${name} toDomain(${namespace}::${name}T const& value)`)
+	lines.push(`inline ${name} toDomain([[maybe_unused]] ${namespace}::${name}T const& value)`)
 	lines.push('{')
 	lines.push(`\t${name} out;`)
 	for (const block of fields.map(cppFieldToDomain)) {
@@ -542,7 +542,7 @@ function domainConversions (namespace, name, fields) {
 	lines.push('', '\treturn out;')
 	lines.push('}')
 	lines.push('')
-	lines.push(`inline ${namespace}::${name}T fromDomain(${name} const& value)`)
+	lines.push(`inline ${namespace}::${name}T fromDomain([[maybe_unused]] ${name} const& value)`)
 	lines.push('{')
 	lines.push(`\t${namespace}::${name}T out;`)
 	for (const block of fields.map((f) => cppFieldFromDomain(f, namespace))) {
