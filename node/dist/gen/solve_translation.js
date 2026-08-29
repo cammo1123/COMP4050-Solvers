@@ -2,7 +2,7 @@
 import * as flatbuffers from "flatbuffers";
 import { BoxTypeT as BoxTypeObject, ItemTypeT as ItemTypeObject, SolveOptionsT as SolveOptionsObject, SolveRequestT as SolveRequestObject, SolveResponse as SolveResponseMessage, } from "./fbs.js";
 export function encodeRequest(request) {
-    const message = new SolveRequestObject((request.boxes ?? []).map((item) => new BoxTypeObject(item.reference, item.width, item.length, item.depth, item.maxWeight, item.boxWeight, item.active, item.maximumBoxes)), (request.items ?? []).map((item) => new ItemTypeObject(item.itemCode, item.itemReference, item.width, item.length, item.depth, item.weight, item.boxGroup)), request.options ? new SolveOptionsObject(request.options.maxBoxes, request.options.allowRotation, request.options.timeoutMs, request.options.strategy) : null);
+    const message = new SolveRequestObject((request.boxes ?? []).map((item) => new BoxTypeObject(item.reference, item.width, item.length, item.depth, item.maxWeight, item.boxWeight, item.active, item.maximumBoxes)), (request.items ?? []).map((item) => new ItemTypeObject(item.itemCode, item.itemReference, item.width, item.length, item.depth, item.weight, item.boxGroup)), request.options ? new SolveOptionsObject(request.options.maxBoxes, request.options.allowRotation, request.options.timeoutMs, request.options.algorithm) : null);
     const builder = new flatbuffers.Builder();
     builder.finish(message.pack(builder));
     return builder.asUint8Array();

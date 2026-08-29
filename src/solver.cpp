@@ -11,26 +11,6 @@
 
 using namespace fbs::domain;
 
-namespace {
-
-auto select_algorithm(SolveOptions const& options) -> solver::algo::Algorithm
-{
-	if (!options.strategy.has_value()) {
-		return solver::algo::Algorithm::shit_stack;
-	}
-
-	switch (*options.strategy) {
-	case static_cast<std::int8_t>(solver::algo::Algorithm::greedy):
-		return solver::algo::Algorithm::greedy;
-	case static_cast<std::int8_t>(solver::algo::Algorithm::extreme_point):
-		return solver::algo::Algorithm::extreme_point;
-	default:
-		throw std::invalid_argument("unsupported solver strategy: " + std::to_string(*options.strategy));
-	}
-}
-
-}
-
 namespace solver {
 
 std::string info()
@@ -54,14 +34,13 @@ std::string info()
 SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
 {
 	auto const options = request.options.value_or(SolveOptions { });
-	auto const algorithm = select_algorithm(options);
 
-	switch (algorithm) {
-	case algo::Algorithm::shit_stack:
+	switch (options.algorithm.value_or(SolveAlgorithm::ShitStack)) {
+	case SolveAlgorithm::ShitStack:
 		return algo::solve_shit_stack(request, options, on_progress);
-	case algo::Algorithm::greedy:
+	case SolveAlgorithm::Greedy:
 		return algo::solve_greedy(request, options, on_progress);
-	case algo::Algorithm::extreme_point:
+	case SolveAlgorithm::ExtremePoint:
 		return algo::solve_extreme_point(request, options, on_progress);
 	default:
 		throw std::logic_error("unhandled solver algorithm");

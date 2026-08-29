@@ -37,6 +37,39 @@ struct SolveResponse;
 struct SolveResponseBuilder;
 struct SolveResponseT;
 
+enum SolveAlgorithm : int8_t {
+  SolveAlgorithm_Greedy = 0,
+  SolveAlgorithm_ExtremePoint = 1,
+  SolveAlgorithm_ShitStack = 2,
+  SolveAlgorithm_MIN = SolveAlgorithm_Greedy,
+  SolveAlgorithm_MAX = SolveAlgorithm_ShitStack
+};
+
+inline const SolveAlgorithm (&EnumValuesSolveAlgorithm())[3] {
+  static const SolveAlgorithm values[] = {
+    SolveAlgorithm_Greedy,
+    SolveAlgorithm_ExtremePoint,
+    SolveAlgorithm_ShitStack
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesSolveAlgorithm() {
+  static const char * const names[4] = {
+    "Greedy",
+    "ExtremePoint",
+    "ShitStack",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNameSolveAlgorithm(SolveAlgorithm e) {
+  if (::flatbuffers::IsOutRange(e, SolveAlgorithm_Greedy, SolveAlgorithm_ShitStack)) return "";
+  const size_t index = static_cast<size_t>(e);
+  return EnumNamesSolveAlgorithm()[index];
+}
+
 struct SolveRequestT : public ::flatbuffers::NativeTable {
   typedef SolveRequest TableType;
   std::vector<std::unique_ptr<fbs::BoxTypeT>> boxes{};
@@ -142,7 +175,7 @@ struct SolveOptionsT : public ::flatbuffers::NativeTable {
   ::flatbuffers::Optional<uint32_t> max_boxes = ::flatbuffers::nullopt;
   bool allow_rotation = true;
   ::flatbuffers::Optional<uint32_t> timeout_ms = ::flatbuffers::nullopt;
-  ::flatbuffers::Optional<int8_t> strategy = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<fbs::SolveAlgorithm> algorithm = ::flatbuffers::nullopt;
 };
 
 struct SolveOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
@@ -152,7 +185,7 @@ struct SolveOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_MAX_BOXES = 4,
     VT_ALLOW_ROTATION = 6,
     VT_TIMEOUT_MS = 8,
-    VT_STRATEGY = 10
+    VT_ALGORITHM = 10
   };
   ::flatbuffers::Optional<uint32_t> max_boxes() const {
     return GetOptional<uint32_t, uint32_t>(VT_MAX_BOXES);
@@ -163,8 +196,8 @@ struct SolveOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   ::flatbuffers::Optional<uint32_t> timeout_ms() const {
     return GetOptional<uint32_t, uint32_t>(VT_TIMEOUT_MS);
   }
-  ::flatbuffers::Optional<int8_t> strategy() const {
-    return GetOptional<int8_t, int8_t>(VT_STRATEGY);
+  ::flatbuffers::Optional<fbs::SolveAlgorithm> algorithm() const {
+    return GetOptional<int8_t, fbs::SolveAlgorithm>(VT_ALGORITHM);
   }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
@@ -172,7 +205,7 @@ struct SolveOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<uint32_t>(verifier, VT_MAX_BOXES, 4) &&
            VerifyField<uint8_t>(verifier, VT_ALLOW_ROTATION, 1) &&
            VerifyField<uint32_t>(verifier, VT_TIMEOUT_MS, 4) &&
-           VerifyField<int8_t>(verifier, VT_STRATEGY, 1) &&
+           VerifyField<int8_t>(verifier, VT_ALGORITHM, 1) &&
            verifier.EndTable();
   }
   SolveOptionsT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
@@ -193,8 +226,8 @@ struct SolveOptionsBuilder {
   void add_timeout_ms(uint32_t timeout_ms) {
     fbb_.AddElement<uint32_t>(SolveOptions::VT_TIMEOUT_MS, timeout_ms);
   }
-  void add_strategy(int8_t strategy) {
-    fbb_.AddElement<int8_t>(SolveOptions::VT_STRATEGY, strategy);
+  void add_algorithm(fbs::SolveAlgorithm algorithm) {
+    fbb_.AddElement<int8_t>(SolveOptions::VT_ALGORITHM, static_cast<int8_t>(algorithm));
   }
   explicit SolveOptionsBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -212,11 +245,11 @@ inline ::flatbuffers::Offset<SolveOptions> CreateSolveOptions(
     ::flatbuffers::Optional<uint32_t> max_boxes = ::flatbuffers::nullopt,
     bool allow_rotation = true,
     ::flatbuffers::Optional<uint32_t> timeout_ms = ::flatbuffers::nullopt,
-    ::flatbuffers::Optional<int8_t> strategy = ::flatbuffers::nullopt) {
+    ::flatbuffers::Optional<fbs::SolveAlgorithm> algorithm = ::flatbuffers::nullopt) {
   SolveOptionsBuilder builder_(_fbb);
   if(timeout_ms) { builder_.add_timeout_ms(*timeout_ms); }
   if(max_boxes) { builder_.add_max_boxes(*max_boxes); }
-  if(strategy) { builder_.add_strategy(*strategy); }
+  if(algorithm) { builder_.add_algorithm(*algorithm); }
   builder_.add_allow_rotation(allow_rotation);
   return builder_.Finish();
 }
@@ -605,7 +638,7 @@ inline void SolveOptions::UnPackTo(SolveOptionsT *_o, const ::flatbuffers::resol
   { auto _e = max_boxes(); _o->max_boxes = _e; }
   { auto _e = allow_rotation(); _o->allow_rotation = _e; }
   { auto _e = timeout_ms(); _o->timeout_ms = _e; }
-  { auto _e = strategy(); _o->strategy = _e; }
+  { auto _e = algorithm(); _o->algorithm = _e; }
 }
 
 inline ::flatbuffers::Offset<SolveOptions> CreateSolveOptions(::flatbuffers::FlatBufferBuilder &_fbb, const SolveOptionsT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
@@ -619,13 +652,13 @@ inline ::flatbuffers::Offset<SolveOptions> SolveOptions::Pack(::flatbuffers::Fla
   auto _max_boxes = _o->max_boxes;
   auto _allow_rotation = _o->allow_rotation;
   auto _timeout_ms = _o->timeout_ms;
-  auto _strategy = _o->strategy;
+  auto _algorithm = _o->algorithm;
   return fbs::CreateSolveOptions(
       _fbb,
       _max_boxes,
       _allow_rotation,
       _timeout_ms,
-      _strategy);
+      _algorithm);
 }
 
 inline ItemPlacementT *ItemPlacement::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {

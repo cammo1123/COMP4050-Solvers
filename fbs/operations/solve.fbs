@@ -10,11 +10,17 @@ table SolveRequest {
   options: SolveOptions (optional);
 }
 
+enum SolveAlgorithm : byte {
+	Greedy = 0,
+	ExtremePoint = 1,
+	ShitStack = 2,
+}
+
 table SolveOptions {
   max_boxes: uint = null;
   allow_rotation: bool = true;
   timeout_ms: uint = null;
-  strategy: byte = null;
+  algorithm: SolveAlgorithm = null;
 }
 
 table ItemPlacement {

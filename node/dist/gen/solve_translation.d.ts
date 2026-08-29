@@ -1,3 +1,4 @@
+import { SolveAlgorithm } from "./fbs.js";
 export type BoxResultT = {
     boxReference: string;
     placements: ItemPlacementT[];
@@ -35,7 +36,7 @@ export type SolveOptionsT = {
     maxBoxes?: number;
     allowRotation?: boolean;
     timeoutMs?: number;
-    strategy?: number;
+    algorithm?: SolveAlgorithm;
 };
 export type SolveRequest = {
     boxes: BoxTypeT[];

@@ -8,17 +8,44 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
 namespace fbs {
 namespace domain {
 
+enum class SolveAlgorithm : int8_t {
+	Greedy = 0,
+	ExtremePoint = 1,
+	ShitStack = 2
+};
+
+inline SolveAlgorithm toDomain(::fbs::SolveAlgorithm value)
+{
+	switch (value) {
+	case ::fbs::SolveAlgorithm_Greedy: return SolveAlgorithm::Greedy;
+	case ::fbs::SolveAlgorithm_ExtremePoint: return SolveAlgorithm::ExtremePoint;
+	case ::fbs::SolveAlgorithm_ShitStack: return SolveAlgorithm::ShitStack;
+	default: throw std::invalid_argument("invalid SolveAlgorithm value");
+	}
+}
+
+inline ::fbs::SolveAlgorithm fromDomain(SolveAlgorithm value)
+{
+	switch (value) {
+	case SolveAlgorithm::Greedy: return ::fbs::SolveAlgorithm_Greedy;
+	case SolveAlgorithm::ExtremePoint: return ::fbs::SolveAlgorithm_ExtremePoint;
+	case SolveAlgorithm::ShitStack: return ::fbs::SolveAlgorithm_ShitStack;
+	default: throw std::invalid_argument("invalid SolveAlgorithm value");
+	}
+}
+
 struct SolveOptions {
 	std::optional<uint32_t> max_boxes = std::nullopt;
 	bool allow_rotation = true;
 	std::optional<uint32_t> timeout_ms = std::nullopt;
-	std::optional<int8_t> strategy = std::nullopt;
+	std::optional<SolveAlgorithm> algorithm = std::nullopt;
 };
 
 struct SolveRequest {
@@ -62,8 +89,8 @@ inline SolveOptions toDomain(fbs::SolveOptionsT const& value)
 		out.timeout_ms = *value.timeout_ms;
 	}
 
-	if (value.strategy.has_value()) {
-		out.strategy = *value.strategy;
+	if (value.algorithm.has_value()) {
+		out.algorithm = toDomain(*value.algorithm);
 	}
 
 	return out;
@@ -83,8 +110,8 @@ inline fbs::SolveOptionsT fromDomain(SolveOptions const& value)
 		out.timeout_ms = *value.timeout_ms;
 	}
 
-	if (value.strategy.has_value()) {
-		out.strategy = *value.strategy;
+	if (value.algorithm.has_value()) {
+		out.algorithm = fromDomain(*value.algorithm);
 	}
 
 	return out;
