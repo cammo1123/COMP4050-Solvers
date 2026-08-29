@@ -1,9 +1,11 @@
 import { Buffer } from "node:buffer";
 import native from "../native.cjs";
 
+import { decodeResponse as decodeInfoResponse, type InfoResponse } from "./gen/info_translation.js";
 import { decodeResponse, encodeRequest, type SolveRequest, type SolveResponse } from "./gen/solve_translation.js";
 
 export { SolveAlgorithm } from "./gen/fbs.js";
+export type { InfoResponse } from "./gen/info_translation.js";
 export type { BoxResultT, BoxTypeT, ItemPlacementT, ItemTypeT, SolveOptionsT, SolveRequest, SolveResponse } from "./gen/solve_translation.js";
 
 export type SolveInput = SolveRequest & {
@@ -19,8 +21,8 @@ export async function solve(input: SolveInput): Promise<SolveResponse> {
 	return decodeResponse(bytes);
 }
 
-export function info(): string {
-	return native.info();
+export function info(): InfoResponse {
+	return decodeInfoResponse(native.info());
 }
 
 export default { info, solve };

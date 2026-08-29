@@ -1,3 +1,4 @@
+#include "info_domain_generated.h"
 #include "solve_worker.h"
 #include "solver.h"
 
@@ -7,7 +8,11 @@ using namespace addon;
 
 Napi::Value info(Napi::CallbackInfo const& cbInfo)
 {
-	return Napi::String::New(cbInfo.Env(), solver::info());
+	Napi::Env env = cbInfo.Env();
+	flatbuffers::FlatBufferBuilder builder;
+	auto const value = fbs::domain::fromDomain(solver::info());
+	builder.Finish(fbs::InfoResponse::Pack(builder, &value));
+	return Napi::Buffer<uint8_t>::Copy(env, builder.GetBufferPointer(), builder.GetSize());
 }
 
 Napi::Value solve(Napi::CallbackInfo const& cbInfo)

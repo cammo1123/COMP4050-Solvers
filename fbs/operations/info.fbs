@@ -1,0 +1,20 @@
+include "../types.fbs";
+
+namespace fbs;
+
+table InfoRequest { }
+
+table InfoResponse {
+  project_name: string (required);
+  project_version: string (required);
+  build_type: string (required);
+  git_hash: string (required);
+  git_branch: string (required);
+  build_time: string (required);
+  platform: string (required);
+  arch: string (required);
+  compiler: string (required);
+  node_version: string (required);
+}
+
+root_type InfoRequest;

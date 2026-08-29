@@ -75,7 +75,7 @@ struct SolveResponse {
 	std::vector<ItemType> failed{};
 };
 
-inline SolveOptions toDomain(fbs::SolveOptionsT const& value)
+inline SolveOptions toDomain([[maybe_unused]] fbs::SolveOptionsT const& value)
 {
 	SolveOptions out;
 
@@ -96,7 +96,7 @@ inline SolveOptions toDomain(fbs::SolveOptionsT const& value)
 	return out;
 }
 
-inline fbs::SolveOptionsT fromDomain(SolveOptions const& value)
+inline fbs::SolveOptionsT fromDomain([[maybe_unused]] SolveOptions const& value)
 {
 	fbs::SolveOptionsT out;
 
@@ -117,7 +117,7 @@ inline fbs::SolveOptionsT fromDomain(SolveOptions const& value)
 	return out;
 }
 
-inline SolveRequest toDomain(fbs::SolveRequestT const& value)
+inline SolveRequest toDomain([[maybe_unused]] fbs::SolveRequestT const& value)
 {
 	SolveRequest out;
 
@@ -138,7 +138,7 @@ inline SolveRequest toDomain(fbs::SolveRequestT const& value)
 	return out;
 }
 
-inline fbs::SolveRequestT fromDomain(SolveRequest const& value)
+inline fbs::SolveRequestT fromDomain([[maybe_unused]] SolveRequest const& value)
 {
 	fbs::SolveRequestT out;
 
@@ -159,7 +159,7 @@ inline fbs::SolveRequestT fromDomain(SolveRequest const& value)
 	return out;
 }
 
-inline ItemPlacement toDomain(fbs::ItemPlacementT const& value)
+inline ItemPlacement toDomain([[maybe_unused]] fbs::ItemPlacementT const& value)
 {
 	ItemPlacement out;
 
@@ -182,7 +182,7 @@ inline ItemPlacement toDomain(fbs::ItemPlacementT const& value)
 	return out;
 }
 
-inline fbs::ItemPlacementT fromDomain(ItemPlacement const& value)
+inline fbs::ItemPlacementT fromDomain([[maybe_unused]] ItemPlacement const& value)
 {
 	fbs::ItemPlacementT out;
 
@@ -205,7 +205,7 @@ inline fbs::ItemPlacementT fromDomain(ItemPlacement const& value)
 	return out;
 }
 
-inline BoxResult toDomain(fbs::BoxResultT const& value)
+inline BoxResult toDomain([[maybe_unused]] fbs::BoxResultT const& value)
 {
 	BoxResult out;
 
@@ -219,7 +219,7 @@ inline BoxResult toDomain(fbs::BoxResultT const& value)
 	return out;
 }
 
-inline fbs::BoxResultT fromDomain(BoxResult const& value)
+inline fbs::BoxResultT fromDomain([[maybe_unused]] BoxResult const& value)
 {
 	fbs::BoxResultT out;
 
@@ -233,7 +233,7 @@ inline fbs::BoxResultT fromDomain(BoxResult const& value)
 	return out;
 }
 
-inline SolveResponse toDomain(fbs::SolveResponseT const& value)
+inline SolveResponse toDomain([[maybe_unused]] fbs::SolveResponseT const& value)
 {
 	SolveResponse out;
 
@@ -250,7 +250,7 @@ inline SolveResponse toDomain(fbs::SolveResponseT const& value)
 	return out;
 }
 
-inline fbs::SolveResponseT fromDomain(SolveResponse const& value)
+inline fbs::SolveResponseT fromDomain([[maybe_unused]] SolveResponse const& value)
 {
 	fbs::SolveResponseT out;
 

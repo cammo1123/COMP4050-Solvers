@@ -1,8 +1,8 @@
-import { describe, expect, it } from "vitest";
+import type { SolveRequest, SolveResponse } from "@bionic/solver";
 
 import * as BionicSolver from "@bionic/solver";
 import { info, solve } from "@bionic/solver";
-import type { SolveRequest, SolveResponse } from "@bionic/solver";
+import { describe, expect, it } from "vitest";
 import type { BoxTypeT, ItemTypeT } from "../src/gen/solve_translation";
 
 describe("package public API (typed entry)", () => {
@@ -11,13 +11,22 @@ describe("package public API (typed entry)", () => {
 	});
 
 	it("exposes info()", () => {
-		expect(info()).contains("comp4050-solver");
+		expect(info().projectName).toBeTypeOf("string");
 	});
 
 	it("exposes a typed solve()", async () => {
 		const request: SolveRequest = {
 			boxes: [{ depth: 10, length: 10, width: 10, reference: "A" }],
-			items: [{ depth: 10, length: 10, width: 10, itemCode: "A", itemReference: "A", weight: 10 }],
+			items: [
+				{
+					depth: 10,
+					length: 10,
+					width: 10,
+					itemCode: "A",
+					itemReference: "A",
+					weight: 10,
+				},
+			],
 		};
 		const result: SolveResponse = await solve(request);
 		expect(result).toEqual({
