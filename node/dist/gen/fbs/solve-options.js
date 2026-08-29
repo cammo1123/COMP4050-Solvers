@@ -28,7 +28,7 @@ export class SolveOptions {
         const offset = this.bb.__offset(this.bb_pos, 8);
         return offset ? this.bb.readUint32(this.bb_pos + offset) : null;
     }
-    strategy() {
+    algorithm() {
         const offset = this.bb.__offset(this.bb_pos, 10);
         return offset ? this.bb.readInt8(this.bb_pos + offset) : null;
     }
@@ -44,47 +44,47 @@ export class SolveOptions {
     static addTimeoutMs(builder, timeoutMs) {
         builder.addFieldInt32(2, timeoutMs, null);
     }
-    static addStrategy(builder, strategy) {
-        builder.addFieldInt8(3, strategy, null);
+    static addAlgorithm(builder, algorithm) {
+        builder.addFieldInt8(3, algorithm, null);
     }
     static endSolveOptions(builder) {
         const offset = builder.endObject();
         return offset;
     }
-    static createSolveOptions(builder, maxBoxes, allowRotation, timeoutMs, strategy) {
+    static createSolveOptions(builder, maxBoxes, allowRotation, timeoutMs, algorithm) {
         SolveOptions.startSolveOptions(builder);
         if (maxBoxes !== null)
             SolveOptions.addMaxBoxes(builder, maxBoxes);
         SolveOptions.addAllowRotation(builder, allowRotation);
         if (timeoutMs !== null)
             SolveOptions.addTimeoutMs(builder, timeoutMs);
-        if (strategy !== null)
-            SolveOptions.addStrategy(builder, strategy);
+        if (algorithm !== null)
+            SolveOptions.addAlgorithm(builder, algorithm);
         return SolveOptions.endSolveOptions(builder);
     }
     unpack() {
-        return new SolveOptionsT(this.maxBoxes(), this.allowRotation(), this.timeoutMs(), this.strategy());
+        return new SolveOptionsT(this.maxBoxes(), this.allowRotation(), this.timeoutMs(), this.algorithm());
     }
     unpackTo(_o) {
         _o.maxBoxes = this.maxBoxes();
         _o.allowRotation = this.allowRotation();
         _o.timeoutMs = this.timeoutMs();
-        _o.strategy = this.strategy();
+        _o.algorithm = this.algorithm();
     }
 }
 export class SolveOptionsT {
     maxBoxes;
     allowRotation;
     timeoutMs;
-    strategy;
-    constructor(maxBoxes = null, allowRotation = true, timeoutMs = null, strategy = null) {
+    algorithm;
+    constructor(maxBoxes = null, allowRotation = true, timeoutMs = null, algorithm = null) {
         this.maxBoxes = maxBoxes;
         this.allowRotation = allowRotation;
         this.timeoutMs = timeoutMs;
-        this.strategy = strategy;
+        this.algorithm = algorithm;
     }
     pack(builder) {
-        return SolveOptions.createSolveOptions(builder, this.maxBoxes, this.allowRotation, this.timeoutMs, this.strategy);
+        return SolveOptions.createSolveOptions(builder, this.maxBoxes, this.allowRotation, this.timeoutMs, this.algorithm);
     }
 }
 //# sourceMappingURL=solve-options.js.map

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { solve } from "../src/addon";
-import { solverStrategy } from "./solverStrategies";
+import { SolveAlgorithm, solve } from "../src/addon";
 
 const request = {
 	boxes: [{ reference: "box", width: 10, length: 10, depth: 10 }],
@@ -20,29 +19,35 @@ describe("algorithm dispatch", () => {
 		await new Promise<void>((resolve) => setImmediate(resolve));
 
 		expect(response).toEqual({
-			results: [{
-				boxReference: "box",
-				placements: [
-					{ itemCode: "item", itemReference: "item", x: 0, y: 0, z: 0, width: 1, length: 1, depth: 1 },
-					{ itemCode: "second", itemReference: "second", x: 0, y: 1, z: 0, width: 1, length: 1, depth: 1 },
-				],
-			}],
+			results: [
+				{
+					boxReference: "box",
+					placements: [
+						{ itemCode: "item", itemReference: "item", x: 0, y: 0, z: 0, width: 1, length: 1, depth: 1 },
+						{ itemCode: "second", itemReference: "second", x: 0, y: 1, z: 0, width: 1, length: 1, depth: 1 },
+					],
+				},
+			],
 			failed: [],
 		});
-		expect(progress).toEqual([[0, 2], [1, 2], [2, 2]]);
+		expect(progress).toEqual([
+			[0, 2],
+			[1, 2],
+			[2, 2],
+		]);
 	});
 
-	it("dispatches strategy 0 to the greedy implementation", async () => {
-		await expect(solve({ ...request, options: { strategy: solverStrategy.greedy } })).rejects.toThrow("greedy solver algorithm is not implemented");
+	it("dispatches the greedy enum value", async () => {
+		await expect(solve({ ...request, options: { algorithm: SolveAlgorithm.Greedy } })).rejects.toThrow("greedy solver algorithm is not implemented");
 	});
 
-	it("dispatches strategy 1 to the extreme-point implementation", async () => {
-		await expect(solve({ ...request, options: { strategy: solverStrategy.extremePoint } })).rejects.toThrow("extreme-point solver algorithm is not implemented");
+	it("dispatches the extreme-point enum value", async () => {
+		await expect(solve({ ...request, options: { algorithm: SolveAlgorithm.ExtremePoint } })).rejects.toThrow("extreme-point solver algorithm is not implemented");
 	});
 
-	it("rejects unsupported strategies", async () => {
-		await expect(solve({ ...request, options: { strategy: 2 } })).rejects.toThrow("unsupported solver strategy: 2");
-		await expect(solve({ ...request, options: { strategy: -1 } })).rejects.toThrow("unsupported solver strategy: -1");
+	it("rejects unsupported algorithm values", async () => {
+		await expect(solve({ ...request, options: { algorithm: 3 as SolveAlgorithm } })).rejects.toThrow("invalid SolveAlgorithm value");
+		await expect(solve({ ...request, options: { algorithm: -1 as SolveAlgorithm } })).rejects.toThrow("invalid SolveAlgorithm value");
 	});
 });
 

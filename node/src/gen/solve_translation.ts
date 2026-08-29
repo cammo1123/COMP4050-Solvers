@@ -9,6 +9,7 @@ import {
 	ItemTypeT as ItemTypeObject,
 	SolveOptionsT as SolveOptionsObject,
 	SolveRequestT as SolveRequestObject,
+	SolveAlgorithm,
 	SolveResponse as SolveResponseMessage,
 	SolveResponseT as SolveResponseObject,
 } from "./fbs.js";
@@ -54,7 +55,7 @@ export type SolveOptionsT = {
 	maxBoxes?: number;
 	allowRotation?: boolean;
 	timeoutMs?: number;
-	strategy?: number;
+	algorithm?: SolveAlgorithm;
 };
 
 export type SolveRequest = {
@@ -73,7 +74,7 @@ export function encodeRequest(request: SolveRequest): Uint8Array {
 	const message = new SolveRequestObject(
 		(request.boxes ?? []).map((item) => new BoxTypeObject(item.reference, item.width, item.length, item.depth, item.maxWeight, item.boxWeight, item.active, item.maximumBoxes)),
 		(request.items ?? []).map((item) => new ItemTypeObject(item.itemCode, item.itemReference, item.width, item.length, item.depth, item.weight, item.boxGroup)),
-		request.options ? new SolveOptionsObject(request.options.maxBoxes, request.options.allowRotation, request.options.timeoutMs, request.options.strategy) : null
+		request.options ? new SolveOptionsObject(request.options.maxBoxes, request.options.allowRotation, request.options.timeoutMs, request.options.algorithm) : null
 	);
 
 	const builder = new flatbuffers.Builder();
