@@ -371,6 +371,7 @@ describe("packing invariants", () => {
 			items: [{ itemCode: "oversized", itemReference: "oversized", width: 11, length: 10, depth: 10, weight: 1, rotationPolicy: 0 }],
 			onProgress: (done, total) => progress.push([done, total]),
 		});
+		await new Promise<void>((resolve) => setImmediate(resolve));
 		expect(result.failed).toHaveLength(1);
 		expect(progress).toEqual([[0, 1]]);
 		expect(progress.every(([done, total]) => done >= 0 && done <= total && total === 1)).toBe(true);
@@ -388,6 +389,7 @@ describe("packing invariants", () => {
 			],
 			onProgress: (done, total) => progress.push([done, total]),
 		});
+		await new Promise<void>((resolve) => setImmediate(resolve));
 		expect(progress).toEqual([
 			[0, 4],
 			[1, 4],

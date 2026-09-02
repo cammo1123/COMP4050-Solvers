@@ -183,6 +183,10 @@ foreach(target php_solver solver_core solver)
     endif()
 endforeach()
 
+# solver_core and php_solver are linked into the Node addon module, which
+# requires position-independent code.
+set_target_properties(php_solver solver_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 if(COMP4050_BUILD_ADDON)
     execute_process(
         COMMAND "${NODE_EXECUTABLE}" -p "process.versions.node"
