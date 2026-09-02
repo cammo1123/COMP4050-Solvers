@@ -61,7 +61,7 @@ void SolveWorker::Execute()
 void SolveWorker::OnOK()
 {
 	if (_tsfn) {
-		_tsfn.BlockingCall(nullptr, [](Napi::Env, Napi::Function, void*) {});
+		_tsfn.BlockingCall(static_cast<void*>(nullptr), [](Napi::Env, Napi::Function, void*) {});
 		_tsfn.Release();
 	}
 	_deferred.Resolve(Napi::Buffer<uint8_t>::Copy(Env(), _response.data(), _response.size()));
@@ -70,7 +70,7 @@ void SolveWorker::OnOK()
 void SolveWorker::OnError(Napi::Error const& error)
 {
 	if (_tsfn) {
-		_tsfn.BlockingCall(nullptr, [](Napi::Env, Napi::Function, void*) {});
+		_tsfn.BlockingCall(static_cast<void*>(nullptr), [](Napi::Env, Napi::Function, void*) {});
 		_tsfn.Release();
 	}
 	_deferred.Reject(Napi::Error::New(Env(), error.Message()).Value());
