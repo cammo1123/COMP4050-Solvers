@@ -6,6 +6,7 @@ import * as flatbuffers from 'flatbuffers';
 
 import { ExtremePointOptions, ExtremePointOptionsT } from '../fbs/extreme-point-options.js';
 import { GreedyOptions, GreedyOptionsT } from '../fbs/greedy-options.js';
+import { PHPSolverOptions, PHPSolverOptionsT } from '../fbs/phpsolver-options.js';
 import { ShitStackOptions, ShitStackOptionsT } from '../fbs/shit-stack-options.js';
 import { SolveStrategyOptions, unionToSolveStrategyOptions, unionListToSolveStrategyOptions } from '../fbs/solve-strategy-options.js';
 
@@ -128,7 +129,7 @@ constructor(
   public allowRotation: boolean = true,
   public timeoutMs: number|null = null,
   public algoOptionsType: SolveStrategyOptions = SolveStrategyOptions.NONE,
-  public algoOptions: ExtremePointOptionsT|GreedyOptionsT|ShitStackOptionsT|null = null
+  public algoOptions: ExtremePointOptionsT|GreedyOptionsT|PHPSolverOptionsT|ShitStackOptionsT|null = null
 ){}
 
 

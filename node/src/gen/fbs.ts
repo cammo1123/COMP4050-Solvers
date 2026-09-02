@@ -8,6 +8,7 @@ export { InfoRequest, InfoRequestT } from './fbs/info-request.js';
 export { InfoResponse, InfoResponseT } from './fbs/info-response.js';
 export { ItemPlacement, ItemPlacementT } from './fbs/item-placement.js';
 export { ItemType, ItemTypeT } from './fbs/item-type.js';
+export { PHPSolverOptions, PHPSolverOptionsT } from './fbs/phpsolver-options.js';
 export { PlacementConstraint, PlacementConstraintT } from './fbs/placement-constraint.js';
 export { ShitStackOptions, ShitStackOptionsT } from './fbs/shit-stack-options.js';
 export { SolveOptions, SolveOptionsT } from './fbs/solve-options.js';
