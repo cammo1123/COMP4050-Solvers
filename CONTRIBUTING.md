@@ -97,7 +97,7 @@ wrapper-side TypeScript checks.
 ### CI
 
 The `test` workflow (`.github/workflows/test.yml`) installs deps, materialises
-`flatc` (cached under `node/.flatc/`), builds the addon with CMake/Ninja, and
+`flatc` (cached under `.flatc/`), builds the addon with CMake/Ninja, and
 runs `pnpm test` on every pull request into `dev` or `main` and every push to
 `dev`. The `prebuild` workflow does the same across Ubuntu/macOS/Windows and
 snapshots the built binaries.
