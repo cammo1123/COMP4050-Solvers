@@ -30,7 +30,13 @@ jobs:
           cache: pnpm
 
       - name: Install Clang toolchain
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y clang clang-tidy cmake ninja-build
+        shell: bash
+        run: |
+          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/llvm.asc >/dev/null
+          echo "deb http://apt.llvm.org/noble/ llvm-toolchain-noble-22 main" | sudo tee /etc/apt/sources.list.d/llvm.list >/dev/null
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y clang-22 clang-format-22 clang-tidy-22 cmake ninja-build
+          echo /usr/lib/llvm-22/bin >> "$GITHUB_PATH"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
