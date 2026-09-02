@@ -6,7 +6,7 @@ import { log, repoRoot } from './shared.mjs'
 
 const generatedPaths = [
 	'build',
-	'native/gen',
+	'src/gen',
 	'.flatc',
 	'node/build',
 	'node/dist',

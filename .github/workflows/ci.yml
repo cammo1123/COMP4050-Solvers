@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-check:
+    runs-on: ubuntu-latest
+    env:
+      CC: clang
+      CXX: clang++
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install Clang toolchain
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y clang clang-tidy cmake ninja-build
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check formatting
+        run: pnpm run lint:check
+
+      - name: Build TypeScript
+        run: pnpm run build:ts
+
+      - name: Build core with Clang
+        run: pnpm run build:core
+
+      - name: Build and test addon
+        run: pnpm test
+
+      - name: Run clang-tidy
+        shell: bash
+        run: clang-tidy -p build/addon -quiet -warnings-as-errors=* $(git ls-files '*.cpp' '*.cc' '*.cxx')

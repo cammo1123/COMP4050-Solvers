@@ -313,7 +313,7 @@ std::optional<PackedItem> place(Box const& box, Dimensions box_dimensions, Item 
 	return std::nullopt;
 }
 
-std::optional<PackedBox> try_box_once(Box const& box, std::vector<Item> const& items, bool allow_rotation, Clock::time_point deadline, ProgressCallback progress)
+std::optional<PackedBox> try_box_once(Box const& box, std::vector<Item> const& items, bool allow_rotation, Clock::time_point deadline, ProgressCallback const& progress)
 {
 	debug("try_box_once begin box=", box.reference, " items=", items.size(), " dimensions=", box.dimensions.width, "x", box.dimensions.height, "x", box.dimensions.length);
 	std::vector<Dimensions> box_orientations { { box.dimensions } };
@@ -435,7 +435,7 @@ PackedBox enforce_linked_groups(Box const& box, std::vector<Item> const& items, 
 }
 
 std::optional<PackedBox> try_box(Box const& box, std::vector<Item> const& items, bool allow_rotation, bool best_subset,
-	Clock::time_point deadline, ProgressCallback progress)
+	Clock::time_point deadline, ProgressCallback const& progress)
 {
 	if (!best_subset) {
 		auto candidate = try_box_once(box, items, allow_rotation, deadline, progress);
@@ -546,7 +546,7 @@ void balance_weights(std::vector<PackedBox>& boxes, Clock::time_point deadline)
 } // namespace
 
 Result pack_ordered(std::vector<Box> boxes, std::vector<Item> items, Options options, Clock::time_point deadline,
-	ProgressCallback progress, size_t progress_total)
+	ProgressCallback const& progress, size_t progress_total)
 {
 	std::sort(boxes.begin(), boxes.end(), [](auto const& a, auto const& b) {
 		if (a.dimensions.volume() != b.dimensions.volume())
@@ -579,16 +579,16 @@ Result pack_ordered(std::vector<Box> boxes, std::vector<Item> items, Options opt
 				continue;
 			bool better = !best;
 			if (best && options.strategy == Strategy::Utilization) {
-				auto utilization = candidate->dimensions.volume() == 0 ? 0.0 : static_cast<double>(candidate->used_volume()) / candidate->dimensions.volume();
-				auto best_utilization = best->dimensions.volume() == 0 ? 0.0 : static_cast<double>(best->used_volume()) / best->dimensions.volume();
+				auto utilization = candidate->dimensions.volume() == 0 ? 0.0 : static_cast<double>(candidate->used_volume()) / static_cast<double>(candidate->dimensions.volume());
+				auto best_utilization = best->dimensions.volume() == 0 ? 0.0 : static_cast<double>(best->used_volume()) / static_cast<double>(best->dimensions.volume());
 				better = utilization > best_utilization || (utilization == best_utilization && candidate->items.size() > best->items.size());
 			} else if (best) {
 				auto utilization = candidate->dimensions.volume() == 0
 					? 0.0
-					: static_cast<double>(candidate->used_volume()) / candidate->dimensions.volume();
+					: static_cast<double>(candidate->used_volume()) / static_cast<double>(candidate->dimensions.volume());
 				auto best_utilization = best->dimensions.volume() == 0
 					? 0.0
-					: static_cast<double>(best->used_volume()) / best->dimensions.volume();
+					: static_cast<double>(best->used_volume()) / static_cast<double>(best->dimensions.volume());
 				better = candidate->items.size() > best->items.size() || (candidate->items.size() == best->items.size() && (utilization > best_utilization || (utilization == best_utilization && candidate->used_volume() > best->used_volume())));
 			}
 			if (better) {
