@@ -87,7 +87,7 @@ function format (check) {
 	if (!clangFormat) fail("build", 'clang-format not found on PATH')
 	const srcDir = path.join(repoRoot, 'src')
 	const files = fs.readdirSync(srcDir, { recursive: true })
-		.filter(f => f.endsWith('.cpp') || f.endsWith('.h'))
+		.filter(f => !f.startsWith(`gen${path.sep}`) && (f.endsWith('.cpp') || f.endsWith('.h')))
 		.map(f => path.join('src', f))
 	const flags = check ? ['--dry-run', '--Werror'] : ['-i']
 	for (const file of files) {
@@ -148,6 +148,7 @@ if (ninja) {
 const configure = ['-S', repoRoot, '-B', buildDir]
 if (target === 'core') configure.push('-DCOMP4050_BUILD_ADDON=OFF')
 configure.push(`-DCMAKE_BUILD_TYPE=${buildType}`)
+configure.push('-DCMAKE_EXPORT_COMPILE_COMMANDS=ON')
 if (optimize) configure.push('-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON')
 if (ninja) configure.push('-G', 'Ninja', `-DCMAKE_MAKE_PROGRAM=${ninja}`)
 if (findClangCl()) configure.push('-DCMAKE_CXX_COMPILER=clang-cl')

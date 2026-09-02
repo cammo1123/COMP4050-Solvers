@@ -112,7 +112,7 @@ int main()
 			return;
 
 		constexpr int barWidth = 40;
-		float progress = static_cast<float>(done) / total;
+		float progress = static_cast<float>(done) / static_cast<float>(total);
 		int filled = static_cast<int>(progress * barWidth);
 
 		std::string bar(filled, '#');
@@ -127,7 +127,7 @@ int main()
 	std::cout << "\033[?25h\n";
 
 	auto f = res.failed.size();
-	int i = 0;
+	std::size_t i = 0;
 	for (auto const& result : res.results) {
 		i += result.placements.size();
 	}

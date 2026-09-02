@@ -43,16 +43,15 @@ auto solve_php_solver(SolveRequest const& request, SolveOptions const& options, 
 			item.weight = source.weight;
 			item.rotation = source.rotation_policy.has_value() ? static_cast<packing::RotationPolicy>(*source.rotation_policy) : packing::RotationPolicy::BestFit;
 
-			if (source.constraint) {
-				item.constraint.no_stacking = source.constraint->no_stacking.value_or(false);
-				item.constraint.required_vertical = source.constraint->required_vertical.value_or(false);
-				item.constraint.min_x = source.constraint->min_x.value_or(0);
-				item.constraint.min_y = source.constraint->min_y.value_or(0);
-				item.constraint.min_z = source.constraint->min_z.value_or(0);
-				item.constraint.max_x = source.constraint->max_x.value_or(UINT32_MAX);
-				item.constraint.max_y = source.constraint->max_y.value_or(UINT32_MAX);
-				item.constraint.max_z = source.constraint->max_z.value_or(UINT32_MAX);
-			}
+			auto const constraint = source.constraint.value_or(fbs::domain::PlacementConstraint { });
+			item.constraint.no_stacking = constraint.no_stacking.value_or(false);
+			item.constraint.required_vertical = constraint.required_vertical.value_or(false);
+			item.constraint.min_x = constraint.min_x.value_or(0);
+			item.constraint.min_y = constraint.min_y.value_or(0);
+			item.constraint.min_z = constraint.min_z.value_or(0);
+			item.constraint.max_x = constraint.max_x.value_or(UINT32_MAX);
+			item.constraint.max_y = constraint.max_y.value_or(UINT32_MAX);
+			item.constraint.max_z = constraint.max_z.value_or(UINT32_MAX);
 
 			items.push_back(std::move(item));
 		}
@@ -74,14 +73,14 @@ auto solve_php_solver(SolveRequest const& request, SolveOptions const& options, 
 	}
 	pack_options.strategy = packing::Strategy::Default;
 
-	auto packed = packing::pack(std::move(boxes), std::move(items), pack_options, std::move(on_progress));
+	auto packed = packing::pack(std::move(boxes), std::move(items), pack_options, on_progress);
 
 	SolveResponse response;
 	for (auto const& source : packed.boxes) {
 		BoxResult result;
 		result.box_reference = source.box.reference;
 		result.total_weight = source.total_weight;
-		result.utilization = source.dimensions.volume() == 0 ? 0.0f : static_cast<float>(source.used_volume()) / source.dimensions.volume();
+		result.utilization = source.dimensions.volume() == 0 ? 0.0f : static_cast<float>(source.used_volume()) / static_cast<float>(source.dimensions.volume());
 
 		if (source.box.outer_dimensions) {
 			result.outer_width = source.box.outer_dimensions->width;

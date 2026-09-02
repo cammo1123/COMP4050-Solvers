@@ -27,7 +27,7 @@ InfoResponse info()
 	};
 }
 
-SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
+SolveResponse solve(SolveRequest const& request, ProgressCallback const& on_progress)
 {
 	auto const options = request.options.value_or(SolveOptions { });
 
