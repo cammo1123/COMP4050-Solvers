@@ -1,148 +1,191 @@
 # @bionic/solver
 
-C++ solver core exposed through a Node.js addon. The binary boundary between the
-TypeScript wrapper and the native addon is defined by a single FlatBuffers
-schema.
+`@bionic/solver` is a Node.js package backed by a C++ packing engine. The
+TypeScript wrapper serializes requests through FlatBuffers, calls the native
+N-API addon, and decodes the response. The same C++ core can also be built as a
+standalone command-line program.
 
-## Layout
+## Requirements
 
-- **`src/`** — C++ core: solver API and dispatcher (`solver.h` / `solver.cpp`),
-  separate algorithm translation units, a standalone CLI (`main.cpp`), and the
-  N-API addon (`addon.cpp`).
-- **`fbs/`** — FlatBuffers schemas. Each `*.fbs` generates C++ and TypeScript
-  bindings, so it is the single source of truth for the binary boundary.
-- **`native/gen/`** — generated C++ bindings and translation layer, included by
-  the addon.
-- **`node/`** — the npm package: TypeScript wrapper, generated TS bindings,
-  Vitest tests, and the scripts that drive flatc/CMake.
-- **`build/`** — CMake build dirs (`build/core` = standalone binary,
-  `build/addon` = addon).
+- Node.js 22 or newer
+- pnpm 11 or newer
+- CMake 3.18 or newer
+- Ninja (recommended)
+- A C++ compiler with C++23 support
+- `flatc` is optional; the build scripts download and cache FlatBuffers 25.12.19
+  under `node/.flatc/` when it is not available on `PATH`
 
-## Prerequisites
+Install dependencies with:
 
-- CMake >= 3.18, Ninja, and a C++17 compiler
-- Node.js and pnpm
-- flatc — optional; a pinned release is downloaded and cached automatically if
-  not on `PATH`
+```sh
+pnpm install
+```
+
+## Package API
+
+The package exposes named exports, a default export, and CommonJS support:
+
+```ts
+import solver, {
+  RotationPolicy,
+  SolveAlgorithm,
+  info,
+  solve,
+} from "@bionic/solver";
+```
+
+`info()` returns build metadata:
+
+```ts
+const metadata = info();
+// projectName, projectVersion, buildType, gitHash, gitBranch,
+// buildTime, platform, arch, compiler, nodeVersion
+```
+
+`solve()` is asynchronous and accepts `boxes`, `items`, an optional algorithm,
+options, and an optional progress callback:
+
+```ts
+const response = await solve({
+  boxes: [
+    {
+      reference: "small",
+      width: 120,
+      length: 80,
+      depth: 60,
+      maxWeight: 25000,
+      maximumBoxes: 2,
+      active: true,
+    },
+  ],
+  items: [
+    {
+      itemCode: "panel",
+      itemReference: "panel",
+      width: 40,
+      length: 30,
+      depth: 5,
+      weight: 1000,
+      quantity: 3,
+      rotationPolicy: RotationPolicy.KeepFlat,
+      linkedGroup: "panel-set",
+      constraint: { noStacking: true, minX: 0 },
+    },
+  ],
+  algorithm: SolveAlgorithm.PHPSolver,
+  options: {
+    allowRotation: true,
+    timeoutMs: 1000,
+    phpsolverOptions: {
+      balanceWeight: true,
+      strictItemOrder: false,
+      bestSubset: false,
+    },
+  },
+  onProgress: (done, total) => {
+    console.log(`${done}/${total}`);
+  },
+});
+```
+
+The default algorithm is `SolveAlgorithm.PHPSolver`. The available algorithms
+are `Greedy`, `ExtremePoint`, `ShitStack`, and `PHPSolver`. `ShitStack` is the
+current stacking implementation. `Greedy` and `ExtremePoint` are dispatchable
+but currently reject requests because their solvers are not implemented.
+
+## Data model
+
+All dimensions use millimetres and weights use kilograms. Box dimensions are the
+usable interior dimensions. `outerWidth`, `outerLength`, and `outerDepth` are
+optional shipping dimensions and do not enlarge the packing area.
+
+Required box fields are `reference`, `width`, `length`, and `depth`. Optional
+box fields are `maxWeight`, `boxWeight`, `active`, `maximumBoxes`, and the outer
+dimensions.
+
+Required item fields are `itemCode`, `itemReference`, `width`, `length`,
+`depth`, and `weight`. `quantity` expands one item definition into instances;
+omitting it represents one instance, while zero represents none. Optional
+grouping fields are `boxGroup` and `linkedGroup`.
+
+`RotationPolicy` values are:
+
+- `Never` — do not rotate the item.
+- `KeepFlat` — allow rotations around the vertical axis while preserving depth.
+- `BestFit` — allow supported rotations to find the best fit.
+
+Placement constraints support `noStacking`, `requiredVertical`, and minimum or
+maximum `x`, `y`, and `z` coordinates. Coordinates use the native Y-up model:
+width is X, depth is vertical Y, and length is Z. A placement coordinate is the
+minimum corner of the item.
+
+Each response contains `results`, failed item definitions in `failed`, and
+`algorithmUs` and `serverUs` timing values. Box results include placements,
+packed dimensions, and optional `totalWeight`, `utilization`, and outer
+dimensions.
 
 ## Build
 
-Addon (everything; the first configure fetches Node headers, node-addon-api,
-and the header-only FlatBuffers runtime):
+Build the addon and generated TypeScript output using the default
+`RelWithDebInfo` configuration:
 
 ```sh
 pnpm build
 ```
 
-The default build is `RelWithDebInfo`: optimized code with debug symbols. Use
-`pnpm build:debug` when an unoptimized Debug build is needed.
-
-Release build with maximum optimizations (LTO; used by CI):
+Other build commands are:
 
 ```sh
-pnpm build:optimized
+pnpm build:debug       # Debug addon build
+pnpm build:optimized   # Release build with LTO
+pnpm build:core        # Standalone CLI, RelWithDebInfo
+pnpm build:core:debug  # Standalone CLI, Debug
+pnpm build:ts          # TypeScript output only
 ```
 
-Unoptimized build with debug symbols:
+The addon is copied to `node/build/Release/addon.node`. The standalone binary
+is written to `build/core/solver` or `build/core/solver.exe` on Windows.
+
+To create a platform-specific package prebuild after building the addon:
 
 ```sh
-pnpm build:debug
+pnpm prebuild:binaries
 ```
 
-For the standalone CLI:
+Generated bindings are produced from `fbs/` and written under `native/gen/` and
+`node/src/gen/`. Do not edit generated files manually.
+
+## Testing And Checks
 
 ```sh
-pnpm build:core:debug
+pnpm test          # Build and run the Vitest suite once
+pnpm test:watch    # Build and run Vitest in watch mode
+pnpm typecheck     # TypeScript type checking
+pnpm lint:check    # clang-format validation for src/
+pnpm lint:fix      # Apply clang-format to src/
+pnpm bench         # Optimized benchmark suite
 ```
 
-Standalone CLI only (no addon; fetches the header-only FlatBuffers runtime):
+`pnpm clean` removes generated bindings, build outputs, prebuilds, and the
+local FlatBuffers compiler cache.
 
-```sh
-pnpm build:core
-# binary: build/core/solver (solver.exe on Windows)
-```
+## Repository Layout
 
-Remove all generated bindings, build outputs, binaries, and local compiler cache:
+- `src/` — C++ core, algorithms, CLI, and native addon boundary.
+- `fbs/` — FlatBuffers schemas shared by the core and addon.
+- `native/gen/` — generated C++ bindings.
+- `node/src/` — TypeScript API and generated TypeScript bindings.
+- `node/test/` — Vitest tests and benchmarks.
+- `node/scripts/` — generation, build, run, clean, and translation scripts.
+- `docs/` — reference schema examples and supplementary documentation.
+- `build/` — local CMake output; generated and ignored build artifacts.
 
-```sh
-pnpm clean
-```
+## Continuous Integration
 
-## Usage
+The `test` workflow builds and tests on Ubuntu, Windows, and macOS for pull
+requests targeting `dev` or `main`, and pushes to `dev`. The `prebuild` workflow
+builds platform prebuilds, runs the tests and standalone smoke test, and commits
+generated distribution files and prebuilds on branch pushes.
 
-```ts
-import addon from "@bionic/solver";
-// or: import { info, solve } from "@bionic/solver";
-
-addon.info();
-
-addon.solve({
-  boxes: [
-    {
-      reference: "a1",
-      width: 120, length: 80, depth: 60,
-      outerWidth: 124, outerLength: 84, outerDepth: 64,
-      maxWeight: 25000, maximumBoxes: 2, active: true,
-    },
-  ],
-  items: [
-    {
-      itemCode: "panel", itemReference: "panel",
-      width: 40, length: 30, depth: 5, weight: 1000,
-      quantity: 3, rotationPolicy: RotationPolicy.KeepFlat,
-      linkedGroup: "panel-set",
-      constraint: { noStacking: true, minX: 0 },
-    },
-  ],
-  options: {
-    strategy: SolveStrategy.Utilization,
-    balanceWeight: true,
-    strictItemOrder: false,
-    bestSubset: false,
-    timeoutMs: 1000,
-  },
-});
-```
-
-`solve(request)` marshals a `SolveRequest` into a FlatBuffers buffer, runs the
-native addon, and returns the decoded `SolveResponse`.
-
-Packing dimensions use millimetres and weights use grams. The native engine uses
-Y-up coordinates: `width` is X, `depth` is vertical Y, and `length` is Z. A
-placement's `x`, `y`, and `z` are its minimum corner. Inner box dimensions are
-the packing bounds; optional `outerWidth`, `outerLength`, and `outerDepth` are
-returned as shipping dimensions and do not enlarge the usable interior.
-
-Use the generated `RotationPolicy` enum: `Never`, `KeepFlat` (rotate around Y
-without changing vertical depth), or `BestFit`. `quantity` expands one item
-record into instances; omitted means one and zero means none. `linkedGroup`
-requires instances in the group to remain together. Declarative constraints
-support no-stacking, required vertical orientation, and minimum/maximum start
-coordinates.
-
-Current solve options are `maxBoxes`, `allowRotation`, `timeoutMs`, and the
-generated `SolveAlgorithm` enum. An omitted algorithm uses the temporary stacking
-implementation; `SolveAlgorithm.Greedy` selects greedy and
-`SolveAlgorithm.ExtremePoint` selects extreme-point, both of which remain
-unimplemented. `onProgress` receives intermediate `(done, total)` callbacks.
-
-The standalone CLI exercises multiple box sizes, outer dimensions, linked
-items, keep-flat rotation, utilization strategy, balancing, best-subset mode,
-and the progress bar:
-
-```sh
-pnpm build:core
-build/core/solver.exe       # Windows: build/core/solver.exe
-```
-
-## Testing
-
-```sh
-pnpm test        # one-shot run (builds the addon on demand if needed)
-pnpm test:watch  # watch mode
-pnpm typecheck   # TypeScript checker
-pnpm bench       # optimized end-to-end benchmarks
-```
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the branch rules, build details, and
-CI workflows.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for branch rules and development
+workflow.
