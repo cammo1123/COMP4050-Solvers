@@ -114,7 +114,7 @@ hardcoded.
 - Operation schemas under `fbs/operations/` produce their own generated C++
   headers, domain headers, translation headers, and TypeScript translation
   layer.
-- `node/scripts/generate.mjs` follows schema includes and runs flatc for both
+- `scripts/generate.mjs` follows schema includes and runs flatc for both
   the shared and operation schemas.
 - The domain header defines pure-C++ structs (no FlatBuffers types) for every
   table, plus `toDomain`/`fromDomain` per type. The core and CLI only ever see
