@@ -152,7 +152,7 @@ local FlatBuffers compiler cache.
 - `native/gen/` — generated C++ bindings.
 - `node/src/` — TypeScript API and generated TypeScript bindings.
 - `node/test/` — Vitest tests and benchmarks.
-- `node/scripts/` — generation, build, run, clean, and translation scripts.
+- `scripts/` — generation, build, run, clean, and codegen scripts.
 - `docs/` — reference schema examples and supplementary documentation.
 - `build/` — local CMake output; generated and ignored build artifacts.
 

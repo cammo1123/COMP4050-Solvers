@@ -122,9 +122,10 @@ if(NOT EXISTS "${flatbuffers_include}/flatbuffers/flatbuffers.h")
     )
 endif()
 
-set(GENERATED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/native/gen")
+set(GENERATED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/gen")
 file(GLOB_RECURSE SCHEMA_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/fbs/*.fbs")
 file(GLOB_RECURSE OPERATION_SCHEMA_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/fbs/operations/*.fbs")
+file(GLOB_RECURSE CODEGEN_SCRIPTS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/scripts/*")
 
 set(GENERATED_HEADERS)
 
@@ -147,13 +148,10 @@ endif()
 
 add_custom_command(
     OUTPUT ${GENERATED_HEADERS}
-    COMMAND "${NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/generate.mjs"
+    COMMAND "${NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate.mjs"
     DEPENDS
     ${SCHEMA_FILES}
-    "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/generate.mjs"
-    "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/generated.mjs"
-    "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/shared.mjs"
-    "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/translation.mjs"
+    ${CODEGEN_SCRIPTS}
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     VERBATIM
 )
