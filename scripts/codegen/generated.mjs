@@ -30,6 +30,17 @@ function extractArchive(archive, extractDir) {
   const isWindows = process.platform === 'win32'
 
   if (archive.endsWith('.zip')) {
+    if (isWindows) {
+      // Git Bash's tar does not extract ZIP archives reliably on Windows.
+      const quotePowerShell = (value) => value.replaceAll("'", "''")
+      return run('powershell.exe', [
+        '-NoProfile',
+        '-NonInteractive',
+        '-Command',
+        `Expand-Archive -LiteralPath '${quotePowerShell(archive)}' -DestinationPath '${quotePowerShell(extractDir)}' -Force`,
+      ])
+    }
+
     if (!isWindows) {
       if (!findOnPath('unzip')) {
         fail(
@@ -41,8 +52,9 @@ function extractArchive(archive, extractDir) {
       if (result.status === 0) return result
     }
 
-    // Windows 10+ ships `tar.exe` (bsdtar), which can extract .zip files.
-    return run('tar', ['-xf', archive, '-C', extractDir])
+    // Avoid drive-letter paths here. Git Bash's tar treats `D:\\...` as a
+    // remote archive name instead of a local Windows path.
+    return run('tar', ['-xf', path.relative(extractDir, archive)], { cwd: extractDir })
   }
 
   // Handles .tar, .tar.gz, .tgz, etc. on both platforms.

@@ -13,7 +13,7 @@ standalone command-line program.
 - Ninja (recommended)
 - A C++ compiler with C++23 support
 - `flatc` is optional; the build scripts download and cache FlatBuffers 25.12.19
-  under `node/.flatc/` when it is not available on `PATH`
+  under `.flatc/` when it is not available on `PATH`
 
 Install dependencies with:
 
