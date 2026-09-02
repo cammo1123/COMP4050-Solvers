@@ -74,6 +74,12 @@ merge, rebase stale feature branches rather than merging `dev` into them.
   braces). `pnpm lint:fix` applies it; `pnpm lint:check` validates it.
 - **Debugging** — **Run > Start Debugging (F5)** rebuilds the standalone binary
   (`build:core`) and points the debugger at `build/core/solver.exe`.
+- **Dependencies** — Use Node.js 22 and pnpm 11. Run `pnpm install` from the
+  repository root before building or testing.
+- **Build outputs** — `pnpm build` generates bindings, builds the addon, and
+  compiles the TypeScript package. The addon is copied to
+  `node/build/Release/addon.node`; standalone binaries are written under
+  `build/core/` or `build/addon/`.
 
 ## Testing
 
@@ -83,9 +89,10 @@ pnpm test:watch    # watch mode
 pnpm typecheck     # TypeScript checker over src/ and tests
 ```
 
-The suite covers native addon loading, `info()`, and the `solve()` binary
-boundary: marshalling boxes across the FlatBuffers boundary, malformed-payload
-errors at the native layer, and the wrapper's TS-side checks.
+The suite covers native addon loading, `info()`, the public typed API, algorithm
+dispatch, progress callbacks, and the `solve()` binary boundary. It also tests
+FlatBuffers marshalling, malformed-payload errors at the native layer, and
+wrapper-side TypeScript checks.
 
 ### CI
 
@@ -99,14 +106,14 @@ snapshots the built binaries.
 
 Bindings are generated, committed, and regenerated on `pnpm build` (or by CMake
 via `add_custom_command`) whenever a schema or generator changes. Schemas under
-`fbs/` and `fbs/operations/` are picked up automatically - no file names are
-hardcoded anywhere.
+`fbs/` and `fbs/operations/` are picked up automatically; file names are not
+hardcoded.
 
 - `fbs/types.fbs` contains shared tables and produces
   `native/gen/types_generated.h` and `native/gen/types_domain_generated.h`.
-- Operation schemas under `fbs/operations/` produce their own
-  `<name>_generated.h`, `<name>_domain_generated.h`,
-  `<name>_translation_generated.h`, and TypeScript translation layer.
+- Operation schemas under `fbs/operations/` produce their own generated C++
+  headers, domain headers, translation headers, and TypeScript translation
+  layer.
 - `node/scripts/generate.mjs` follows schema includes and runs flatc for both
   the shared and operation schemas.
 - The domain header defines pure-C++ structs (no FlatBuffers types) for every
@@ -116,3 +123,12 @@ hardcoded anywhere.
 - The hand-written code (`node/src/addon.ts`, `src/addon.cpp`) only validates
   input and applies the domain transform; marshalling is entirely generated, so
   the schema cannot drift from the code.
+
+## Pull Request Checklist
+
+- Update `README.md` or `docs/` when public fields, algorithms, scripts, or
+  build behavior changes.
+- Update the relevant FlatBuffers schema before changing generated bindings.
+- Run `pnpm typecheck`, `pnpm lint:check`, and `pnpm test` locally when the
+  required toolchains are available.
+- Do not edit generated files manually; regenerate them with `pnpm build`.
