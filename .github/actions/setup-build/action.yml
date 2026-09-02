@@ -21,7 +21,7 @@ runs:
     - name: Cache flatc
       uses: actions/cache@v4
       with:
-        path: node/.flatc
+        path: .flatc
         key: flatc-${{ runner.os }}-25.12.19
 
     - name: Install flatc (FlatBuffers compiler)
