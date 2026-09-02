@@ -1,8 +1,6 @@
 #include <cstddef>
-#include <cstdio>
 #include <iomanip>
 #include <iostream>
-#include <stdio.h>
 
 #include "solve_domain_generated.h"
 #include "solver.h"
@@ -36,6 +34,9 @@ int main()
 		.width = 50,
 		.length = 50,
 		.depth = 50,
+		.outer_width = 54,
+		.outer_length = 54,
+		.outer_depth = 54,
 	});
 
 	solve.boxes.push_back({
@@ -44,6 +45,33 @@ int main()
 		.length = 100,
 		.depth = 100,
 	});
+
+	solve.algorithm = SolveAlgorithm::PHPSolver;
+
+	fbs::domain::SolveOptions options;
+	options.phpsolver_options = fbs::domain::PHPSolverOptions {
+		.balance_weight = true,
+		.best_subset = false,
+	};
+	solve.options = options;
+
+	fbs::domain::ItemType linked_a;
+	linked_a.item_code = "LinkedA";
+	linked_a.item_reference = "LinkedA";
+	linked_a.width = 5;
+	linked_a.length = 5;
+	linked_a.depth = 5;
+	linked_a.weight = 1;
+	linked_a.linked_group = "demo-pair";
+	linked_a.rotation_policy = RotationPolicy::KeepFlat;
+	linked_a.constraint = fbs::domain::PlacementConstraint { };
+	linked_a.constraint->no_stacking = true;
+	solve.items.push_back(linked_a);
+
+	fbs::domain::ItemType linked_b = linked_a;
+	linked_b.item_code = "LinkedB";
+	linked_b.item_reference = "LinkedB";
+	solve.items.push_back(linked_b);
 
 	for (auto i = 1; i <= 65; i++) {
 		solve.items.push_back({
