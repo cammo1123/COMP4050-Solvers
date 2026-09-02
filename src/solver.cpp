@@ -30,10 +30,11 @@ InfoResponse info()
 SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
 {
 	auto const options = request.options.value_or(SolveOptions { });
+
 	SolveResponse response;
 	auto const start = std::chrono::steady_clock::now();
 
-	auto const algorithm = options.algorithm.value_or(SolveAlgorithm::PHPSolver);
+	auto const algorithm = request.algorithm;
 	auto const* info = algo::get_algo(algorithm);
 	if (!info) {
 		throw std::logic_error("invalid SolveAlgorithm value");
