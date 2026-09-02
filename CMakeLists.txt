@@ -158,21 +158,24 @@ add_custom_command(
     VERBATIM
 )
 
+add_subdirectory(src/php_solver)
+
 add_library(solver_core OBJECT
     src/solver.cpp
     src/algo_registry.cpp
     src/algo_greedy.cpp
     src/algo_extreme_point.cpp
     src/algo_shit_stack.cpp
+    src/php_solver/php_solver.cpp
     ${GENERATED_HEADERS}
 )
-set_target_properties(solver_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_include_directories(solver_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR} ${GENERATED_DIR} ${flatbuffers_include})
+target_link_libraries(solver_core PUBLIC php_solver)
 
 add_executable(solver src/main.cpp)
 target_link_libraries(solver PRIVATE solver_core)
 
-foreach(target solver_core solver)
+foreach(target php_solver solver_core solver)
     if(MSVC)
         target_compile_options(${target} PRIVATE /W4)
     else()

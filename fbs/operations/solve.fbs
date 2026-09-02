@@ -10,22 +10,32 @@ table ExtremePointOptions {}
 
 table ShitStackOptions {}
 
+table PHPSolverOptions {
+  balance_weight: bool = null;
+  all_permutations: bool = null;
+  single_box: bool = null;
+  strict_item_order: bool = null;
+  best_subset: bool = null;
+}
+
 union SolveStrategyOptions {
   GreedyOptions,
   ExtremePointOptions,
   ShitStackOptions,
+  PHPSolverOptions,
 }
 
 enum SolveAlgorithm : byte {
 	Greedy = 0,
 	ExtremePoint = 1,
 	ShitStack = 2,
+  PHPSolver = 3,
 }
 
 table SolveRequest {
   boxes: [BoxType] (required);
   items: [ItemType] (required);
-  algorithm: SolveAlgorithm = Greedy;
+  algorithm: SolveAlgorithm = PHPSolver;
   options: SolveOptions (optional);
 }
 
