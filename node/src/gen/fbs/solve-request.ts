@@ -6,6 +6,7 @@ import * as flatbuffers from 'flatbuffers';
 
 import { BoxType, BoxTypeT } from '../fbs/box-type.js';
 import { ItemType, ItemTypeT } from '../fbs/item-type.js';
+import { SolveAlgorithm } from '../fbs/solve-algorithm.js';
 import { SolveOptions, SolveOptionsT } from '../fbs/solve-options.js';
 
 
@@ -47,13 +48,18 @@ itemsLength():number {
   return offset ? this.bb!.__vector_len(this.bb_pos + offset) : 0;
 }
 
-options(obj?:SolveOptions):SolveOptions|null {
+algorithm():SolveAlgorithm {
   const offset = this.bb!.__offset(this.bb_pos, 8);
+  return offset ? this.bb!.readInt8(this.bb_pos + offset) : SolveAlgorithm.Greedy;
+}
+
+options(obj?:SolveOptions):SolveOptions|null {
+  const offset = this.bb!.__offset(this.bb_pos, 10);
   return offset ? (obj || new SolveOptions()).__init(this.bb!.__indirect(this.bb_pos + offset), this.bb!) : null;
 }
 
 static startSolveRequest(builder:flatbuffers.Builder) {
-  builder.startObject(3);
+  builder.startObject(4);
 }
 
 static addBoxes(builder:flatbuffers.Builder, boxesOffset:flatbuffers.Offset) {
@@ -88,8 +94,12 @@ static startItemsVector(builder:flatbuffers.Builder, numElems:number) {
   builder.startVector(4, numElems, 4);
 }
 
+static addAlgorithm(builder:flatbuffers.Builder, algorithm:SolveAlgorithm) {
+  builder.addFieldInt8(2, algorithm, SolveAlgorithm.Greedy);
+}
+
 static addOptions(builder:flatbuffers.Builder, optionsOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(2, optionsOffset, 0);
+  builder.addFieldOffset(3, optionsOffset, 0);
 }
 
 static endSolveRequest(builder:flatbuffers.Builder):flatbuffers.Offset {
@@ -112,6 +122,7 @@ unpack(): SolveRequestT {
   return new SolveRequestT(
     this.bb!.createObjList<BoxType, BoxTypeT>(this.boxes.bind(this), this.boxesLength()),
     this.bb!.createObjList<ItemType, ItemTypeT>(this.items.bind(this), this.itemsLength()),
+    this.algorithm(),
     (this.options() !== null ? this.options()!.unpack() : null)
   );
 }
@@ -120,6 +131,7 @@ unpack(): SolveRequestT {
 unpackTo(_o: SolveRequestT): void {
   _o.boxes = this.bb!.createObjList<BoxType, BoxTypeT>(this.boxes.bind(this), this.boxesLength());
   _o.items = this.bb!.createObjList<ItemType, ItemTypeT>(this.items.bind(this), this.itemsLength());
+  _o.algorithm = this.algorithm();
   _o.options = (this.options() !== null ? this.options()!.unpack() : null);
 }
 }
@@ -128,6 +140,7 @@ export class SolveRequestT implements flatbuffers.IGeneratedObject {
 constructor(
   public boxes: (BoxTypeT)[] = [],
   public items: (ItemTypeT)[] = [],
+  public algorithm: SolveAlgorithm = SolveAlgorithm.Greedy,
   public options: SolveOptionsT|null = null
 ){}
 
@@ -140,6 +153,7 @@ pack(builder:flatbuffers.Builder): flatbuffers.Offset {
   SolveRequest.startSolveRequest(builder);
   SolveRequest.addBoxes(builder, boxes);
   SolveRequest.addItems(builder, items);
+  SolveRequest.addAlgorithm(builder, this.algorithm);
   SolveRequest.addOptions(builder, options);
 
   return SolveRequest.endSolveRequest(builder);

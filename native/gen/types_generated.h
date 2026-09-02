@@ -15,6 +15,10 @@ static_assert(FLATBUFFERS_VERSION_MAJOR == 25 &&
 
 namespace fbs {
 
+struct PlacementConstraint;
+struct PlacementConstraintBuilder;
+struct PlacementConstraintT;
+
 struct BoxType;
 struct BoxTypeBuilder;
 struct BoxTypeT;
@@ -22,6 +26,169 @@ struct BoxTypeT;
 struct ItemType;
 struct ItemTypeBuilder;
 struct ItemTypeT;
+
+enum RotationPolicy : int8_t {
+  RotationPolicy_Never = 0,
+  RotationPolicy_KeepFlat = 1,
+  RotationPolicy_BestFit = 2,
+  RotationPolicy_MIN = RotationPolicy_Never,
+  RotationPolicy_MAX = RotationPolicy_BestFit
+};
+
+inline const RotationPolicy (&EnumValuesRotationPolicy())[3] {
+  static const RotationPolicy values[] = {
+    RotationPolicy_Never,
+    RotationPolicy_KeepFlat,
+    RotationPolicy_BestFit
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesRotationPolicy() {
+  static const char * const names[4] = {
+    "Never",
+    "KeepFlat",
+    "BestFit",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNameRotationPolicy(RotationPolicy e) {
+  if (::flatbuffers::IsOutRange(e, RotationPolicy_Never, RotationPolicy_BestFit)) return "";
+  const size_t index = static_cast<size_t>(e);
+  return EnumNamesRotationPolicy()[index];
+}
+
+struct PlacementConstraintT : public ::flatbuffers::NativeTable {
+  typedef PlacementConstraint TableType;
+  ::flatbuffers::Optional<bool> no_stacking = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<bool> required_vertical = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<uint32_t> min_x = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<uint32_t> min_y = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<uint32_t> min_z = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<uint32_t> max_x = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<uint32_t> max_y = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<uint32_t> max_z = ::flatbuffers::nullopt;
+};
+
+struct PlacementConstraint FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef PlacementConstraintT NativeTableType;
+  typedef PlacementConstraintBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_NO_STACKING = 4,
+    VT_REQUIRED_VERTICAL = 6,
+    VT_MIN_X = 8,
+    VT_MIN_Y = 10,
+    VT_MIN_Z = 12,
+    VT_MAX_X = 14,
+    VT_MAX_Y = 16,
+    VT_MAX_Z = 18
+  };
+  ::flatbuffers::Optional<bool> no_stacking() const {
+    return GetOptional<uint8_t, bool>(VT_NO_STACKING);
+  }
+  ::flatbuffers::Optional<bool> required_vertical() const {
+    return GetOptional<uint8_t, bool>(VT_REQUIRED_VERTICAL);
+  }
+  ::flatbuffers::Optional<uint32_t> min_x() const {
+    return GetOptional<uint32_t, uint32_t>(VT_MIN_X);
+  }
+  ::flatbuffers::Optional<uint32_t> min_y() const {
+    return GetOptional<uint32_t, uint32_t>(VT_MIN_Y);
+  }
+  ::flatbuffers::Optional<uint32_t> min_z() const {
+    return GetOptional<uint32_t, uint32_t>(VT_MIN_Z);
+  }
+  ::flatbuffers::Optional<uint32_t> max_x() const {
+    return GetOptional<uint32_t, uint32_t>(VT_MAX_X);
+  }
+  ::flatbuffers::Optional<uint32_t> max_y() const {
+    return GetOptional<uint32_t, uint32_t>(VT_MAX_Y);
+  }
+  ::flatbuffers::Optional<uint32_t> max_z() const {
+    return GetOptional<uint32_t, uint32_t>(VT_MAX_Z);
+  }
+  template <bool B = false>
+  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<uint8_t>(verifier, VT_NO_STACKING, 1) &&
+           VerifyField<uint8_t>(verifier, VT_REQUIRED_VERTICAL, 1) &&
+           VerifyField<uint32_t>(verifier, VT_MIN_X, 4) &&
+           VerifyField<uint32_t>(verifier, VT_MIN_Y, 4) &&
+           VerifyField<uint32_t>(verifier, VT_MIN_Z, 4) &&
+           VerifyField<uint32_t>(verifier, VT_MAX_X, 4) &&
+           VerifyField<uint32_t>(verifier, VT_MAX_Y, 4) &&
+           VerifyField<uint32_t>(verifier, VT_MAX_Z, 4) &&
+           verifier.EndTable();
+  }
+  PlacementConstraintT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(PlacementConstraintT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<PlacementConstraint> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const PlacementConstraintT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+};
+
+struct PlacementConstraintBuilder {
+  typedef PlacementConstraint Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_no_stacking(bool no_stacking) {
+    fbb_.AddElement<uint8_t>(PlacementConstraint::VT_NO_STACKING, static_cast<uint8_t>(no_stacking));
+  }
+  void add_required_vertical(bool required_vertical) {
+    fbb_.AddElement<uint8_t>(PlacementConstraint::VT_REQUIRED_VERTICAL, static_cast<uint8_t>(required_vertical));
+  }
+  void add_min_x(uint32_t min_x) {
+    fbb_.AddElement<uint32_t>(PlacementConstraint::VT_MIN_X, min_x);
+  }
+  void add_min_y(uint32_t min_y) {
+    fbb_.AddElement<uint32_t>(PlacementConstraint::VT_MIN_Y, min_y);
+  }
+  void add_min_z(uint32_t min_z) {
+    fbb_.AddElement<uint32_t>(PlacementConstraint::VT_MIN_Z, min_z);
+  }
+  void add_max_x(uint32_t max_x) {
+    fbb_.AddElement<uint32_t>(PlacementConstraint::VT_MAX_X, max_x);
+  }
+  void add_max_y(uint32_t max_y) {
+    fbb_.AddElement<uint32_t>(PlacementConstraint::VT_MAX_Y, max_y);
+  }
+  void add_max_z(uint32_t max_z) {
+    fbb_.AddElement<uint32_t>(PlacementConstraint::VT_MAX_Z, max_z);
+  }
+  explicit PlacementConstraintBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<PlacementConstraint> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<PlacementConstraint>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<PlacementConstraint> CreatePlacementConstraint(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Optional<bool> no_stacking = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<bool> required_vertical = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<uint32_t> min_x = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<uint32_t> min_y = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<uint32_t> min_z = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<uint32_t> max_x = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<uint32_t> max_y = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<uint32_t> max_z = ::flatbuffers::nullopt) {
+  PlacementConstraintBuilder builder_(_fbb);
+  if(max_z) { builder_.add_max_z(*max_z); }
+  if(max_y) { builder_.add_max_y(*max_y); }
+  if(max_x) { builder_.add_max_x(*max_x); }
+  if(min_z) { builder_.add_min_z(*min_z); }
+  if(min_y) { builder_.add_min_y(*min_y); }
+  if(min_x) { builder_.add_min_x(*min_x); }
+  if(required_vertical) { builder_.add_required_vertical(*required_vertical); }
+  if(no_stacking) { builder_.add_no_stacking(*no_stacking); }
+  return builder_.Finish();
+}
+
+::flatbuffers::Offset<PlacementConstraint> CreatePlacementConstraint(::flatbuffers::FlatBufferBuilder &_fbb, const PlacementConstraintT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 
 struct BoxTypeT : public ::flatbuffers::NativeTable {
   typedef BoxType TableType;
@@ -33,6 +200,9 @@ struct BoxTypeT : public ::flatbuffers::NativeTable {
   ::flatbuffers::Optional<float> box_weight = ::flatbuffers::nullopt;
   ::flatbuffers::Optional<bool> active = ::flatbuffers::nullopt;
   ::flatbuffers::Optional<uint32_t> maximum_boxes = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<uint32_t> outer_width = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<uint32_t> outer_length = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<uint32_t> outer_depth = ::flatbuffers::nullopt;
 };
 
 struct BoxType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
@@ -46,7 +216,10 @@ struct BoxType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_MAX_WEIGHT = 12,
     VT_BOX_WEIGHT = 14,
     VT_ACTIVE = 16,
-    VT_MAXIMUM_BOXES = 18
+    VT_MAXIMUM_BOXES = 18,
+    VT_OUTER_WIDTH = 20,
+    VT_OUTER_LENGTH = 22,
+    VT_OUTER_DEPTH = 24
   };
   const ::flatbuffers::String *reference() const {
     return GetPointer<const ::flatbuffers::String *>(VT_REFERENCE);
@@ -72,6 +245,15 @@ struct BoxType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   ::flatbuffers::Optional<uint32_t> maximum_boxes() const {
     return GetOptional<uint32_t, uint32_t>(VT_MAXIMUM_BOXES);
   }
+  ::flatbuffers::Optional<uint32_t> outer_width() const {
+    return GetOptional<uint32_t, uint32_t>(VT_OUTER_WIDTH);
+  }
+  ::flatbuffers::Optional<uint32_t> outer_length() const {
+    return GetOptional<uint32_t, uint32_t>(VT_OUTER_LENGTH);
+  }
+  ::flatbuffers::Optional<uint32_t> outer_depth() const {
+    return GetOptional<uint32_t, uint32_t>(VT_OUTER_DEPTH);
+  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -84,6 +266,9 @@ struct BoxType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<float>(verifier, VT_BOX_WEIGHT, 4) &&
            VerifyField<uint8_t>(verifier, VT_ACTIVE, 1) &&
            VerifyField<uint32_t>(verifier, VT_MAXIMUM_BOXES, 4) &&
+           VerifyField<uint32_t>(verifier, VT_OUTER_WIDTH, 4) &&
+           VerifyField<uint32_t>(verifier, VT_OUTER_LENGTH, 4) &&
+           VerifyField<uint32_t>(verifier, VT_OUTER_DEPTH, 4) &&
            verifier.EndTable();
   }
   BoxTypeT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
@@ -119,6 +304,15 @@ struct BoxTypeBuilder {
   void add_maximum_boxes(uint32_t maximum_boxes) {
     fbb_.AddElement<uint32_t>(BoxType::VT_MAXIMUM_BOXES, maximum_boxes);
   }
+  void add_outer_width(uint32_t outer_width) {
+    fbb_.AddElement<uint32_t>(BoxType::VT_OUTER_WIDTH, outer_width);
+  }
+  void add_outer_length(uint32_t outer_length) {
+    fbb_.AddElement<uint32_t>(BoxType::VT_OUTER_LENGTH, outer_length);
+  }
+  void add_outer_depth(uint32_t outer_depth) {
+    fbb_.AddElement<uint32_t>(BoxType::VT_OUTER_DEPTH, outer_depth);
+  }
   explicit BoxTypeBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -140,8 +334,14 @@ inline ::flatbuffers::Offset<BoxType> CreateBoxType(
     ::flatbuffers::Optional<float> max_weight = ::flatbuffers::nullopt,
     ::flatbuffers::Optional<float> box_weight = ::flatbuffers::nullopt,
     ::flatbuffers::Optional<bool> active = ::flatbuffers::nullopt,
-    ::flatbuffers::Optional<uint32_t> maximum_boxes = ::flatbuffers::nullopt) {
+    ::flatbuffers::Optional<uint32_t> maximum_boxes = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<uint32_t> outer_width = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<uint32_t> outer_length = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<uint32_t> outer_depth = ::flatbuffers::nullopt) {
   BoxTypeBuilder builder_(_fbb);
+  if(outer_depth) { builder_.add_outer_depth(*outer_depth); }
+  if(outer_length) { builder_.add_outer_length(*outer_length); }
+  if(outer_width) { builder_.add_outer_width(*outer_width); }
   if(maximum_boxes) { builder_.add_maximum_boxes(*maximum_boxes); }
   if(box_weight) { builder_.add_box_weight(*box_weight); }
   if(max_weight) { builder_.add_max_weight(*max_weight); }
@@ -162,7 +362,10 @@ inline ::flatbuffers::Offset<BoxType> CreateBoxTypeDirect(
     ::flatbuffers::Optional<float> max_weight = ::flatbuffers::nullopt,
     ::flatbuffers::Optional<float> box_weight = ::flatbuffers::nullopt,
     ::flatbuffers::Optional<bool> active = ::flatbuffers::nullopt,
-    ::flatbuffers::Optional<uint32_t> maximum_boxes = ::flatbuffers::nullopt) {
+    ::flatbuffers::Optional<uint32_t> maximum_boxes = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<uint32_t> outer_width = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<uint32_t> outer_length = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<uint32_t> outer_depth = ::flatbuffers::nullopt) {
   auto reference__ = reference ? _fbb.CreateString(reference) : 0;
   return fbs::CreateBoxType(
       _fbb,
@@ -173,7 +376,10 @@ inline ::flatbuffers::Offset<BoxType> CreateBoxTypeDirect(
       max_weight,
       box_weight,
       active,
-      maximum_boxes);
+      maximum_boxes,
+      outer_width,
+      outer_length,
+      outer_depth);
 }
 
 ::flatbuffers::Offset<BoxType> CreateBoxType(::flatbuffers::FlatBufferBuilder &_fbb, const BoxTypeT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
@@ -186,7 +392,15 @@ struct ItemTypeT : public ::flatbuffers::NativeTable {
   uint32_t length = 0;
   uint32_t depth = 0;
   float weight = 0.0f;
+  ::flatbuffers::Optional<uint32_t> quantity = ::flatbuffers::nullopt;
   std::string box_group{};
+  ::flatbuffers::Optional<fbs::RotationPolicy> rotation_policy = ::flatbuffers::nullopt;
+  std::string linked_group{};
+  std::unique_ptr<fbs::PlacementConstraintT> constraint{};
+  ItemTypeT() = default;
+  ItemTypeT(const ItemTypeT &o);
+  ItemTypeT(ItemTypeT&&) FLATBUFFERS_NOEXCEPT = default;
+  ItemTypeT &operator=(ItemTypeT o) FLATBUFFERS_NOEXCEPT;
 };
 
 struct ItemType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
@@ -199,7 +413,11 @@ struct ItemType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_LENGTH = 10,
     VT_DEPTH = 12,
     VT_WEIGHT = 14,
-    VT_BOX_GROUP = 16
+    VT_QUANTITY = 16,
+    VT_BOX_GROUP = 18,
+    VT_ROTATION_POLICY = 20,
+    VT_LINKED_GROUP = 22,
+    VT_CONSTRAINT = 24
   };
   const ::flatbuffers::String *item_code() const {
     return GetPointer<const ::flatbuffers::String *>(VT_ITEM_CODE);
@@ -219,8 +437,20 @@ struct ItemType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   float weight() const {
     return GetField<float>(VT_WEIGHT, 0.0f);
   }
+  ::flatbuffers::Optional<uint32_t> quantity() const {
+    return GetOptional<uint32_t, uint32_t>(VT_QUANTITY);
+  }
   const ::flatbuffers::String *box_group() const {
     return GetPointer<const ::flatbuffers::String *>(VT_BOX_GROUP);
+  }
+  ::flatbuffers::Optional<fbs::RotationPolicy> rotation_policy() const {
+    return GetOptional<int8_t, fbs::RotationPolicy>(VT_ROTATION_POLICY);
+  }
+  const ::flatbuffers::String *linked_group() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_LINKED_GROUP);
+  }
+  const fbs::PlacementConstraint *constraint() const {
+    return GetPointer<const fbs::PlacementConstraint *>(VT_CONSTRAINT);
   }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
@@ -233,8 +463,14 @@ struct ItemType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<uint32_t>(verifier, VT_LENGTH, 4) &&
            VerifyField<uint32_t>(verifier, VT_DEPTH, 4) &&
            VerifyField<float>(verifier, VT_WEIGHT, 4) &&
+           VerifyField<uint32_t>(verifier, VT_QUANTITY, 4) &&
            VerifyOffset(verifier, VT_BOX_GROUP) &&
            verifier.VerifyString(box_group()) &&
+           VerifyField<int8_t>(verifier, VT_ROTATION_POLICY, 1) &&
+           VerifyOffset(verifier, VT_LINKED_GROUP) &&
+           verifier.VerifyString(linked_group()) &&
+           VerifyOffset(verifier, VT_CONSTRAINT) &&
+           verifier.VerifyTable(constraint()) &&
            verifier.EndTable();
   }
   ItemTypeT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
@@ -264,8 +500,20 @@ struct ItemTypeBuilder {
   void add_weight(float weight) {
     fbb_.AddElement<float>(ItemType::VT_WEIGHT, weight, 0.0f);
   }
+  void add_quantity(uint32_t quantity) {
+    fbb_.AddElement<uint32_t>(ItemType::VT_QUANTITY, quantity);
+  }
   void add_box_group(::flatbuffers::Offset<::flatbuffers::String> box_group) {
     fbb_.AddOffset(ItemType::VT_BOX_GROUP, box_group);
+  }
+  void add_rotation_policy(fbs::RotationPolicy rotation_policy) {
+    fbb_.AddElement<int8_t>(ItemType::VT_ROTATION_POLICY, static_cast<int8_t>(rotation_policy));
+  }
+  void add_linked_group(::flatbuffers::Offset<::flatbuffers::String> linked_group) {
+    fbb_.AddOffset(ItemType::VT_LINKED_GROUP, linked_group);
+  }
+  void add_constraint(::flatbuffers::Offset<fbs::PlacementConstraint> constraint) {
+    fbb_.AddOffset(ItemType::VT_CONSTRAINT, constraint);
   }
   explicit ItemTypeBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -288,15 +536,23 @@ inline ::flatbuffers::Offset<ItemType> CreateItemType(
     uint32_t length = 0,
     uint32_t depth = 0,
     float weight = 0.0f,
-    ::flatbuffers::Offset<::flatbuffers::String> box_group = 0) {
+    ::flatbuffers::Optional<uint32_t> quantity = ::flatbuffers::nullopt,
+    ::flatbuffers::Offset<::flatbuffers::String> box_group = 0,
+    ::flatbuffers::Optional<fbs::RotationPolicy> rotation_policy = ::flatbuffers::nullopt,
+    ::flatbuffers::Offset<::flatbuffers::String> linked_group = 0,
+    ::flatbuffers::Offset<fbs::PlacementConstraint> constraint = 0) {
   ItemTypeBuilder builder_(_fbb);
+  builder_.add_constraint(constraint);
+  builder_.add_linked_group(linked_group);
   builder_.add_box_group(box_group);
+  if(quantity) { builder_.add_quantity(*quantity); }
   builder_.add_weight(weight);
   builder_.add_depth(depth);
   builder_.add_length(length);
   builder_.add_width(width);
   builder_.add_item_reference(item_reference);
   builder_.add_item_code(item_code);
+  if(rotation_policy) { builder_.add_rotation_policy(*rotation_policy); }
   return builder_.Finish();
 }
 
@@ -308,10 +564,15 @@ inline ::flatbuffers::Offset<ItemType> CreateItemTypeDirect(
     uint32_t length = 0,
     uint32_t depth = 0,
     float weight = 0.0f,
-    const char *box_group = nullptr) {
+    ::flatbuffers::Optional<uint32_t> quantity = ::flatbuffers::nullopt,
+    const char *box_group = nullptr,
+    ::flatbuffers::Optional<fbs::RotationPolicy> rotation_policy = ::flatbuffers::nullopt,
+    const char *linked_group = nullptr,
+    ::flatbuffers::Offset<fbs::PlacementConstraint> constraint = 0) {
   auto item_code__ = item_code ? _fbb.CreateString(item_code) : 0;
   auto item_reference__ = item_reference ? _fbb.CreateString(item_reference) : 0;
   auto box_group__ = box_group ? _fbb.CreateString(box_group) : 0;
+  auto linked_group__ = linked_group ? _fbb.CreateString(linked_group) : 0;
   return fbs::CreateItemType(
       _fbb,
       item_code__,
@@ -320,10 +581,61 @@ inline ::flatbuffers::Offset<ItemType> CreateItemTypeDirect(
       length,
       depth,
       weight,
-      box_group__);
+      quantity,
+      box_group__,
+      rotation_policy,
+      linked_group__,
+      constraint);
 }
 
 ::flatbuffers::Offset<ItemType> CreateItemType(::flatbuffers::FlatBufferBuilder &_fbb, const ItemTypeT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+inline PlacementConstraintT *PlacementConstraint::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<PlacementConstraintT>(new PlacementConstraintT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void PlacementConstraint::UnPackTo(PlacementConstraintT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = no_stacking(); _o->no_stacking = _e; }
+  { auto _e = required_vertical(); _o->required_vertical = _e; }
+  { auto _e = min_x(); _o->min_x = _e; }
+  { auto _e = min_y(); _o->min_y = _e; }
+  { auto _e = min_z(); _o->min_z = _e; }
+  { auto _e = max_x(); _o->max_x = _e; }
+  { auto _e = max_y(); _o->max_y = _e; }
+  { auto _e = max_z(); _o->max_z = _e; }
+}
+
+inline ::flatbuffers::Offset<PlacementConstraint> CreatePlacementConstraint(::flatbuffers::FlatBufferBuilder &_fbb, const PlacementConstraintT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return PlacementConstraint::Pack(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<PlacementConstraint> PlacementConstraint::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const PlacementConstraintT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const PlacementConstraintT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _no_stacking = _o->no_stacking;
+  auto _required_vertical = _o->required_vertical;
+  auto _min_x = _o->min_x;
+  auto _min_y = _o->min_y;
+  auto _min_z = _o->min_z;
+  auto _max_x = _o->max_x;
+  auto _max_y = _o->max_y;
+  auto _max_z = _o->max_z;
+  return fbs::CreatePlacementConstraint(
+      _fbb,
+      _no_stacking,
+      _required_vertical,
+      _min_x,
+      _min_y,
+      _min_z,
+      _max_x,
+      _max_y,
+      _max_z);
+}
 
 inline BoxTypeT *BoxType::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
   auto _o = std::unique_ptr<BoxTypeT>(new BoxTypeT());
@@ -342,6 +654,9 @@ inline void BoxType::UnPackTo(BoxTypeT *_o, const ::flatbuffers::resolver_functi
   { auto _e = box_weight(); _o->box_weight = _e; }
   { auto _e = active(); _o->active = _e; }
   { auto _e = maximum_boxes(); _o->maximum_boxes = _e; }
+  { auto _e = outer_width(); _o->outer_width = _e; }
+  { auto _e = outer_length(); _o->outer_length = _e; }
+  { auto _e = outer_depth(); _o->outer_depth = _e; }
 }
 
 inline ::flatbuffers::Offset<BoxType> CreateBoxType(::flatbuffers::FlatBufferBuilder &_fbb, const BoxTypeT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
@@ -360,6 +675,9 @@ inline ::flatbuffers::Offset<BoxType> BoxType::Pack(::flatbuffers::FlatBufferBui
   auto _box_weight = _o->box_weight;
   auto _active = _o->active;
   auto _maximum_boxes = _o->maximum_boxes;
+  auto _outer_width = _o->outer_width;
+  auto _outer_length = _o->outer_length;
+  auto _outer_depth = _o->outer_depth;
   return fbs::CreateBoxType(
       _fbb,
       _reference,
@@ -369,7 +687,39 @@ inline ::flatbuffers::Offset<BoxType> BoxType::Pack(::flatbuffers::FlatBufferBui
       _max_weight,
       _box_weight,
       _active,
-      _maximum_boxes);
+      _maximum_boxes,
+      _outer_width,
+      _outer_length,
+      _outer_depth);
+}
+
+inline ItemTypeT::ItemTypeT(const ItemTypeT &o)
+      : item_code(o.item_code),
+        item_reference(o.item_reference),
+        width(o.width),
+        length(o.length),
+        depth(o.depth),
+        weight(o.weight),
+        quantity(o.quantity),
+        box_group(o.box_group),
+        rotation_policy(o.rotation_policy),
+        linked_group(o.linked_group),
+        constraint((o.constraint) ? new fbs::PlacementConstraintT(*o.constraint) : nullptr) {
+}
+
+inline ItemTypeT &ItemTypeT::operator=(ItemTypeT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(item_code, o.item_code);
+  std::swap(item_reference, o.item_reference);
+  std::swap(width, o.width);
+  std::swap(length, o.length);
+  std::swap(depth, o.depth);
+  std::swap(weight, o.weight);
+  std::swap(quantity, o.quantity);
+  std::swap(box_group, o.box_group);
+  std::swap(rotation_policy, o.rotation_policy);
+  std::swap(linked_group, o.linked_group);
+  std::swap(constraint, o.constraint);
+  return *this;
 }
 
 inline ItemTypeT *ItemType::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
@@ -387,7 +737,11 @@ inline void ItemType::UnPackTo(ItemTypeT *_o, const ::flatbuffers::resolver_func
   { auto _e = length(); _o->length = _e; }
   { auto _e = depth(); _o->depth = _e; }
   { auto _e = weight(); _o->weight = _e; }
+  { auto _e = quantity(); _o->quantity = _e; }
   { auto _e = box_group(); if (_e) _o->box_group = _e->str(); }
+  { auto _e = rotation_policy(); _o->rotation_policy = _e; }
+  { auto _e = linked_group(); if (_e) _o->linked_group = _e->str(); }
+  { auto _e = constraint(); if (_e) { if(_o->constraint) { _e->UnPackTo(_o->constraint.get(), _resolver); } else { _o->constraint = std::unique_ptr<fbs::PlacementConstraintT>(_e->UnPack(_resolver)); } } else if (_o->constraint) { _o->constraint.reset(); } }
 }
 
 inline ::flatbuffers::Offset<ItemType> CreateItemType(::flatbuffers::FlatBufferBuilder &_fbb, const ItemTypeT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
@@ -404,7 +758,11 @@ inline ::flatbuffers::Offset<ItemType> ItemType::Pack(::flatbuffers::FlatBufferB
   auto _length = _o->length;
   auto _depth = _o->depth;
   auto _weight = _o->weight;
+  auto _quantity = _o->quantity;
   auto _box_group = _o->box_group.empty() ? 0 : _fbb.CreateString(_o->box_group);
+  auto _rotation_policy = _o->rotation_policy;
+  auto _linked_group = _o->linked_group.empty() ? 0 : _fbb.CreateString(_o->linked_group);
+  auto _constraint = _o->constraint ? CreatePlacementConstraint(_fbb, _o->constraint.get(), _rehasher) : 0;
   return fbs::CreateItemType(
       _fbb,
       _item_code,
@@ -413,7 +771,11 @@ inline ::flatbuffers::Offset<ItemType> ItemType::Pack(::flatbuffers::FlatBufferB
       _length,
       _depth,
       _weight,
-      _box_group);
+      _quantity,
+      _box_group,
+      _rotation_policy,
+      _linked_group,
+      _constraint);
 }
 
 }  // namespace fbs

@@ -5,18 +5,31 @@ import * as flatbuffers from "flatbuffers";
 import {
 	BoxResultT as BoxResultObject,
 	BoxTypeT as BoxTypeObject,
+	ExtremePointOptionsT as ExtremePointOptionsObject,
+	GreedyOptionsT as GreedyOptionsObject,
 	ItemPlacementT as ItemPlacementObject,
 	ItemTypeT as ItemTypeObject,
+	PlacementConstraintT as PlacementConstraintObject,
+	ShitStackOptionsT as ShitStackOptionsObject,
 	SolveOptionsT as SolveOptionsObject,
 	SolveRequestT as SolveRequestObject,
 	SolveAlgorithm,
+	RotationPolicy,
+	SolveStrategyOptions,
+	SolveRequest as SolveRequestMessage,
 	SolveResponse as SolveResponseMessage,
 	SolveResponseT as SolveResponseObject,
+	SolveOptions as SolveOptionsMessage,
 } from "./fbs.js";
 
 export type BoxResultT = {
 	boxReference: string;
 	placements: ItemPlacementT[];
+	totalWeight?: number;
+	utilization?: number;
+	outerWidth?: number;
+	outerLength?: number;
+	outerDepth?: number;
 };
 
 export type BoxTypeT = {
@@ -28,6 +41,17 @@ export type BoxTypeT = {
 	boxWeight?: number;
 	active?: boolean;
 	maximumBoxes?: number;
+	outerWidth?: number;
+	outerLength?: number;
+	outerDepth?: number;
+};
+
+export type ExtremePointOptionsT = {
+
+};
+
+export type GreedyOptionsT = {
+
 };
 
 export type ItemPlacementT = {
@@ -48,33 +72,93 @@ export type ItemTypeT = {
 	length: number;
 	depth: number;
 	weight: number;
+	quantity?: number;
 	boxGroup?: string | Uint8Array;
+	rotationPolicy?: RotationPolicy;
+	linkedGroup?: string | Uint8Array;
+	constraint?: PlacementConstraintT | null;
+};
+
+export type PlacementConstraintT = {
+	noStacking?: boolean;
+	requiredVertical?: boolean;
+	minX?: number;
+	minY?: number;
+	minZ?: number;
+	maxX?: number;
+	maxY?: number;
+	maxZ?: number;
+};
+
+export type ShitStackOptionsT = {
+
 };
 
 export type SolveOptionsT = {
 	maxBoxes?: number;
 	allowRotation?: boolean;
 	timeoutMs?: number;
-	algorithm?: SolveAlgorithm;
+	greedyOptions?: GreedyOptionsT | null;
+	extremePointOptions?: ExtremePointOptionsT | null;
+	shitStackOptions?: ShitStackOptionsT | null;
 };
 
-export type SolveRequest = {
-	boxes: BoxTypeT[];
-	items: ItemTypeT[];
-	options?: SolveOptionsT | null;
+export type BaseOptions = {
+	maxBoxes?: number;
+	allowRotation?: boolean;
+	timeoutMs?: number;
 };
 
 export type SolveResponse = {
 	results: BoxResultT[];
 	failed: ItemTypeT[];
+	algorithmUs?: number;
+	serverUs?: number;
 };
 
+export type SolveRequest = {
+	boxes: BoxTypeT[];
+	items: ItemTypeT[];
+} & (
+	| { algorithm: typeof SolveAlgorithm.Greedy; options?: BaseOptions & { greedyOptions?: GreedyOptionsT } }
+	| { algorithm: typeof SolveAlgorithm.ExtremePoint; options?: BaseOptions & { extremePointOptions?: ExtremePointOptionsT } }
+	| { algorithm: typeof SolveAlgorithm.ShitStack; options?: BaseOptions & { shitStackOptions?: ShitStackOptionsT } }
+	| { algorithm?: undefined; options?: BaseOptions & { shitStackOptions?: ShitStackOptionsT } }
+);
+
+
+function toAlgoOptionsT(options: any): { type: SolveStrategyOptions; value: any } {
+	if (options?.greedyOptions) {
+		const value = options.greedyOptions;
+		return { type: SolveStrategyOptions.GreedyOptions, value: new GreedyOptionsObject() };
+	}
+	if (options?.extremePointOptions) {
+		const value = options.extremePointOptions;
+		return { type: SolveStrategyOptions.ExtremePointOptions, value: new ExtremePointOptionsObject() };
+	}
+	if (options?.shitStackOptions) {
+		const value = options.shitStackOptions;
+		return { type: SolveStrategyOptions.ShitStackOptions, value: new ShitStackOptionsObject() };
+	}
+	return { type: SolveStrategyOptions.NONE, value: null };
+}
+
+
 export function encodeRequest(request: SolveRequest): Uint8Array {
+	const algoOptions = toAlgoOptionsT(request.options);
+	const optionsT = request.options ? new SolveOptionsObject(
+		request.options.maxBoxes ?? null,
+		request.options.allowRotation ?? true,
+		request.options.timeoutMs ?? null,
+		algoOptions.type,
+		algoOptions.value,
+	) : null;
 
 	const message = new SolveRequestObject(
-		(request.boxes ?? []).map((item) => new BoxTypeObject(item.reference, item.width, item.length, item.depth, item.maxWeight, item.boxWeight, item.active, item.maximumBoxes)),
-		(request.items ?? []).map((item) => new ItemTypeObject(item.itemCode, item.itemReference, item.width, item.length, item.depth, item.weight, item.boxGroup)),
-		request.options ? new SolveOptionsObject(request.options.maxBoxes, request.options.allowRotation, request.options.timeoutMs, request.options.algorithm) : null
+		(request.boxes ?? []).map((item) => new BoxTypeObject(item.reference, item.width, item.length, item.depth, item.maxWeight, item.boxWeight, item.active, item.maximumBoxes, item.outerWidth, item.outerLength, item.outerDepth)),
+		(request.items ?? []).map((item) => new ItemTypeObject(item.itemCode, item.itemReference, item.width, item.length, item.depth, item.weight, item.quantity, item.boxGroup, item.rotationPolicy, item.linkedGroup, item.constraint ? new PlacementConstraintObject(item.constraint.noStacking, item.constraint.requiredVertical, item.constraint.minX, item.constraint.minY, item.constraint.minZ, item.constraint.maxX, item.constraint.maxY, item.constraint.maxZ) : null)),
+		('algorithm' in request && request.algorithm !== undefined && request.algorithm !== null) ? request.algorithm : SolveAlgorithm.ShitStack,
+		optionsT,
 	);
 
 	const builder = new flatbuffers.Builder();
@@ -86,7 +170,9 @@ export function decodeResponse(bytes: Uint8Array): SolveResponse {
 	const message = SolveResponseMessage.getRootAsSolveResponse(new flatbuffers.ByteBuffer(bytes));
 	const unpacked = message.unpack();
 	return {
-		results: (unpacked.results ?? []).map((item) => ({ boxReference: item.boxReference as string, placements: (item.placements ?? []).map((item) => ({ itemCode: item.itemCode as string, itemReference: item.itemReference as string, x: item.x, y: item.y, z: item.z, width: item.width, length: item.length, depth: item.depth })) })),
-		failed: (unpacked.failed ?? []).map((item) => ({ itemCode: item.itemCode as string, itemReference: item.itemReference as string, width: item.width, length: item.length, depth: item.depth, weight: item.weight, ...(item.boxGroup !== null && item.boxGroup !== undefined ? { boxGroup: item.boxGroup } : {}) }))
+		results: (unpacked.results ?? []).map((item) => ({ boxReference: item.boxReference as string, placements: (item.placements ?? []).map((item) => ({ itemCode: item.itemCode as string, itemReference: item.itemReference as string, x: item.x, y: item.y, z: item.z, width: item.width, length: item.length, depth: item.depth })), ...(item.totalWeight !== null && item.totalWeight !== undefined ? { totalWeight: item.totalWeight } : {}), ...(item.utilization !== null && item.utilization !== undefined ? { utilization: item.utilization } : {}), ...(item.outerWidth !== null && item.outerWidth !== undefined ? { outerWidth: item.outerWidth } : {}), ...(item.outerLength !== null && item.outerLength !== undefined ? { outerLength: item.outerLength } : {}), ...(item.outerDepth !== null && item.outerDepth !== undefined ? { outerDepth: item.outerDepth } : {}) })),
+		failed: (unpacked.failed ?? []).map((item) => ({ itemCode: item.itemCode as string, itemReference: item.itemReference as string, width: item.width, length: item.length, depth: item.depth, weight: item.weight, ...(item.quantity !== null && item.quantity !== undefined ? { quantity: item.quantity } : {}), ...(item.boxGroup !== null && item.boxGroup !== undefined ? { boxGroup: item.boxGroup } : {}), ...(item.rotationPolicy !== null && item.rotationPolicy !== undefined ? { rotationPolicy: item.rotationPolicy } : {}), ...(item.linkedGroup !== null && item.linkedGroup !== undefined ? { linkedGroup: item.linkedGroup } : {}), ...(item.constraint !== null && item.constraint !== undefined ? { constraint: { ...(item.constraint.noStacking !== null && item.constraint.noStacking !== undefined ? { noStacking: item.constraint.noStacking } : {}), ...(item.constraint.requiredVertical !== null && item.constraint.requiredVertical !== undefined ? { requiredVertical: item.constraint.requiredVertical } : {}), ...(item.constraint.minX !== null && item.constraint.minX !== undefined ? { minX: item.constraint.minX } : {}), ...(item.constraint.minY !== null && item.constraint.minY !== undefined ? { minY: item.constraint.minY } : {}), ...(item.constraint.minZ !== null && item.constraint.minZ !== undefined ? { minZ: item.constraint.minZ } : {}), ...(item.constraint.maxX !== null && item.constraint.maxX !== undefined ? { maxX: item.constraint.maxX } : {}), ...(item.constraint.maxY !== null && item.constraint.maxY !== undefined ? { maxY: item.constraint.maxY } : {}), ...(item.constraint.maxZ !== null && item.constraint.maxZ !== undefined ? { maxZ: item.constraint.maxZ } : {}) } } : {}) })),
+		...(unpacked.algorithmUs !== null && unpacked.algorithmUs !== undefined ? { algorithmUs: unpacked.algorithmUs } : {}),
+		...(unpacked.serverUs !== null && unpacked.serverUs !== undefined ? { serverUs: unpacked.serverUs } : {})
 	};
 }

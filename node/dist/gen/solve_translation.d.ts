@@ -1,7 +1,12 @@
-import { SolveAlgorithm } from "./fbs.js";
+import { SolveAlgorithm, RotationPolicy } from "./fbs.js";
 export type BoxResultT = {
     boxReference: string;
     placements: ItemPlacementT[];
+    totalWeight?: number;
+    utilization?: number;
+    outerWidth?: number;
+    outerLength?: number;
+    outerDepth?: number;
 };
 export type BoxTypeT = {
     reference: string;
@@ -12,7 +17,12 @@ export type BoxTypeT = {
     boxWeight?: number;
     active?: boolean;
     maximumBoxes?: number;
+    outerWidth?: number;
+    outerLength?: number;
+    outerDepth?: number;
 };
+export type ExtremePointOptionsT = {};
+export type GreedyOptionsT = {};
 export type ItemPlacementT = {
     itemCode: string;
     itemReference: string;
@@ -30,23 +40,66 @@ export type ItemTypeT = {
     length: number;
     depth: number;
     weight: number;
+    quantity?: number;
     boxGroup?: string | Uint8Array;
+    rotationPolicy?: RotationPolicy;
+    linkedGroup?: string | Uint8Array;
+    constraint?: PlacementConstraintT | null;
 };
+export type PlacementConstraintT = {
+    noStacking?: boolean;
+    requiredVertical?: boolean;
+    minX?: number;
+    minY?: number;
+    minZ?: number;
+    maxX?: number;
+    maxY?: number;
+    maxZ?: number;
+};
+export type ShitStackOptionsT = {};
 export type SolveOptionsT = {
     maxBoxes?: number;
     allowRotation?: boolean;
     timeoutMs?: number;
-    algorithm?: SolveAlgorithm;
+    greedyOptions?: GreedyOptionsT | null;
+    extremePointOptions?: ExtremePointOptionsT | null;
+    shitStackOptions?: ShitStackOptionsT | null;
 };
-export type SolveRequest = {
-    boxes: BoxTypeT[];
-    items: ItemTypeT[];
-    options?: SolveOptionsT | null;
+export type BaseOptions = {
+    maxBoxes?: number;
+    allowRotation?: boolean;
+    timeoutMs?: number;
 };
 export type SolveResponse = {
     results: BoxResultT[];
     failed: ItemTypeT[];
+    algorithmUs?: number;
+    serverUs?: number;
 };
+export type SolveRequest = {
+    boxes: BoxTypeT[];
+    items: ItemTypeT[];
+} & ({
+    algorithm: typeof SolveAlgorithm.Greedy;
+    options?: BaseOptions & {
+        greedyOptions?: GreedyOptionsT;
+    };
+} | {
+    algorithm: typeof SolveAlgorithm.ExtremePoint;
+    options?: BaseOptions & {
+        extremePointOptions?: ExtremePointOptionsT;
+    };
+} | {
+    algorithm: typeof SolveAlgorithm.ShitStack;
+    options?: BaseOptions & {
+        shitStackOptions?: ShitStackOptionsT;
+    };
+} | {
+    algorithm?: undefined;
+    options?: BaseOptions & {
+        shitStackOptions?: ShitStackOptionsT;
+    };
+});
 export declare function encodeRequest(request: SolveRequest): Uint8Array;
 export declare function decodeResponse(bytes: Uint8Array): SolveResponse;
 //# sourceMappingURL=solve_translation.d.ts.map

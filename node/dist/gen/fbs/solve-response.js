@@ -34,8 +34,16 @@ export class SolveResponse {
         const offset = this.bb.__offset(this.bb_pos, 6);
         return offset ? this.bb.__vector_len(this.bb_pos + offset) : 0;
     }
+    algorithmUs() {
+        const offset = this.bb.__offset(this.bb_pos, 8);
+        return offset ? this.bb.readUint32(this.bb_pos + offset) : 0;
+    }
+    serverUs() {
+        const offset = this.bb.__offset(this.bb_pos, 10);
+        return offset ? this.bb.readUint32(this.bb_pos + offset) : 0;
+    }
     static startSolveResponse(builder) {
-        builder.startObject(2);
+        builder.startObject(4);
     }
     static addResults(builder, resultsOffset) {
         builder.addFieldOffset(0, resultsOffset, 0);
@@ -63,35 +71,49 @@ export class SolveResponse {
     static startFailedVector(builder, numElems) {
         builder.startVector(4, numElems, 4);
     }
+    static addAlgorithmUs(builder, algorithmUs) {
+        builder.addFieldInt32(2, algorithmUs, 0);
+    }
+    static addServerUs(builder, serverUs) {
+        builder.addFieldInt32(3, serverUs, 0);
+    }
     static endSolveResponse(builder) {
         const offset = builder.endObject();
         return offset;
     }
-    static createSolveResponse(builder, resultsOffset, failedOffset) {
+    static createSolveResponse(builder, resultsOffset, failedOffset, algorithmUs, serverUs) {
         SolveResponse.startSolveResponse(builder);
         SolveResponse.addResults(builder, resultsOffset);
         SolveResponse.addFailed(builder, failedOffset);
+        SolveResponse.addAlgorithmUs(builder, algorithmUs);
+        SolveResponse.addServerUs(builder, serverUs);
         return SolveResponse.endSolveResponse(builder);
     }
     unpack() {
-        return new SolveResponseT(this.bb.createObjList(this.results.bind(this), this.resultsLength()), this.bb.createObjList(this.failed.bind(this), this.failedLength()));
+        return new SolveResponseT(this.bb.createObjList(this.results.bind(this), this.resultsLength()), this.bb.createObjList(this.failed.bind(this), this.failedLength()), this.algorithmUs(), this.serverUs());
     }
     unpackTo(_o) {
         _o.results = this.bb.createObjList(this.results.bind(this), this.resultsLength());
         _o.failed = this.bb.createObjList(this.failed.bind(this), this.failedLength());
+        _o.algorithmUs = this.algorithmUs();
+        _o.serverUs = this.serverUs();
     }
 }
 export class SolveResponseT {
     results;
     failed;
-    constructor(results = [], failed = []) {
+    algorithmUs;
+    serverUs;
+    constructor(results = [], failed = [], algorithmUs = 0, serverUs = 0) {
         this.results = results;
         this.failed = failed;
+        this.algorithmUs = algorithmUs;
+        this.serverUs = serverUs;
     }
     pack(builder) {
         const results = SolveResponse.createResultsVector(builder, builder.createObjectOffsetList(this.results));
         const failed = SolveResponse.createFailedVector(builder, builder.createObjectOffsetList(this.failed));
-        return SolveResponse.createSolveResponse(builder, results, failed);
+        return SolveResponse.createSolveResponse(builder, results, failed, this.algorithmUs, this.serverUs);
     }
 }
 //# sourceMappingURL=solve-response.js.map

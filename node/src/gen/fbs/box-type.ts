@@ -66,8 +66,23 @@ maximumBoxes():number|null {
   return offset ? this.bb!.readUint32(this.bb_pos + offset) : null;
 }
 
+outerWidth():number|null {
+  const offset = this.bb!.__offset(this.bb_pos, 20);
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : null;
+}
+
+outerLength():number|null {
+  const offset = this.bb!.__offset(this.bb_pos, 22);
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : null;
+}
+
+outerDepth():number|null {
+  const offset = this.bb!.__offset(this.bb_pos, 24);
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : null;
+}
+
 static startBoxType(builder:flatbuffers.Builder) {
-  builder.startObject(8);
+  builder.startObject(11);
 }
 
 static addReference(builder:flatbuffers.Builder, referenceOffset:flatbuffers.Offset) {
@@ -102,13 +117,25 @@ static addMaximumBoxes(builder:flatbuffers.Builder, maximumBoxes:number) {
   builder.addFieldInt32(7, maximumBoxes, null);
 }
 
+static addOuterWidth(builder:flatbuffers.Builder, outerWidth:number) {
+  builder.addFieldInt32(8, outerWidth, null);
+}
+
+static addOuterLength(builder:flatbuffers.Builder, outerLength:number) {
+  builder.addFieldInt32(9, outerLength, null);
+}
+
+static addOuterDepth(builder:flatbuffers.Builder, outerDepth:number) {
+  builder.addFieldInt32(10, outerDepth, null);
+}
+
 static endBoxType(builder:flatbuffers.Builder):flatbuffers.Offset {
   const offset = builder.endObject();
   builder.requiredField(offset, 4) // reference
   return offset;
 }
 
-static createBoxType(builder:flatbuffers.Builder, referenceOffset:flatbuffers.Offset, width:number, length:number, depth:number, maxWeight:number|null, boxWeight:number|null, active:boolean|null, maximumBoxes:number|null):flatbuffers.Offset {
+static createBoxType(builder:flatbuffers.Builder, referenceOffset:flatbuffers.Offset, width:number, length:number, depth:number, maxWeight:number|null, boxWeight:number|null, active:boolean|null, maximumBoxes:number|null, outerWidth:number|null, outerLength:number|null, outerDepth:number|null):flatbuffers.Offset {
   BoxType.startBoxType(builder);
   BoxType.addReference(builder, referenceOffset);
   BoxType.addWidth(builder, width);
@@ -122,6 +149,12 @@ static createBoxType(builder:flatbuffers.Builder, referenceOffset:flatbuffers.Of
     BoxType.addActive(builder, active);
   if (maximumBoxes !== null)
     BoxType.addMaximumBoxes(builder, maximumBoxes);
+  if (outerWidth !== null)
+    BoxType.addOuterWidth(builder, outerWidth);
+  if (outerLength !== null)
+    BoxType.addOuterLength(builder, outerLength);
+  if (outerDepth !== null)
+    BoxType.addOuterDepth(builder, outerDepth);
   return BoxType.endBoxType(builder);
 }
 
@@ -134,7 +167,10 @@ unpack(): BoxTypeT {
     this.maxWeight(),
     this.boxWeight(),
     this.active(),
-    this.maximumBoxes()
+    this.maximumBoxes(),
+    this.outerWidth(),
+    this.outerLength(),
+    this.outerDepth()
   );
 }
 
@@ -148,6 +184,9 @@ unpackTo(_o: BoxTypeT): void {
   _o.boxWeight = this.boxWeight();
   _o.active = this.active();
   _o.maximumBoxes = this.maximumBoxes();
+  _o.outerWidth = this.outerWidth();
+  _o.outerLength = this.outerLength();
+  _o.outerDepth = this.outerDepth();
 }
 }
 
@@ -160,7 +199,10 @@ constructor(
   public maxWeight: number|null = null,
   public boxWeight: number|null = null,
   public active: boolean|null = null,
-  public maximumBoxes: number|null = null
+  public maximumBoxes: number|null = null,
+  public outerWidth: number|null = null,
+  public outerLength: number|null = null,
+  public outerDepth: number|null = null
 ){}
 
 
@@ -175,7 +217,10 @@ pack(builder:flatbuffers.Builder): flatbuffers.Offset {
     this.maxWeight,
     this.boxWeight,
     this.active,
-    this.maximumBoxes
+    this.maximumBoxes,
+    this.outerWidth,
+    this.outerLength,
+    this.outerDepth
   );
 }
 }
