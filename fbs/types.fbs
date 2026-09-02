@@ -2,6 +2,23 @@ namespace fbs;
 
 attribute "optional";
 
+enum RotationPolicy : byte {
+  Never = 0,
+  KeepFlat = 1,
+  BestFit = 2
+}
+
+table PlacementConstraint {
+  no_stacking: bool = null;
+  required_vertical: bool = null;
+  min_x: uint = null;
+  min_y: uint = null;
+  min_z: uint = null;
+  max_x: uint = null;
+  max_y: uint = null;
+  max_z: uint = null;
+}
+
 table BoxType {
   reference: string (required);
   width: uint;
@@ -12,6 +29,9 @@ table BoxType {
   box_weight: float = null;
   active: bool = null;
   maximum_boxes: uint = null;
+  outer_width: uint = null;
+  outer_length: uint = null;
+  outer_depth: uint = null;
 }
 
 table ItemType {
@@ -21,6 +41,10 @@ table ItemType {
   length: uint;
   depth: uint;
   weight: float;
+  quantity: uint = null;
 
   box_group: string (optional);
+  rotation_policy: RotationPolicy = null;
+  linked_group: string (optional);
+  constraint: PlacementConstraint (optional);
 }
