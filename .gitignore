@@ -71,5 +71,5 @@ Testing/
 prebuilds
 # Node
 node_modules
-node/.flatc/
+.flatc/
 package-lock.json

@@ -26,4 +26,4 @@ runs:
 
     - name: Install flatc (FlatBuffers compiler)
       shell: bash
-      run: node node/scripts/generate.mjs --version
+      run: node scripts/generate.mjs --version

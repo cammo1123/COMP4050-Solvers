@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { fail, findOnPath, log, nodeRoot, repoRoot, warn } from './shared.mjs'
+import { fail, findOnPath, log, repoRoot, warn } from './shared.mjs'
 
 const TARGETS = ['addon', 'core']
 const BUILD_TYPES = ['Debug', 'Release', 'RelWithDebInfo']
@@ -63,11 +63,11 @@ function builtAddonPath (buildDir) {
 }
 
 function releaseAddonPath () {
-	return path.join(nodeRoot, 'build', 'Release', 'addon.node')
+	return path.join(repoRoot, 'node', 'build', 'Release', 'addon.node')
 }
 
 function prebuildAddonPath () {
-	return path.join(nodeRoot, 'prebuilds', `${os.platform()}-${os.arch()}`, 'addon.node')
+	return path.join(repoRoot, 'node', 'prebuilds', `${os.platform()}-${os.arch()}`, 'addon.node')
 }
 
 function copyAddon (dest) {

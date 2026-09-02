@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
-import { fail, findOnPath, log, nodeRoot, repoRoot } from './shared.mjs'
+import { fail, findOnPath, log, repoRoot } from '../shared.mjs'
 
 export const FLATC_VERSION = '25.12.19'
 
@@ -55,7 +55,7 @@ function downloadAsset (platform, arch) {
 		fail("generated", `no flatc release asset known for ${platform}/${arch}; install flatc on PATH instead`)
 	}
 	const [asset, executable] = spec
-	const cacheDir = path.join(nodeRoot, '.flatc', FLATC_VERSION)
+	const cacheDir = path.join(repoRoot, '.flatc', FLATC_VERSION)
 	const binary = path.join(cacheDir, executable)
 	if (fs.existsSync(binary)) return binary
 
