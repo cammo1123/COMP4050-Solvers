@@ -31,7 +31,7 @@ describe("upstream fixture adapter", () => {
 		const result = await solve({
 			boxes: [{ reference, width: Number(width), length: Number(length), depth: Number(depth), boxWeight: Number(boxWeight), maxWeight: Number(maxWeight), outerWidth: Number(outerWidth), outerLength: Number(outerLength), outerDepth: Number(outerDepth) }],
 			items,
-			options: { timeoutMs: 1000, phpsolverOptions: { maxBoxes: 2 } },
+			options: { timeoutMs: 1000, phpSolverOptions: { maxBoxes: 2 } },
 		});
 
 		const expected = new Map(items.map((item) => [`${item.itemCode}/${item.itemReference}`, item.quantity]));

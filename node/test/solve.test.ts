@@ -158,7 +158,7 @@ describe("packing invariants", () => {
 				{ itemCode: "support", itemReference: "support", width: 4, length: 10, depth: 10, weight: 1, rotationPolicy: 0, constraint: { minX: 8, maxX: 8 } },
 				{ itemCode: "overhang", itemReference: "overhang", width: 10, length: 10, depth: 2, weight: 1, rotationPolicy: 0, constraint: { minX: 5, maxX: 5 } },
 			],
-			options: { phpsolverOptions: { maxBoxes: 1 } },
+			options: { phpSolverOptions: { maxBoxes: 1 } },
 		});
 		expect(result.failed).toHaveLength(0);
 		expect(result.results[0].placements.find((item) => item.itemCode === "overhang")).toMatchObject({ x: 5, y: 10 });
@@ -171,7 +171,7 @@ describe("packing invariants", () => {
 				{ itemCode: "support", itemReference: "support", width: 4, length: 10, depth: 10, weight: 1, rotationPolicy: 0, constraint: { minX: 8, maxX: 8 } },
 				{ itemCode: "overhang", itemReference: "overhang", width: 10, length: 10, depth: 2, weight: 1, rotationPolicy: 0, constraint: { minX: 0, maxX: 0 } },
 			],
-			options: { phpsolverOptions: { maxBoxes: 1 } },
+			options: { phpSolverOptions: { maxBoxes: 1 } },
 		});
 		expect(result.failed.map((item) => item.itemCode)).toEqual(["overhang"]);
 	});
@@ -286,7 +286,7 @@ describe("packing invariants", () => {
 				{ itemCode: "one", itemReference: "one", width: 10, length: 10, depth: 10, weight: 3, rotationPolicy: RotationPolicy.Never },
 				{ itemCode: "two", itemReference: "two", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: RotationPolicy.Never },
 			],
-			options: { phpsolverOptions: { maxBoxes: 1 } },
+			options: { phpSolverOptions: { maxBoxes: 1 } },
 		});
 		expect(result.results).toHaveLength(1);
 		expect(result.results[0].totalWeight).toBe(4);
@@ -320,7 +320,7 @@ describe("packing invariants", () => {
 				{ itemCode: "large", itemReference: "large", width: 15, length: 10, depth: 10, weight: 1, rotationPolicy: RotationPolicy.Never },
 			],
 			algorithm: SolveAlgorithm.PHPSolver,
-			options: { phpsolverOptions: { strictItemOrder: true } },
+			options: { phpSolverOptions: { strictItemOrder: true } },
 		});
 		expect(result.failed).toHaveLength(0);
 		expect(result.results[0].placements.map((item) => item.itemCode)).toEqual(["small", "large"]);
@@ -348,7 +348,7 @@ describe("packing invariants", () => {
 				{ itemCode: "small", itemReference: "small", width: 5, length: 5, depth: 5, weight: 1, quantity: 8, rotationPolicy: RotationPolicy.Never },
 			],
 			algorithm: SolveAlgorithm.PHPSolver,
-			options: { phpsolverOptions: { bestSubset: true } },
+			options: { phpSolverOptions: { bestSubset: true } },
 		});
 		expect(result.results[0].placements).toHaveLength(8);
 		expect(result.results[0].placements.every((item) => item.itemCode === "small")).toBe(true);
@@ -433,7 +433,7 @@ describe("packing invariants", () => {
 				{ itemCode: "regular", itemReference: "regular", width: 20, length: 10, depth: 10, weight: 1, rotationPolicy: RotationPolicy.Never },
 			],
 			algorithm: SolveAlgorithm.PHPSolver,
-			options: { phpsolverOptions: { bestSubset: true } },
+			options: { phpSolverOptions: { bestSubset: true } },
 		});
 
 		expect(result.results[0].placements.map((item) => item.itemCode)).toEqual(["regular"]);
@@ -499,7 +499,7 @@ describe("packing invariants", () => {
 				{ itemCode: "second-light", itemReference: "second-light", width: 10, length: 10, depth: 5, weight: 4, rotationPolicy: 0 },
 			],
 			algorithm: SolveAlgorithm.PHPSolver,
-			options: { phpsolverOptions: { balanceWeight: true } },
+			options: { phpSolverOptions: { balanceWeight: true } },
 		});
 		expect(result.results.map((box) => box.totalWeight)).toEqual([6, 8]);
 		expect(result.failed).toHaveLength(0);
@@ -516,7 +516,7 @@ describe("packing invariants", () => {
 				{ itemCode: "two", itemReference: "two", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: 0 },
 			],
 			algorithm: SolveAlgorithm.PHPSolver,
-			options: { phpsolverOptions: { singleBox: true } },
+			options: { phpSolverOptions: { singleBox: true } },
 		});
 		expect(result.results).toHaveLength(1);
 		expect(result.failed).toHaveLength(1);
@@ -530,7 +530,7 @@ describe("packing invariants", () => {
 				{ itemCode: "two", itemReference: "two", width: 10, length: 10, depth: 5, weight: 1, rotationPolicy: 0 },
 			],
 			algorithm: SolveAlgorithm.PHPSolver,
-			options: { timeoutMs: 1000, phpsolverOptions: { allPermutations: true } },
+			options: { timeoutMs: 1000, phpSolverOptions: { allPermutations: true } },
 		});
 		expect(result.failed).toHaveLength(0);
 		expect(result.results[0].placements).toHaveLength(2);
@@ -541,7 +541,7 @@ describe("packing invariants", () => {
 			boxes: [{ reference: "A", width: 10, length: 10, depth: 10 }],
 			items: [{ itemCode: "item", itemReference: "item", width: 1, length: 1, depth: 1, weight: 1 }],
 			algorithm: SolveAlgorithm.PHPSolver,
-			options: { timeoutMs: 0, phpsolverOptions: { allPermutations: true } },
+			options: { timeoutMs: 0, phpSolverOptions: { allPermutations: true } },
 		});
 
 		expect(result.results).toEqual([]);
@@ -557,7 +557,7 @@ describe("packing invariants", () => {
 				{ itemCode: "same", itemReference: "same", width: 10, length: 1, depth: 1, weight: 1, rotationPolicy: RotationPolicy.Never },
 			],
 			algorithm: SolveAlgorithm.PHPSolver,
-			options: { phpsolverOptions: { strictItemOrder: true } },
+			options: { phpSolverOptions: { strictItemOrder: true } },
 		});
 
 		expect(result.results[0].placements).toHaveLength(1);

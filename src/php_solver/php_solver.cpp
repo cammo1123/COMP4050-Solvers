@@ -61,8 +61,8 @@ auto solve_php_solver(SolveRequest const& request, SolveOptions const& options, 
 	packing::Options pack_options;
 	pack_options.timeout_ms = options.timeout_ms;
 
-	if (options.phpsolver_options.has_value()) {
-		auto const& algo_opts = *options.phpsolver_options;
+	if (options.php_solver_options.has_value()) {
+		auto const& algo_opts = *options.php_solver_options;
 
 		pack_options.max_boxes = algo_opts.max_boxes;
 		pack_options.allow_rotation = algo_opts.allow_rotation;

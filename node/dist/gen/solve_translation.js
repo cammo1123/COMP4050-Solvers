@@ -14,8 +14,8 @@ function toAlgoOptionsT(options) {
         const value = options.shitStackOptions;
         return { type: SolveStrategyOptions.ShitStackOptions, value: new ShitStackOptionsObject() };
     }
-    if (options?.phpsolverOptions) {
-        const value = options.phpsolverOptions;
+    if (options?.phpSolverOptions) {
+        const value = options.phpSolverOptions;
         return { type: SolveStrategyOptions.PHPSolverOptions, value: new PHPSolverOptionsObject(value.balanceWeight ?? null, value.allPermutations ?? null, value.singleBox ?? null, value.strictItemOrder ?? null, value.bestSubset ?? null, value.maxBoxes ?? null, value.allowRotation ?? true) };
     }
     return { type: SolveStrategyOptions.NONE, value: null };
