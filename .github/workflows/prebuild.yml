@@ -1,77 +1,77 @@
 name: prebuild
 
 on:
-  push:
-    branches: [main, dev]
-  pull_request:
-  workflow_dispatch:
+    push:
+        branches: [main]
+    pull_request:
+    workflow_dispatch:
 
 jobs:
-  prebuild:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    steps:
-      - uses: actions/checkout@v4
+    prebuild:
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest, windows-latest, macos-latest]
+        steps:
+            - uses: actions/checkout@v4
 
-      - uses: ./.github/actions/setup-build
+            - uses: ./.github/actions/setup-build
 
-      - name: Build (CMake/Ninja, max optimization)
-        run: pnpm build:optimized
+            - name: Build (CMake/Ninja, max optimization)
+              run: pnpm build:optimized
 
-      - name: Snapshot prebuilt binary
-        shell: bash
-        run: |
-          rm -rf node/prebuilds
-          pnpm prebuild:binaries
+            - name: Snapshot prebuilt binary
+              shell: bash
+              run: |
+                  rm -rf node/prebuilds
+                  pnpm prebuild:binaries
 
-      - name: Test
-        run: pnpm test
+            - name: Test
+              run: pnpm test
 
-      - name: Standalone smoke test
-        shell: bash
-        run: |
-          BINARY=$([[ "$RUNNER_OS" == "Windows" ]] && echo "build/addon/solver.exe" || echo "build/addon/solver")
-          "$BINARY"
+            - name: Standalone smoke test
+              shell: bash
+              run: |
+                  BINARY=$([[ "$RUNNER_OS" == "Windows" ]] && echo "build/addon/solver.exe" || echo "build/addon/solver")
+                  "$BINARY"
 
-      - name: Upload prebuilds
-        uses: actions/upload-artifact@v4
-        with:
-          name: prebuilds-${{ matrix.os }}
-          path: node/prebuilds/
+            - name: Upload prebuilds
+              uses: actions/upload-artifact@v4
+              with:
+                  name: prebuilds-${{ matrix.os }}
+                  path: node/prebuilds/
 
-  commit:
-    needs: prebuild
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
+    commit:
+        needs: prebuild
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        steps:
+            - uses: actions/checkout@v4
 
-      - uses: ./.github/actions/setup-build
+            - uses: ./.github/actions/setup-build
 
-      - name: Build dist (tsc)
-        run: pnpm build:ts
+            - name: Build dist (tsc)
+              run: pnpm build:ts
 
-      - name: Download prebuilds
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
+            - name: Download prebuilds
+              uses: actions/download-artifact@v4
+              with:
+                  path: artifacts
 
-      - name: Merge prebuilds
-        run: |
-          rm -rf node/prebuilds
-          mkdir -p node/prebuilds
-          cp -R artifacts/*/. node/prebuilds/
+            - name: Merge prebuilds
+              run: |
+                  rm -rf node/prebuilds
+                  mkdir -p node/prebuilds
+                  cp -R artifacts/*/. node/prebuilds/
 
-      - name: Commit and push dist + prebuilds
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f node/dist node/prebuilds
-          git diff --cached --quiet || git commit -m "chore: update dist and prebuilt binaries [skip ci]"
-          git pull --rebase
-          git push
+            - name: Commit and push dist + prebuilds
+              run: |
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                  git add -f node/dist node/prebuilds
+                  git diff --cached --quiet || git commit -m "chore: update dist and prebuilt binaries [skip ci]"
+                  git pull --rebase
+                  git push
