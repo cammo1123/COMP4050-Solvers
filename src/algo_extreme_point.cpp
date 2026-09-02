@@ -1,4 +1,5 @@
-#include "solver_algo.h"
+#include "algo_registry.h"
+#include "solve_domain_generated.h"
 
 #include <stdexcept>
 
@@ -12,5 +13,9 @@ auto solve_extreme_point(fbs::domain::SolveRequest const& request, fbs::domain::
 
 	throw std::logic_error("extreme-point solver algorithm is not implemented");
 }
+
+static struct ExtremePointRegistrar {
+	ExtremePointRegistrar() { register_algo(fbs::domain::SolveAlgorithm::ExtremePoint, { solve_extreme_point }); }
+} registrar;
 
 }

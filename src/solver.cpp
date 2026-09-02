@@ -1,10 +1,11 @@
 #include "solver.h"
-
-#include <stdexcept>
+#include "algo_registry.h"
 
 #include "buildinfo.h"
 #include "solve_domain_generated.h"
-#include "solver_algo.h"
+
+#include <chrono>
+#include <stdexcept>
 
 using namespace fbs::domain;
 
@@ -29,17 +30,20 @@ InfoResponse info()
 SolveResponse solve(SolveRequest const& request, ProgressCallback on_progress)
 {
 	auto const options = request.options.value_or(SolveOptions { });
+	SolveResponse response;
+	auto const start = std::chrono::steady_clock::now();
 
-	switch (options.algorithm.value_or(SolveAlgorithm::ShitStack)) {
-	case SolveAlgorithm::ShitStack:
-		return algo::solve_shit_stack(request, options, on_progress);
-	case SolveAlgorithm::Greedy:
-		return algo::solve_greedy(request, options, on_progress);
-	case SolveAlgorithm::ExtremePoint:
-		return algo::solve_extreme_point(request, options, on_progress);
-	default:
-		throw std::logic_error("unhandled solver algorithm");
+	auto const algorithm = options.algorithm.value_or(SolveAlgorithm::PHPSolver);
+	auto const* info = algo::get_algo(algorithm);
+	if (!info) {
+		throw std::logic_error("invalid SolveAlgorithm value");
 	}
+	response = info->solve(request, options, on_progress);
+
+	auto const elapsed_us = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count();
+	response.algorithm_us = static_cast<uint32_t>(elapsed_us);
+
+	return response;
 }
 
 }
