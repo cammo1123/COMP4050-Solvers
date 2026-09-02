@@ -4,6 +4,8 @@ import * as flatbuffers from "flatbuffers";
 
 import {
 	InfoRequestT as InfoRequestObject,
+	RotationPolicy,
+	InfoRequest as InfoRequestMessage,
 	InfoResponse as InfoResponseMessage,
 	InfoResponseT as InfoResponseObject,
 } from "./fbs.js";

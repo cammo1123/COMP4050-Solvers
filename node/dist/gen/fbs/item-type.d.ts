@@ -1,4 +1,6 @@
 import * as flatbuffers from 'flatbuffers';
+import { PlacementConstraint, PlacementConstraintT } from '../fbs/placement-constraint.js';
+import { RotationPolicy } from '../fbs/rotation-policy.js';
 export declare class ItemType implements flatbuffers.IUnpackableObject<ItemTypeT> {
     bb: flatbuffers.ByteBuffer | null;
     bb_pos: number;
@@ -13,8 +15,13 @@ export declare class ItemType implements flatbuffers.IUnpackableObject<ItemTypeT
     length(): number;
     depth(): number;
     weight(): number;
+    quantity(): number | null;
     boxGroup(): string | null;
     boxGroup(optionalEncoding: flatbuffers.Encoding): string | Uint8Array | null;
+    rotationPolicy(): RotationPolicy | null;
+    linkedGroup(): string | null;
+    linkedGroup(optionalEncoding: flatbuffers.Encoding): string | Uint8Array | null;
+    constraint(obj?: PlacementConstraint): PlacementConstraint | null;
     static startItemType(builder: flatbuffers.Builder): void;
     static addItemCode(builder: flatbuffers.Builder, itemCodeOffset: flatbuffers.Offset): void;
     static addItemReference(builder: flatbuffers.Builder, itemReferenceOffset: flatbuffers.Offset): void;
@@ -22,9 +29,12 @@ export declare class ItemType implements flatbuffers.IUnpackableObject<ItemTypeT
     static addLength(builder: flatbuffers.Builder, length: number): void;
     static addDepth(builder: flatbuffers.Builder, depth: number): void;
     static addWeight(builder: flatbuffers.Builder, weight: number): void;
+    static addQuantity(builder: flatbuffers.Builder, quantity: number): void;
     static addBoxGroup(builder: flatbuffers.Builder, boxGroupOffset: flatbuffers.Offset): void;
+    static addRotationPolicy(builder: flatbuffers.Builder, rotationPolicy: RotationPolicy): void;
+    static addLinkedGroup(builder: flatbuffers.Builder, linkedGroupOffset: flatbuffers.Offset): void;
+    static addConstraint(builder: flatbuffers.Builder, constraintOffset: flatbuffers.Offset): void;
     static endItemType(builder: flatbuffers.Builder): flatbuffers.Offset;
-    static createItemType(builder: flatbuffers.Builder, itemCodeOffset: flatbuffers.Offset, itemReferenceOffset: flatbuffers.Offset, width: number, length: number, depth: number, weight: number, boxGroupOffset: flatbuffers.Offset): flatbuffers.Offset;
     unpack(): ItemTypeT;
     unpackTo(_o: ItemTypeT): void;
 }
@@ -35,8 +45,12 @@ export declare class ItemTypeT implements flatbuffers.IGeneratedObject {
     length: number;
     depth: number;
     weight: number;
+    quantity: number | null;
     boxGroup: string | Uint8Array | null;
-    constructor(itemCode?: string | Uint8Array | null, itemReference?: string | Uint8Array | null, width?: number, length?: number, depth?: number, weight?: number, boxGroup?: string | Uint8Array | null);
+    rotationPolicy: RotationPolicy | null;
+    linkedGroup: string | Uint8Array | null;
+    constraint: PlacementConstraintT | null;
+    constructor(itemCode?: string | Uint8Array | null, itemReference?: string | Uint8Array | null, width?: number, length?: number, depth?: number, weight?: number, quantity?: number | null, boxGroup?: string | Uint8Array | null, rotationPolicy?: RotationPolicy | null, linkedGroup?: string | Uint8Array | null, constraint?: PlacementConstraintT | null);
     pack(builder: flatbuffers.Builder): flatbuffers.Offset;
 }
 //# sourceMappingURL=item-type.d.ts.map
