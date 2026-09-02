@@ -41,7 +41,7 @@ auto solve_php_solver(SolveRequest const& request, SolveOptions const& options, 
 			item.linked_group = source.linked_group.value_or("");
 			item.dimensions = { source.width, source.depth, source.length };
 			item.weight = source.weight;
-			item.rotation = source.rotation_policy.has_value() ? static_cast<packing::RotationPolicy>(*source.rotation_policy) : packing::RotationPolicy::BestFit;
+			item.rotation = static_cast<packing::RotationPolicy>(source.rotation_policy.value_or(RotationPolicy::BestFit));
 
 			auto const constraint = source.constraint.value_or(fbs::domain::PlacementConstraint { });
 			item.constraint.no_stacking = constraint.no_stacking.value_or(false);

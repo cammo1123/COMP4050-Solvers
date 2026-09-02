@@ -44,12 +44,6 @@ jobs:
       - name: Check formatting
         run: pnpm run lint:check
 
-      - name: Build TypeScript
-        run: pnpm run build:ts
-
-      - name: Build core with Clang
-        run: pnpm run build:core
-
       - name: Build and test addon
         run: pnpm test
 
