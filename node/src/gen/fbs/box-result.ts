@@ -42,8 +42,33 @@ placementsLength():number {
   return offset ? this.bb!.__vector_len(this.bb_pos + offset) : 0;
 }
 
+totalWeight():number|null {
+  const offset = this.bb!.__offset(this.bb_pos, 8);
+  return offset ? this.bb!.readFloat32(this.bb_pos + offset) : null;
+}
+
+utilization():number|null {
+  const offset = this.bb!.__offset(this.bb_pos, 10);
+  return offset ? this.bb!.readFloat32(this.bb_pos + offset) : null;
+}
+
+outerWidth():number|null {
+  const offset = this.bb!.__offset(this.bb_pos, 12);
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : null;
+}
+
+outerLength():number|null {
+  const offset = this.bb!.__offset(this.bb_pos, 14);
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : null;
+}
+
+outerDepth():number|null {
+  const offset = this.bb!.__offset(this.bb_pos, 16);
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : null;
+}
+
 static startBoxResult(builder:flatbuffers.Builder) {
-  builder.startObject(2);
+  builder.startObject(7);
 }
 
 static addBoxReference(builder:flatbuffers.Builder, boxReferenceOffset:flatbuffers.Offset) {
@@ -66,22 +91,57 @@ static startPlacementsVector(builder:flatbuffers.Builder, numElems:number) {
   builder.startVector(4, numElems, 4);
 }
 
+static addTotalWeight(builder:flatbuffers.Builder, totalWeight:number) {
+  builder.addFieldFloat32(2, totalWeight, null);
+}
+
+static addUtilization(builder:flatbuffers.Builder, utilization:number) {
+  builder.addFieldFloat32(3, utilization, null);
+}
+
+static addOuterWidth(builder:flatbuffers.Builder, outerWidth:number) {
+  builder.addFieldInt32(4, outerWidth, null);
+}
+
+static addOuterLength(builder:flatbuffers.Builder, outerLength:number) {
+  builder.addFieldInt32(5, outerLength, null);
+}
+
+static addOuterDepth(builder:flatbuffers.Builder, outerDepth:number) {
+  builder.addFieldInt32(6, outerDepth, null);
+}
+
 static endBoxResult(builder:flatbuffers.Builder):flatbuffers.Offset {
   const offset = builder.endObject();
   return offset;
 }
 
-static createBoxResult(builder:flatbuffers.Builder, boxReferenceOffset:flatbuffers.Offset, placementsOffset:flatbuffers.Offset):flatbuffers.Offset {
+static createBoxResult(builder:flatbuffers.Builder, boxReferenceOffset:flatbuffers.Offset, placementsOffset:flatbuffers.Offset, totalWeight:number|null, utilization:number|null, outerWidth:number|null, outerLength:number|null, outerDepth:number|null):flatbuffers.Offset {
   BoxResult.startBoxResult(builder);
   BoxResult.addBoxReference(builder, boxReferenceOffset);
   BoxResult.addPlacements(builder, placementsOffset);
+  if (totalWeight !== null)
+    BoxResult.addTotalWeight(builder, totalWeight);
+  if (utilization !== null)
+    BoxResult.addUtilization(builder, utilization);
+  if (outerWidth !== null)
+    BoxResult.addOuterWidth(builder, outerWidth);
+  if (outerLength !== null)
+    BoxResult.addOuterLength(builder, outerLength);
+  if (outerDepth !== null)
+    BoxResult.addOuterDepth(builder, outerDepth);
   return BoxResult.endBoxResult(builder);
 }
 
 unpack(): BoxResultT {
   return new BoxResultT(
     this.boxReference(),
-    this.bb!.createObjList<ItemPlacement, ItemPlacementT>(this.placements.bind(this), this.placementsLength())
+    this.bb!.createObjList<ItemPlacement, ItemPlacementT>(this.placements.bind(this), this.placementsLength()),
+    this.totalWeight(),
+    this.utilization(),
+    this.outerWidth(),
+    this.outerLength(),
+    this.outerDepth()
   );
 }
 
@@ -89,13 +149,23 @@ unpack(): BoxResultT {
 unpackTo(_o: BoxResultT): void {
   _o.boxReference = this.boxReference();
   _o.placements = this.bb!.createObjList<ItemPlacement, ItemPlacementT>(this.placements.bind(this), this.placementsLength());
+  _o.totalWeight = this.totalWeight();
+  _o.utilization = this.utilization();
+  _o.outerWidth = this.outerWidth();
+  _o.outerLength = this.outerLength();
+  _o.outerDepth = this.outerDepth();
 }
 }
 
 export class BoxResultT implements flatbuffers.IGeneratedObject {
 constructor(
   public boxReference: string|Uint8Array|null = null,
-  public placements: (ItemPlacementT)[] = []
+  public placements: (ItemPlacementT)[] = [],
+  public totalWeight: number|null = null,
+  public utilization: number|null = null,
+  public outerWidth: number|null = null,
+  public outerLength: number|null = null,
+  public outerDepth: number|null = null
 ){}
 
 
@@ -105,7 +175,12 @@ pack(builder:flatbuffers.Builder): flatbuffers.Offset {
 
   return BoxResult.createBoxResult(builder,
     boxReference,
-    placements
+    placements,
+    this.totalWeight,
+    this.utilization,
+    this.outerWidth,
+    this.outerLength,
+    this.outerDepth
   );
 }
 }

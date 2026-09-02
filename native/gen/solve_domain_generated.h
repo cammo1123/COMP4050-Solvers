@@ -41,16 +41,31 @@ inline ::fbs::SolveAlgorithm fromDomain(SolveAlgorithm value)
 	}
 }
 
+struct GreedyOptions {
+
+};
+
+struct ExtremePointOptions {
+
+};
+
+struct ShitStackOptions {
+
+};
+
 struct SolveOptions {
 	std::optional<uint32_t> max_boxes = std::nullopt;
 	bool allow_rotation = true;
 	std::optional<uint32_t> timeout_ms = std::nullopt;
-	std::optional<SolveAlgorithm> algorithm = std::nullopt;
+	std::optional<GreedyOptions> greedy_options = std::nullopt;
+	std::optional<ExtremePointOptions> extreme_point_options = std::nullopt;
+	std::optional<ShitStackOptions> shit_stack_options = std::nullopt;
 };
 
 struct SolveRequest {
 	std::vector<BoxType> boxes{};
 	std::vector<ItemType> items{};
+	SolveAlgorithm algorithm = SolveAlgorithm::Greedy;
 	std::optional<SolveOptions> options = std::nullopt;
 };
 
@@ -68,12 +83,61 @@ struct ItemPlacement {
 struct BoxResult {
 	std::string box_reference{};
 	std::vector<ItemPlacement> placements{};
+	std::optional<float> total_weight = std::nullopt;
+	std::optional<float> utilization = std::nullopt;
+	std::optional<uint32_t> outer_width = std::nullopt;
+	std::optional<uint32_t> outer_length = std::nullopt;
+	std::optional<uint32_t> outer_depth = std::nullopt;
 };
 
 struct SolveResponse {
 	std::vector<BoxResult> results{};
 	std::vector<ItemType> failed{};
+	uint32_t algorithm_us = 0;
+	uint32_t server_us = 0;
 };
+
+inline GreedyOptions toDomain([[maybe_unused]] fbs::GreedyOptionsT const& value)
+{
+	GreedyOptions out;
+
+	return out;
+}
+
+inline fbs::GreedyOptionsT fromDomain([[maybe_unused]] GreedyOptions const& value)
+{
+	fbs::GreedyOptionsT out;
+
+	return out;
+}
+
+inline ExtremePointOptions toDomain([[maybe_unused]] fbs::ExtremePointOptionsT const& value)
+{
+	ExtremePointOptions out;
+
+	return out;
+}
+
+inline fbs::ExtremePointOptionsT fromDomain([[maybe_unused]] ExtremePointOptions const& value)
+{
+	fbs::ExtremePointOptionsT out;
+
+	return out;
+}
+
+inline ShitStackOptions toDomain([[maybe_unused]] fbs::ShitStackOptionsT const& value)
+{
+	ShitStackOptions out;
+
+	return out;
+}
+
+inline fbs::ShitStackOptionsT fromDomain([[maybe_unused]] ShitStackOptions const& value)
+{
+	fbs::ShitStackOptionsT out;
+
+	return out;
+}
 
 inline SolveOptions toDomain([[maybe_unused]] fbs::SolveOptionsT const& value)
 {
@@ -89,8 +153,16 @@ inline SolveOptions toDomain([[maybe_unused]] fbs::SolveOptionsT const& value)
 		out.timeout_ms = *value.timeout_ms;
 	}
 
-	if (value.algorithm.has_value()) {
-		out.algorithm = toDomain(*value.algorithm);
+	if (value.algo_options.type == ::fbs::SolveStrategyOptions_GreedyOptions) {
+		out.greedy_options = toDomain(*value.algo_options.AsGreedyOptions());
+	}
+
+	if (value.algo_options.type == ::fbs::SolveStrategyOptions_ExtremePointOptions) {
+		out.extreme_point_options = toDomain(*value.algo_options.AsExtremePointOptions());
+	}
+
+	if (value.algo_options.type == ::fbs::SolveStrategyOptions_ShitStackOptions) {
+		out.shit_stack_options = toDomain(*value.algo_options.AsShitStackOptions());
 	}
 
 	return out;
@@ -110,8 +182,16 @@ inline fbs::SolveOptionsT fromDomain([[maybe_unused]] SolveOptions const& value)
 		out.timeout_ms = *value.timeout_ms;
 	}
 
-	if (value.algorithm.has_value()) {
-		out.algorithm = fromDomain(*value.algorithm);
+	if (value.greedy_options.has_value()) {
+		out.algo_options.Set(fromDomain(*value.greedy_options));
+	}
+
+	if (value.extreme_point_options.has_value()) {
+		out.algo_options.Set(fromDomain(*value.extreme_point_options));
+	}
+
+	if (value.shit_stack_options.has_value()) {
+		out.algo_options.Set(fromDomain(*value.shit_stack_options));
 	}
 
 	return out;
@@ -130,6 +210,8 @@ inline SolveRequest toDomain([[maybe_unused]] fbs::SolveRequestT const& value)
 	for (auto const& item : value.items) {
 		out.items.push_back(toDomain(*item));
 	}
+
+	out.algorithm = toDomain(value.algorithm);
 
 	if (value.options) {
 		out.options = toDomain(*value.options);
@@ -151,6 +233,8 @@ inline fbs::SolveRequestT fromDomain([[maybe_unused]] SolveRequest const& value)
 	for (auto const& item : value.items) {
 		out.items.push_back(std::make_unique<fbs::ItemTypeT>(fromDomain(item)));
 	}
+
+	out.algorithm = fromDomain(value.algorithm);
 
 	if (value.options.has_value()) {
 		out.options = std::make_unique<fbs::SolveOptionsT>(fromDomain(*value.options));
@@ -216,6 +300,26 @@ inline BoxResult toDomain([[maybe_unused]] fbs::BoxResultT const& value)
 		out.placements.push_back(toDomain(*item));
 	}
 
+	if (value.total_weight.has_value()) {
+		out.total_weight = *value.total_weight;
+	}
+
+	if (value.utilization.has_value()) {
+		out.utilization = *value.utilization;
+	}
+
+	if (value.outer_width.has_value()) {
+		out.outer_width = *value.outer_width;
+	}
+
+	if (value.outer_length.has_value()) {
+		out.outer_length = *value.outer_length;
+	}
+
+	if (value.outer_depth.has_value()) {
+		out.outer_depth = *value.outer_depth;
+	}
+
 	return out;
 }
 
@@ -228,6 +332,26 @@ inline fbs::BoxResultT fromDomain([[maybe_unused]] BoxResult const& value)
 	out.placements.reserve(value.placements.size());
 	for (auto const& item : value.placements) {
 		out.placements.push_back(std::make_unique<fbs::ItemPlacementT>(fromDomain(item)));
+	}
+
+	if (value.total_weight.has_value()) {
+		out.total_weight = *value.total_weight;
+	}
+
+	if (value.utilization.has_value()) {
+		out.utilization = *value.utilization;
+	}
+
+	if (value.outer_width.has_value()) {
+		out.outer_width = *value.outer_width;
+	}
+
+	if (value.outer_length.has_value()) {
+		out.outer_length = *value.outer_length;
+	}
+
+	if (value.outer_depth.has_value()) {
+		out.outer_depth = *value.outer_depth;
 	}
 
 	return out;
@@ -247,6 +371,10 @@ inline SolveResponse toDomain([[maybe_unused]] fbs::SolveResponseT const& value)
 		out.failed.push_back(toDomain(*item));
 	}
 
+	out.algorithm_us = value.algorithm_us;
+
+	out.server_us = value.server_us;
+
 	return out;
 }
 
@@ -263,6 +391,10 @@ inline fbs::SolveResponseT fromDomain([[maybe_unused]] SolveResponse const& valu
 	for (auto const& item : value.failed) {
 		out.failed.push_back(std::make_unique<fbs::ItemTypeT>(fromDomain(item)));
 	}
+
+	out.algorithm_us = value.algorithm_us;
+
+	out.server_us = value.server_us;
 
 	return out;
 }

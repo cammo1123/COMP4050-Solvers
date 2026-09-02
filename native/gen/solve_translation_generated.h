@@ -21,6 +21,11 @@ inline bool decodeRequest(uint8_t const* data, std::size_t size, SolveRequestT& 
 	}
 	fbs::GetSolveRequest(data)->UnPackTo(&out);
 
+	int8_t const algorithm = out.algorithm;
+	if (algorithm < -128 || algorithm > 127) {
+		error = "SolveRequest algorithm out of int8 range";
+		return false;
+	}
 	return true;
 }
 

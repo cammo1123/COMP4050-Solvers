@@ -4,7 +4,10 @@
 
 import * as flatbuffers from 'flatbuffers';
 
-import { SolveAlgorithm } from '../fbs/solve-algorithm.js';
+import { ExtremePointOptions, ExtremePointOptionsT } from '../fbs/extreme-point-options.js';
+import { GreedyOptions, GreedyOptionsT } from '../fbs/greedy-options.js';
+import { ShitStackOptions, ShitStackOptionsT } from '../fbs/shit-stack-options.js';
+import { SolveStrategyOptions, unionToSolveStrategyOptions, unionListToSolveStrategyOptions } from '../fbs/solve-strategy-options.js';
 
 
 export class SolveOptions implements flatbuffers.IUnpackableObject<SolveOptionsT> {
@@ -40,13 +43,18 @@ timeoutMs():number|null {
   return offset ? this.bb!.readUint32(this.bb_pos + offset) : null;
 }
 
-algorithm():SolveAlgorithm|null {
+algoOptionsType():SolveStrategyOptions {
   const offset = this.bb!.__offset(this.bb_pos, 10);
-  return offset ? this.bb!.readInt8(this.bb_pos + offset) : null;
+  return offset ? this.bb!.readUint8(this.bb_pos + offset) : SolveStrategyOptions.NONE;
+}
+
+algoOptions<T extends flatbuffers.Table>(obj:any):any|null {
+  const offset = this.bb!.__offset(this.bb_pos, 12);
+  return offset ? this.bb!.__union(obj, this.bb_pos + offset) : null;
 }
 
 static startSolveOptions(builder:flatbuffers.Builder) {
-  builder.startObject(4);
+  builder.startObject(5);
 }
 
 static addMaxBoxes(builder:flatbuffers.Builder, maxBoxes:number) {
@@ -61,8 +69,12 @@ static addTimeoutMs(builder:flatbuffers.Builder, timeoutMs:number) {
   builder.addFieldInt32(2, timeoutMs, null);
 }
 
-static addAlgorithm(builder:flatbuffers.Builder, algorithm:SolveAlgorithm) {
-  builder.addFieldInt8(3, algorithm, null);
+static addAlgoOptionsType(builder:flatbuffers.Builder, algoOptionsType:SolveStrategyOptions) {
+  builder.addFieldInt8(3, algoOptionsType, SolveStrategyOptions.NONE);
+}
+
+static addAlgoOptions(builder:flatbuffers.Builder, algoOptionsOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(4, algoOptionsOffset, 0);
 }
 
 static endSolveOptions(builder:flatbuffers.Builder):flatbuffers.Offset {
@@ -70,15 +82,15 @@ static endSolveOptions(builder:flatbuffers.Builder):flatbuffers.Offset {
   return offset;
 }
 
-static createSolveOptions(builder:flatbuffers.Builder, maxBoxes:number|null, allowRotation:boolean, timeoutMs:number|null, algorithm:SolveAlgorithm|null):flatbuffers.Offset {
+static createSolveOptions(builder:flatbuffers.Builder, maxBoxes:number|null, allowRotation:boolean, timeoutMs:number|null, algoOptionsType:SolveStrategyOptions, algoOptionsOffset:flatbuffers.Offset):flatbuffers.Offset {
   SolveOptions.startSolveOptions(builder);
   if (maxBoxes !== null)
     SolveOptions.addMaxBoxes(builder, maxBoxes);
   SolveOptions.addAllowRotation(builder, allowRotation);
   if (timeoutMs !== null)
     SolveOptions.addTimeoutMs(builder, timeoutMs);
-  if (algorithm !== null)
-    SolveOptions.addAlgorithm(builder, algorithm);
+  SolveOptions.addAlgoOptionsType(builder, algoOptionsType);
+  SolveOptions.addAlgoOptions(builder, algoOptionsOffset);
   return SolveOptions.endSolveOptions(builder);
 }
 
@@ -87,7 +99,12 @@ unpack(): SolveOptionsT {
     this.maxBoxes(),
     this.allowRotation(),
     this.timeoutMs(),
-    this.algorithm()
+    this.algoOptionsType(),
+    (() => {
+      const temp = unionToSolveStrategyOptions(this.algoOptionsType(), this.algoOptions.bind(this));
+      if(temp === null) { return null; }
+      return temp.unpack()
+  })()
   );
 }
 
@@ -96,7 +113,12 @@ unpackTo(_o: SolveOptionsT): void {
   _o.maxBoxes = this.maxBoxes();
   _o.allowRotation = this.allowRotation();
   _o.timeoutMs = this.timeoutMs();
-  _o.algorithm = this.algorithm();
+  _o.algoOptionsType = this.algoOptionsType();
+  _o.algoOptions = (() => {
+      const temp = unionToSolveStrategyOptions(this.algoOptionsType(), this.algoOptions.bind(this));
+      if(temp === null) { return null; }
+      return temp.unpack()
+  })();
 }
 }
 
@@ -105,16 +127,20 @@ constructor(
   public maxBoxes: number|null = null,
   public allowRotation: boolean = true,
   public timeoutMs: number|null = null,
-  public algorithm: SolveAlgorithm|null = null
+  public algoOptionsType: SolveStrategyOptions = SolveStrategyOptions.NONE,
+  public algoOptions: ExtremePointOptionsT|GreedyOptionsT|ShitStackOptionsT|null = null
 ){}
 
 
 pack(builder:flatbuffers.Builder): flatbuffers.Offset {
+  const algoOptions = builder.createObjectOffset(this.algoOptions);
+
   return SolveOptions.createSolveOptions(builder,
     this.maxBoxes,
     this.allowRotation,
     this.timeoutMs,
-    this.algorithm
+    this.algoOptionsType,
+    algoOptions
   );
 }
 }

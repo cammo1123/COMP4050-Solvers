@@ -4,6 +4,8 @@
 
 import * as flatbuffers from 'flatbuffers';
 
+import { PlacementConstraint, PlacementConstraintT } from '../fbs/placement-constraint.js';
+import { RotationPolicy } from '../fbs/rotation-policy.js';
 
 
 export class ItemType implements flatbuffers.IUnpackableObject<ItemTypeT> {
@@ -58,15 +60,37 @@ weight():number {
   return offset ? this.bb!.readFloat32(this.bb_pos + offset) : 0.0;
 }
 
+quantity():number|null {
+  const offset = this.bb!.__offset(this.bb_pos, 16);
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : null;
+}
+
 boxGroup():string|null
 boxGroup(optionalEncoding:flatbuffers.Encoding):string|Uint8Array|null
 boxGroup(optionalEncoding?:any):string|Uint8Array|null {
-  const offset = this.bb!.__offset(this.bb_pos, 16);
+  const offset = this.bb!.__offset(this.bb_pos, 18);
   return offset ? this.bb!.__string(this.bb_pos + offset, optionalEncoding) : null;
 }
 
+rotationPolicy():RotationPolicy|null {
+  const offset = this.bb!.__offset(this.bb_pos, 20);
+  return offset ? this.bb!.readInt8(this.bb_pos + offset) : null;
+}
+
+linkedGroup():string|null
+linkedGroup(optionalEncoding:flatbuffers.Encoding):string|Uint8Array|null
+linkedGroup(optionalEncoding?:any):string|Uint8Array|null {
+  const offset = this.bb!.__offset(this.bb_pos, 22);
+  return offset ? this.bb!.__string(this.bb_pos + offset, optionalEncoding) : null;
+}
+
+constraint(obj?:PlacementConstraint):PlacementConstraint|null {
+  const offset = this.bb!.__offset(this.bb_pos, 24);
+  return offset ? (obj || new PlacementConstraint()).__init(this.bb!.__indirect(this.bb_pos + offset), this.bb!) : null;
+}
+
 static startItemType(builder:flatbuffers.Builder) {
-  builder.startObject(7);
+  builder.startObject(11);
 }
 
 static addItemCode(builder:flatbuffers.Builder, itemCodeOffset:flatbuffers.Offset) {
@@ -93,8 +117,24 @@ static addWeight(builder:flatbuffers.Builder, weight:number) {
   builder.addFieldFloat32(5, weight, 0.0);
 }
 
+static addQuantity(builder:flatbuffers.Builder, quantity:number) {
+  builder.addFieldInt32(6, quantity, null);
+}
+
 static addBoxGroup(builder:flatbuffers.Builder, boxGroupOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(6, boxGroupOffset, 0);
+  builder.addFieldOffset(7, boxGroupOffset, 0);
+}
+
+static addRotationPolicy(builder:flatbuffers.Builder, rotationPolicy:RotationPolicy) {
+  builder.addFieldInt8(8, rotationPolicy, null);
+}
+
+static addLinkedGroup(builder:flatbuffers.Builder, linkedGroupOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(9, linkedGroupOffset, 0);
+}
+
+static addConstraint(builder:flatbuffers.Builder, constraintOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(10, constraintOffset, 0);
 }
 
 static endItemType(builder:flatbuffers.Builder):flatbuffers.Offset {
@@ -104,17 +144,6 @@ static endItemType(builder:flatbuffers.Builder):flatbuffers.Offset {
   return offset;
 }
 
-static createItemType(builder:flatbuffers.Builder, itemCodeOffset:flatbuffers.Offset, itemReferenceOffset:flatbuffers.Offset, width:number, length:number, depth:number, weight:number, boxGroupOffset:flatbuffers.Offset):flatbuffers.Offset {
-  ItemType.startItemType(builder);
-  ItemType.addItemCode(builder, itemCodeOffset);
-  ItemType.addItemReference(builder, itemReferenceOffset);
-  ItemType.addWidth(builder, width);
-  ItemType.addLength(builder, length);
-  ItemType.addDepth(builder, depth);
-  ItemType.addWeight(builder, weight);
-  ItemType.addBoxGroup(builder, boxGroupOffset);
-  return ItemType.endItemType(builder);
-}
 
 unpack(): ItemTypeT {
   return new ItemTypeT(
@@ -124,7 +153,11 @@ unpack(): ItemTypeT {
     this.length(),
     this.depth(),
     this.weight(),
-    this.boxGroup()
+    this.quantity(),
+    this.boxGroup(),
+    this.rotationPolicy(),
+    this.linkedGroup(),
+    (this.constraint() !== null ? this.constraint()!.unpack() : null)
   );
 }
 
@@ -136,7 +169,11 @@ unpackTo(_o: ItemTypeT): void {
   _o.length = this.length();
   _o.depth = this.depth();
   _o.weight = this.weight();
+  _o.quantity = this.quantity();
   _o.boxGroup = this.boxGroup();
+  _o.rotationPolicy = this.rotationPolicy();
+  _o.linkedGroup = this.linkedGroup();
+  _o.constraint = (this.constraint() !== null ? this.constraint()!.unpack() : null);
 }
 }
 
@@ -148,7 +185,11 @@ constructor(
   public length: number = 0,
   public depth: number = 0,
   public weight: number = 0.0,
-  public boxGroup: string|Uint8Array|null = null
+  public quantity: number|null = null,
+  public boxGroup: string|Uint8Array|null = null,
+  public rotationPolicy: RotationPolicy|null = null,
+  public linkedGroup: string|Uint8Array|null = null,
+  public constraint: PlacementConstraintT|null = null
 ){}
 
 
@@ -156,15 +197,24 @@ pack(builder:flatbuffers.Builder): flatbuffers.Offset {
   const itemCode = (this.itemCode !== null ? builder.createString(this.itemCode!) : 0);
   const itemReference = (this.itemReference !== null ? builder.createString(this.itemReference!) : 0);
   const boxGroup = (this.boxGroup !== null ? builder.createString(this.boxGroup!) : 0);
+  const linkedGroup = (this.linkedGroup !== null ? builder.createString(this.linkedGroup!) : 0);
+  const constraint = (this.constraint !== null ? this.constraint!.pack(builder) : 0);
 
-  return ItemType.createItemType(builder,
-    itemCode,
-    itemReference,
-    this.width,
-    this.length,
-    this.depth,
-    this.weight,
-    boxGroup
-  );
+  ItemType.startItemType(builder);
+  ItemType.addItemCode(builder, itemCode);
+  ItemType.addItemReference(builder, itemReference);
+  ItemType.addWidth(builder, this.width);
+  ItemType.addLength(builder, this.length);
+  ItemType.addDepth(builder, this.depth);
+  ItemType.addWeight(builder, this.weight);
+  if (this.quantity !== null)
+    ItemType.addQuantity(builder, this.quantity);
+  ItemType.addBoxGroup(builder, boxGroup);
+  if (this.rotationPolicy !== null)
+    ItemType.addRotationPolicy(builder, this.rotationPolicy);
+  ItemType.addLinkedGroup(builder, linkedGroup);
+  ItemType.addConstraint(builder, constraint);
+
+  return ItemType.endItemType(builder);
 }
 }

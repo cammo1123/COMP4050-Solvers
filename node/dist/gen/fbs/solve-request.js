@@ -3,6 +3,7 @@
 import * as flatbuffers from 'flatbuffers';
 import { BoxType } from '../fbs/box-type.js';
 import { ItemType } from '../fbs/item-type.js';
+import { SolveAlgorithm } from '../fbs/solve-algorithm.js';
 import { SolveOptions } from '../fbs/solve-options.js';
 export class SolveRequest {
     bb = null;
@@ -35,12 +36,16 @@ export class SolveRequest {
         const offset = this.bb.__offset(this.bb_pos, 6);
         return offset ? this.bb.__vector_len(this.bb_pos + offset) : 0;
     }
-    options(obj) {
+    algorithm() {
         const offset = this.bb.__offset(this.bb_pos, 8);
+        return offset ? this.bb.readInt8(this.bb_pos + offset) : SolveAlgorithm.Greedy;
+    }
+    options(obj) {
+        const offset = this.bb.__offset(this.bb_pos, 10);
         return offset ? (obj || new SolveOptions()).__init(this.bb.__indirect(this.bb_pos + offset), this.bb) : null;
     }
     static startSolveRequest(builder) {
-        builder.startObject(3);
+        builder.startObject(4);
     }
     static addBoxes(builder, boxesOffset) {
         builder.addFieldOffset(0, boxesOffset, 0);
@@ -68,8 +73,11 @@ export class SolveRequest {
     static startItemsVector(builder, numElems) {
         builder.startVector(4, numElems, 4);
     }
+    static addAlgorithm(builder, algorithm) {
+        builder.addFieldInt8(2, algorithm, SolveAlgorithm.Greedy);
+    }
     static addOptions(builder, optionsOffset) {
-        builder.addFieldOffset(2, optionsOffset, 0);
+        builder.addFieldOffset(3, optionsOffset, 0);
     }
     static endSolveRequest(builder) {
         const offset = builder.endObject();
@@ -84,21 +92,24 @@ export class SolveRequest {
         builder.finish(offset, undefined, true);
     }
     unpack() {
-        return new SolveRequestT(this.bb.createObjList(this.boxes.bind(this), this.boxesLength()), this.bb.createObjList(this.items.bind(this), this.itemsLength()), (this.options() !== null ? this.options().unpack() : null));
+        return new SolveRequestT(this.bb.createObjList(this.boxes.bind(this), this.boxesLength()), this.bb.createObjList(this.items.bind(this), this.itemsLength()), this.algorithm(), (this.options() !== null ? this.options().unpack() : null));
     }
     unpackTo(_o) {
         _o.boxes = this.bb.createObjList(this.boxes.bind(this), this.boxesLength());
         _o.items = this.bb.createObjList(this.items.bind(this), this.itemsLength());
+        _o.algorithm = this.algorithm();
         _o.options = (this.options() !== null ? this.options().unpack() : null);
     }
 }
 export class SolveRequestT {
     boxes;
     items;
+    algorithm;
     options;
-    constructor(boxes = [], items = [], options = null) {
+    constructor(boxes = [], items = [], algorithm = SolveAlgorithm.Greedy, options = null) {
         this.boxes = boxes;
         this.items = items;
+        this.algorithm = algorithm;
         this.options = options;
     }
     pack(builder) {
@@ -108,6 +119,7 @@ export class SolveRequestT {
         SolveRequest.startSolveRequest(builder);
         SolveRequest.addBoxes(builder, boxes);
         SolveRequest.addItems(builder, items);
+        SolveRequest.addAlgorithm(builder, this.algorithm);
         SolveRequest.addOptions(builder, options);
         return SolveRequest.endSolveRequest(builder);
     }

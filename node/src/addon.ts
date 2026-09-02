@@ -6,7 +6,8 @@ import { decodeResponse, encodeRequest, type SolveRequest, type SolveResponse } 
 
 export { RotationPolicy, SolveAlgorithm } from "./gen/fbs.js";
 export type { InfoResponse } from "./gen/info_translation.js";
-export type { BaseOptions, BoxResultT, BoxTypeT, ExtremePointOptionsT, GreedyOptionsT, ItemPlacementT, ItemTypeT, PHPSolverOptionsT, PlacementConstraintT, ShitStackOptionsT, SolveOptionsT, SolveRequest, SolveResponse } from "./gen/solve_translation.js";
+
+export type * from "./gen/solve_translation.js";
 
 export type SolveInput = SolveRequest & {
 	onProgress?: (done: number, total: number) => void;
