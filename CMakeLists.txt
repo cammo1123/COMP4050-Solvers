@@ -158,7 +158,7 @@ add_custom_command(
     VERBATIM
 )
 
-add_library(solver_core STATIC
+add_library(solver_core OBJECT
     src/solver.cpp
     src/algo_registry.cpp
     src/algo_greedy.cpp

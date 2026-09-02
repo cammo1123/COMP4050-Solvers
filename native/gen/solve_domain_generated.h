@@ -82,6 +82,9 @@ struct ItemPlacement {
 
 struct BoxResult {
 	std::string box_reference{};
+	uint32_t width = 0;
+	uint32_t length = 0;
+	uint32_t depth = 0;
 	std::vector<ItemPlacement> placements{};
 	std::optional<float> total_weight = std::nullopt;
 	std::optional<float> utilization = std::nullopt;
@@ -295,6 +298,12 @@ inline BoxResult toDomain([[maybe_unused]] fbs::BoxResultT const& value)
 
 	out.box_reference = value.box_reference;
 
+	out.width = value.width;
+
+	out.length = value.length;
+
+	out.depth = value.depth;
+
 	out.placements.reserve(value.placements.size());
 	for (auto const& item : value.placements) {
 		out.placements.push_back(toDomain(*item));
@@ -328,6 +337,12 @@ inline fbs::BoxResultT fromDomain([[maybe_unused]] BoxResult const& value)
 	fbs::BoxResultT out;
 
 	out.box_reference = value.box_reference;
+
+	out.width = value.width;
+
+	out.length = value.length;
+
+	out.depth = value.depth;
 
 	out.placements.reserve(value.placements.size());
 	for (auto const& item : value.placements) {
