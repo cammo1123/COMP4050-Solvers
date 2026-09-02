@@ -159,10 +159,11 @@ add_custom_command(
 )
 
 add_library(solver_core STATIC
-    src/algo_extreme_point.cpp
-    src/algo_greedy.cpp
-    src/algo_shit_stack.cpp
     src/solver.cpp
+    src/algo_registry.cpp
+    src/algo_greedy.cpp
+    src/algo_extreme_point.cpp
+    src/algo_shit_stack.cpp
     ${GENERATED_HEADERS}
 )
 set_target_properties(solver_core PROPERTIES POSITION_INDEPENDENT_CODE ON)

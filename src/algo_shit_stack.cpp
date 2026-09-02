@@ -1,4 +1,4 @@
-#include "solver_algo.h"
+#include "algo_registry.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -66,5 +66,9 @@ auto solve_shit_stack(SolveRequest const& request, SolveOptions const& options, 
 	});
 	return response;
 }
+
+static struct ShitStackRegistrar {
+	ShitStackRegistrar() { register_algo(fbs::domain::SolveAlgorithm::ShitStack, { solve_shit_stack }); }
+} registrar;
 
 }

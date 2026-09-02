@@ -1,4 +1,4 @@
-#include "solver_algo.h"
+#include "algo_registry.h"
 
 #include <stdexcept>
 
@@ -12,5 +12,9 @@ auto solve_greedy(fbs::domain::SolveRequest const& request, fbs::domain::SolveOp
 
 	throw std::logic_error("greedy solver algorithm is not implemented");
 }
+
+static struct GreedyRegistrar {
+	GreedyRegistrar() { register_algo(fbs::domain::SolveAlgorithm::Greedy, { solve_greedy }); }
+} registrar;
 
 }
