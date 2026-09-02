@@ -62,11 +62,11 @@ struct PHPSolverOptions {
 	std::optional<bool> single_box = std::nullopt;
 	std::optional<bool> strict_item_order = std::nullopt;
 	std::optional<bool> best_subset = std::nullopt;
+	std::optional<uint32_t> max_boxes = std::nullopt;
+	bool allow_rotation = true;
 };
 
 struct SolveOptions {
-	std::optional<uint32_t> max_boxes = std::nullopt;
-	bool allow_rotation = true;
 	std::optional<uint32_t> timeout_ms = std::nullopt;
 	std::optional<GreedyOptions> greedy_options = std::nullopt;
 	std::optional<ExtremePointOptions> extreme_point_options = std::nullopt;
@@ -178,6 +178,12 @@ inline PHPSolverOptions toDomain([[maybe_unused]] fbs::PHPSolverOptionsT const& 
 		out.best_subset = *value.best_subset;
 	}
 
+	if (value.max_boxes.has_value()) {
+		out.max_boxes = *value.max_boxes;
+	}
+
+	out.allow_rotation = value.allow_rotation;
+
 	return out;
 }
 
@@ -205,18 +211,18 @@ inline fbs::PHPSolverOptionsT fromDomain([[maybe_unused]] PHPSolverOptions const
 		out.best_subset = *value.best_subset;
 	}
 
+	if (value.max_boxes.has_value()) {
+		out.max_boxes = *value.max_boxes;
+	}
+
+	out.allow_rotation = value.allow_rotation;
+
 	return out;
 }
 
 inline SolveOptions toDomain([[maybe_unused]] fbs::SolveOptionsT const& value)
 {
 	SolveOptions out;
-
-	if (value.max_boxes.has_value()) {
-		out.max_boxes = *value.max_boxes;
-	}
-
-	out.allow_rotation = value.allow_rotation;
 
 	if (value.timeout_ms.has_value()) {
 		out.timeout_ms = *value.timeout_ms;
@@ -244,12 +250,6 @@ inline SolveOptions toDomain([[maybe_unused]] fbs::SolveOptionsT const& value)
 inline fbs::SolveOptionsT fromDomain([[maybe_unused]] SolveOptions const& value)
 {
 	fbs::SolveOptionsT out;
-
-	if (value.max_boxes.has_value()) {
-		out.max_boxes = *value.max_boxes;
-	}
-
-	out.allow_rotation = value.allow_rotation;
 
 	if (value.timeout_ms.has_value()) {
 		out.timeout_ms = *value.timeout_ms;

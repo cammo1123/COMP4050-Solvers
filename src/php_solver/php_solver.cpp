@@ -59,11 +59,13 @@ auto solve_php_solver(SolveRequest const& request, SolveOptions const& options, 
 	}
 
 	packing::Options pack_options;
-	pack_options.max_boxes = options.max_boxes;
-	pack_options.allow_rotation = options.allow_rotation;
 	pack_options.timeout_ms = options.timeout_ms;
+
 	if (options.phpsolver_options.has_value()) {
 		auto const& algo_opts = *options.phpsolver_options;
+
+		pack_options.max_boxes = algo_opts.max_boxes;
+		pack_options.allow_rotation = algo_opts.allow_rotation;
 		pack_options.balance_weight = algo_opts.balance_weight.value_or(false);
 		pack_options.all_permutations = algo_opts.all_permutations.value_or(false);
 		pack_options.single_box = algo_opts.single_box.value_or(false);

@@ -20,7 +20,6 @@ import {
 	SolveRequest as SolveRequestMessage,
 	SolveResponse as SolveResponseMessage,
 	SolveResponseT as SolveResponseObject,
-	SolveOptions as SolveOptionsMessage,
 } from "./fbs.js";
 
 export type BoxResultT = {
@@ -89,6 +88,8 @@ export type PHPSolverOptionsT = {
 	singleBox?: boolean;
 	strictItemOrder?: boolean;
 	bestSubset?: boolean;
+	maxBoxes?: number;
+	allowRotation?: boolean;
 };
 
 export type PlacementConstraintT = {
@@ -107,8 +108,6 @@ export type ShitStackOptionsT = {
 };
 
 export type SolveOptionsT = {
-	maxBoxes?: number;
-	allowRotation?: boolean;
 	timeoutMs?: number;
 	greedyOptions?: GreedyOptionsT | null;
 	extremePointOptions?: ExtremePointOptionsT | null;
@@ -117,8 +116,6 @@ export type SolveOptionsT = {
 };
 
 export type BaseOptions = {
-	maxBoxes?: number;
-	allowRotation?: boolean;
 	timeoutMs?: number;
 };
 
@@ -156,7 +153,7 @@ function toAlgoOptionsT(options: any): { type: SolveStrategyOptions; value: any 
 	}
 	if (options?.phpsolverOptions) {
 		const value = options.phpsolverOptions;
-		return { type: SolveStrategyOptions.PHPSolverOptions, value: new PHPSolverOptionsObject(value.balanceWeight ?? null, value.allPermutations ?? null, value.singleBox ?? null, value.strictItemOrder ?? null, value.bestSubset ?? null) };
+		return { type: SolveStrategyOptions.PHPSolverOptions, value: new PHPSolverOptionsObject(value.balanceWeight ?? null, value.allPermutations ?? null, value.singleBox ?? null, value.strictItemOrder ?? null, value.bestSubset ?? null, value.maxBoxes ?? null, value.allowRotation ?? true) };
 	}
 	return { type: SolveStrategyOptions.NONE, value: null };
 }
@@ -165,18 +162,16 @@ function toAlgoOptionsT(options: any): { type: SolveStrategyOptions; value: any 
 export function encodeRequest(request: SolveRequest): Uint8Array {
 	const algoOptions = toAlgoOptionsT(request.options);
 	const optionsT = request.options ? new SolveOptionsObject(
-		request.options.maxBoxes ?? null,
-		request.options.allowRotation ?? true,
 		request.options.timeoutMs ?? null,
 		algoOptions.type,
-		algoOptions.value,
+		algoOptions.value
 	) : null;
 
 	const message = new SolveRequestObject(
 		(request.boxes ?? []).map((item) => new BoxTypeObject(item.reference, item.width, item.length, item.depth, item.maxWeight, item.boxWeight, item.active, item.maximumBoxes, item.outerWidth, item.outerLength, item.outerDepth)),
 		(request.items ?? []).map((item) => new ItemTypeObject(item.itemCode, item.itemReference, item.width, item.length, item.depth, item.weight, item.quantity, item.boxGroup, item.rotationPolicy, item.linkedGroup, item.constraint ? new PlacementConstraintObject(item.constraint.noStacking, item.constraint.requiredVertical, item.constraint.minX, item.constraint.minY, item.constraint.minZ, item.constraint.maxX, item.constraint.maxY, item.constraint.maxZ) : null)),
 		('algorithm' in request && request.algorithm !== undefined && request.algorithm !== null) ? request.algorithm : SolveAlgorithm.PHPSolver,
-		optionsT,
+		optionsT
 	);
 
 	const builder = new flatbuffers.Builder();

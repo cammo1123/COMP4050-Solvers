@@ -47,34 +47,10 @@ options, and an optional progress callback:
 
 ```ts
 const response = await solve({
-  boxes: [
-    {
-      reference: "small",
-      width: 120,
-      length: 80,
-      depth: 60,
-      maxWeight: 25000,
-      maximumBoxes: 2,
-      active: true,
-    },
-  ],
-  items: [
-    {
-      itemCode: "panel",
-      itemReference: "panel",
-      width: 40,
-      length: 30,
-      depth: 5,
-      weight: 1000,
-      quantity: 3,
-      rotationPolicy: RotationPolicy.KeepFlat,
-      linkedGroup: "panel-set",
-      constraint: { noStacking: true, minX: 0 },
-    },
-  ],
+  boxes,
+  items,
   algorithm: SolveAlgorithm.PHPSolver,
   options: {
-    allowRotation: true,
     timeoutMs: 1000,
     phpsolverOptions: {
       balanceWeight: true,

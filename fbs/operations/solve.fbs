@@ -3,6 +3,7 @@ include "../types.fbs";
 namespace fbs;
 
 attribute "optional";
+attribute "algorithm_specific_options";
 
 table GreedyOptions {}
 
@@ -16,6 +17,8 @@ table PHPSolverOptions {
   single_box: bool = null;
   strict_item_order: bool = null;
   best_subset: bool = null;
+  max_boxes: uint = null;
+  allow_rotation: bool = true;
 }
 
 union SolveStrategyOptions {
@@ -40,10 +43,8 @@ table SolveRequest {
 }
 
 table SolveOptions {
-  max_boxes: uint = null;
-  allow_rotation: bool = true;
   timeout_ms: uint = null;
-  algo_options: SolveStrategyOptions;
+  algo_options: SolveStrategyOptions (algorithm_specific_options);
 }
 
 table ItemPlacement {
