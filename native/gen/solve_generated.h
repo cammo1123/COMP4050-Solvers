@@ -722,6 +722,9 @@ inline ::flatbuffers::Offset<ItemPlacement> CreateItemPlacementDirect(
 struct BoxResultT : public ::flatbuffers::NativeTable {
   typedef BoxResult TableType;
   std::string box_reference{};
+  uint32_t width = 0;
+  uint32_t length = 0;
+  uint32_t depth = 0;
   std::vector<std::unique_ptr<fbs::ItemPlacementT>> placements{};
   ::flatbuffers::Optional<float> total_weight = ::flatbuffers::nullopt;
   ::flatbuffers::Optional<float> utilization = ::flatbuffers::nullopt;
@@ -739,15 +742,27 @@ struct BoxResult FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef BoxResultBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_BOX_REFERENCE = 4,
-    VT_PLACEMENTS = 6,
-    VT_TOTAL_WEIGHT = 8,
-    VT_UTILIZATION = 10,
-    VT_OUTER_WIDTH = 12,
-    VT_OUTER_LENGTH = 14,
-    VT_OUTER_DEPTH = 16
+    VT_WIDTH = 6,
+    VT_LENGTH = 8,
+    VT_DEPTH = 10,
+    VT_PLACEMENTS = 12,
+    VT_TOTAL_WEIGHT = 14,
+    VT_UTILIZATION = 16,
+    VT_OUTER_WIDTH = 18,
+    VT_OUTER_LENGTH = 20,
+    VT_OUTER_DEPTH = 22
   };
   const ::flatbuffers::String *box_reference() const {
     return GetPointer<const ::flatbuffers::String *>(VT_BOX_REFERENCE);
+  }
+  uint32_t width() const {
+    return GetField<uint32_t>(VT_WIDTH, 0);
+  }
+  uint32_t length() const {
+    return GetField<uint32_t>(VT_LENGTH, 0);
+  }
+  uint32_t depth() const {
+    return GetField<uint32_t>(VT_DEPTH, 0);
   }
   const ::flatbuffers::Vector<::flatbuffers::Offset<fbs::ItemPlacement>> *placements() const {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<fbs::ItemPlacement>> *>(VT_PLACEMENTS);
@@ -772,6 +787,9 @@ struct BoxResult FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_BOX_REFERENCE) &&
            verifier.VerifyString(box_reference()) &&
+           VerifyField<uint32_t>(verifier, VT_WIDTH, 4) &&
+           VerifyField<uint32_t>(verifier, VT_LENGTH, 4) &&
+           VerifyField<uint32_t>(verifier, VT_DEPTH, 4) &&
            VerifyOffset(verifier, VT_PLACEMENTS) &&
            verifier.VerifyVector(placements()) &&
            verifier.VerifyVectorOfTables(placements()) &&
@@ -793,6 +811,15 @@ struct BoxResultBuilder {
   ::flatbuffers::uoffset_t start_;
   void add_box_reference(::flatbuffers::Offset<::flatbuffers::String> box_reference) {
     fbb_.AddOffset(BoxResult::VT_BOX_REFERENCE, box_reference);
+  }
+  void add_width(uint32_t width) {
+    fbb_.AddElement<uint32_t>(BoxResult::VT_WIDTH, width, 0);
+  }
+  void add_length(uint32_t length) {
+    fbb_.AddElement<uint32_t>(BoxResult::VT_LENGTH, length, 0);
+  }
+  void add_depth(uint32_t depth) {
+    fbb_.AddElement<uint32_t>(BoxResult::VT_DEPTH, depth, 0);
   }
   void add_placements(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<fbs::ItemPlacement>>> placements) {
     fbb_.AddOffset(BoxResult::VT_PLACEMENTS, placements);
@@ -826,6 +853,9 @@ struct BoxResultBuilder {
 inline ::flatbuffers::Offset<BoxResult> CreateBoxResult(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     ::flatbuffers::Offset<::flatbuffers::String> box_reference = 0,
+    uint32_t width = 0,
+    uint32_t length = 0,
+    uint32_t depth = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<fbs::ItemPlacement>>> placements = 0,
     ::flatbuffers::Optional<float> total_weight = ::flatbuffers::nullopt,
     ::flatbuffers::Optional<float> utilization = ::flatbuffers::nullopt,
@@ -839,6 +869,9 @@ inline ::flatbuffers::Offset<BoxResult> CreateBoxResult(
   if(utilization) { builder_.add_utilization(*utilization); }
   if(total_weight) { builder_.add_total_weight(*total_weight); }
   builder_.add_placements(placements);
+  builder_.add_depth(depth);
+  builder_.add_length(length);
+  builder_.add_width(width);
   builder_.add_box_reference(box_reference);
   return builder_.Finish();
 }
@@ -846,6 +879,9 @@ inline ::flatbuffers::Offset<BoxResult> CreateBoxResult(
 inline ::flatbuffers::Offset<BoxResult> CreateBoxResultDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     const char *box_reference = nullptr,
+    uint32_t width = 0,
+    uint32_t length = 0,
+    uint32_t depth = 0,
     const std::vector<::flatbuffers::Offset<fbs::ItemPlacement>> *placements = nullptr,
     ::flatbuffers::Optional<float> total_weight = ::flatbuffers::nullopt,
     ::flatbuffers::Optional<float> utilization = ::flatbuffers::nullopt,
@@ -857,6 +893,9 @@ inline ::flatbuffers::Offset<BoxResult> CreateBoxResultDirect(
   return fbs::CreateBoxResult(
       _fbb,
       box_reference__,
+      width,
+      length,
+      depth,
       placements__,
       total_weight,
       utilization,
@@ -1185,6 +1224,9 @@ inline ::flatbuffers::Offset<ItemPlacement> ItemPlacement::Pack(::flatbuffers::F
 
 inline BoxResultT::BoxResultT(const BoxResultT &o)
       : box_reference(o.box_reference),
+        width(o.width),
+        length(o.length),
+        depth(o.depth),
         total_weight(o.total_weight),
         utilization(o.utilization),
         outer_width(o.outer_width),
@@ -1196,6 +1238,9 @@ inline BoxResultT::BoxResultT(const BoxResultT &o)
 
 inline BoxResultT &BoxResultT::operator=(BoxResultT o) FLATBUFFERS_NOEXCEPT {
   std::swap(box_reference, o.box_reference);
+  std::swap(width, o.width);
+  std::swap(length, o.length);
+  std::swap(depth, o.depth);
   std::swap(placements, o.placements);
   std::swap(total_weight, o.total_weight);
   std::swap(utilization, o.utilization);
@@ -1215,6 +1260,9 @@ inline void BoxResult::UnPackTo(BoxResultT *_o, const ::flatbuffers::resolver_fu
   (void)_o;
   (void)_resolver;
   { auto _e = box_reference(); if (_e) _o->box_reference = _e->str(); }
+  { auto _e = width(); _o->width = _e; }
+  { auto _e = length(); _o->length = _e; }
+  { auto _e = depth(); _o->depth = _e; }
   { auto _e = placements(); if (_e) { _o->placements.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { if(_o->placements[_i]) { _e->Get(_i)->UnPackTo(_o->placements[_i].get(), _resolver); } else { _o->placements[_i] = std::unique_ptr<fbs::ItemPlacementT>(_e->Get(_i)->UnPack(_resolver)); } } } else { _o->placements.resize(0); } }
   { auto _e = total_weight(); _o->total_weight = _e; }
   { auto _e = utilization(); _o->utilization = _e; }
@@ -1232,6 +1280,9 @@ inline ::flatbuffers::Offset<BoxResult> BoxResult::Pack(::flatbuffers::FlatBuffe
   (void)_o;
   struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const BoxResultT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
   auto _box_reference = _o->box_reference.empty() ? 0 : _fbb.CreateString(_o->box_reference);
+  auto _width = _o->width;
+  auto _length = _o->length;
+  auto _depth = _o->depth;
   auto _placements = _o->placements.size() ? _fbb.CreateVector<::flatbuffers::Offset<fbs::ItemPlacement>> (_o->placements.size(), [](size_t i, _VectorArgs *__va) { return CreateItemPlacement(*__va->__fbb, __va->__o->placements[i].get(), __va->__rehasher); }, &_va ) : 0;
   auto _total_weight = _o->total_weight;
   auto _utilization = _o->utilization;
@@ -1241,6 +1292,9 @@ inline ::flatbuffers::Offset<BoxResult> BoxResult::Pack(::flatbuffers::FlatBuffe
   return fbs::CreateBoxResult(
       _fbb,
       _box_reference,
+      _width,
+      _length,
+      _depth,
       _placements,
       _total_weight,
       _utilization,

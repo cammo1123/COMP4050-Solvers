@@ -21,42 +21,63 @@ export class BoxResult {
         const offset = this.bb.__offset(this.bb_pos, 4);
         return offset ? this.bb.__string(this.bb_pos + offset, optionalEncoding) : null;
     }
-    placements(index, obj) {
+    width() {
         const offset = this.bb.__offset(this.bb_pos, 6);
+        return offset ? this.bb.readUint32(this.bb_pos + offset) : 0;
+    }
+    length() {
+        const offset = this.bb.__offset(this.bb_pos, 8);
+        return offset ? this.bb.readUint32(this.bb_pos + offset) : 0;
+    }
+    depth() {
+        const offset = this.bb.__offset(this.bb_pos, 10);
+        return offset ? this.bb.readUint32(this.bb_pos + offset) : 0;
+    }
+    placements(index, obj) {
+        const offset = this.bb.__offset(this.bb_pos, 12);
         return offset ? (obj || new ItemPlacement()).__init(this.bb.__indirect(this.bb.__vector(this.bb_pos + offset) + index * 4), this.bb) : null;
     }
     placementsLength() {
-        const offset = this.bb.__offset(this.bb_pos, 6);
+        const offset = this.bb.__offset(this.bb_pos, 12);
         return offset ? this.bb.__vector_len(this.bb_pos + offset) : 0;
     }
     totalWeight() {
-        const offset = this.bb.__offset(this.bb_pos, 8);
+        const offset = this.bb.__offset(this.bb_pos, 14);
         return offset ? this.bb.readFloat32(this.bb_pos + offset) : null;
     }
     utilization() {
-        const offset = this.bb.__offset(this.bb_pos, 10);
+        const offset = this.bb.__offset(this.bb_pos, 16);
         return offset ? this.bb.readFloat32(this.bb_pos + offset) : null;
     }
     outerWidth() {
-        const offset = this.bb.__offset(this.bb_pos, 12);
+        const offset = this.bb.__offset(this.bb_pos, 18);
         return offset ? this.bb.readUint32(this.bb_pos + offset) : null;
     }
     outerLength() {
-        const offset = this.bb.__offset(this.bb_pos, 14);
+        const offset = this.bb.__offset(this.bb_pos, 20);
         return offset ? this.bb.readUint32(this.bb_pos + offset) : null;
     }
     outerDepth() {
-        const offset = this.bb.__offset(this.bb_pos, 16);
+        const offset = this.bb.__offset(this.bb_pos, 22);
         return offset ? this.bb.readUint32(this.bb_pos + offset) : null;
     }
     static startBoxResult(builder) {
-        builder.startObject(7);
+        builder.startObject(10);
     }
     static addBoxReference(builder, boxReferenceOffset) {
         builder.addFieldOffset(0, boxReferenceOffset, 0);
     }
+    static addWidth(builder, width) {
+        builder.addFieldInt32(1, width, 0);
+    }
+    static addLength(builder, length) {
+        builder.addFieldInt32(2, length, 0);
+    }
+    static addDepth(builder, depth) {
+        builder.addFieldInt32(3, depth, 0);
+    }
     static addPlacements(builder, placementsOffset) {
-        builder.addFieldOffset(1, placementsOffset, 0);
+        builder.addFieldOffset(4, placementsOffset, 0);
     }
     static createPlacementsVector(builder, data) {
         builder.startVector(4, data.length, 4);
@@ -69,27 +90,30 @@ export class BoxResult {
         builder.startVector(4, numElems, 4);
     }
     static addTotalWeight(builder, totalWeight) {
-        builder.addFieldFloat32(2, totalWeight, null);
+        builder.addFieldFloat32(5, totalWeight, null);
     }
     static addUtilization(builder, utilization) {
-        builder.addFieldFloat32(3, utilization, null);
+        builder.addFieldFloat32(6, utilization, null);
     }
     static addOuterWidth(builder, outerWidth) {
-        builder.addFieldInt32(4, outerWidth, null);
+        builder.addFieldInt32(7, outerWidth, null);
     }
     static addOuterLength(builder, outerLength) {
-        builder.addFieldInt32(5, outerLength, null);
+        builder.addFieldInt32(8, outerLength, null);
     }
     static addOuterDepth(builder, outerDepth) {
-        builder.addFieldInt32(6, outerDepth, null);
+        builder.addFieldInt32(9, outerDepth, null);
     }
     static endBoxResult(builder) {
         const offset = builder.endObject();
         return offset;
     }
-    static createBoxResult(builder, boxReferenceOffset, placementsOffset, totalWeight, utilization, outerWidth, outerLength, outerDepth) {
+    static createBoxResult(builder, boxReferenceOffset, width, length, depth, placementsOffset, totalWeight, utilization, outerWidth, outerLength, outerDepth) {
         BoxResult.startBoxResult(builder);
         BoxResult.addBoxReference(builder, boxReferenceOffset);
+        BoxResult.addWidth(builder, width);
+        BoxResult.addLength(builder, length);
+        BoxResult.addDepth(builder, depth);
         BoxResult.addPlacements(builder, placementsOffset);
         if (totalWeight !== null)
             BoxResult.addTotalWeight(builder, totalWeight);
@@ -104,10 +128,13 @@ export class BoxResult {
         return BoxResult.endBoxResult(builder);
     }
     unpack() {
-        return new BoxResultT(this.boxReference(), this.bb.createObjList(this.placements.bind(this), this.placementsLength()), this.totalWeight(), this.utilization(), this.outerWidth(), this.outerLength(), this.outerDepth());
+        return new BoxResultT(this.boxReference(), this.width(), this.length(), this.depth(), this.bb.createObjList(this.placements.bind(this), this.placementsLength()), this.totalWeight(), this.utilization(), this.outerWidth(), this.outerLength(), this.outerDepth());
     }
     unpackTo(_o) {
         _o.boxReference = this.boxReference();
+        _o.width = this.width();
+        _o.length = this.length();
+        _o.depth = this.depth();
         _o.placements = this.bb.createObjList(this.placements.bind(this), this.placementsLength());
         _o.totalWeight = this.totalWeight();
         _o.utilization = this.utilization();
@@ -118,14 +145,20 @@ export class BoxResult {
 }
 export class BoxResultT {
     boxReference;
+    width;
+    length;
+    depth;
     placements;
     totalWeight;
     utilization;
     outerWidth;
     outerLength;
     outerDepth;
-    constructor(boxReference = null, placements = [], totalWeight = null, utilization = null, outerWidth = null, outerLength = null, outerDepth = null) {
+    constructor(boxReference = null, width = 0, length = 0, depth = 0, placements = [], totalWeight = null, utilization = null, outerWidth = null, outerLength = null, outerDepth = null) {
         this.boxReference = boxReference;
+        this.width = width;
+        this.length = length;
+        this.depth = depth;
         this.placements = placements;
         this.totalWeight = totalWeight;
         this.utilization = utilization;
@@ -136,7 +169,7 @@ export class BoxResultT {
     pack(builder) {
         const boxReference = (this.boxReference !== null ? builder.createString(this.boxReference) : 0);
         const placements = BoxResult.createPlacementsVector(builder, builder.createObjectOffsetList(this.placements));
-        return BoxResult.createBoxResult(builder, boxReference, placements, this.totalWeight, this.utilization, this.outerWidth, this.outerLength, this.outerDepth);
+        return BoxResult.createBoxResult(builder, boxReference, this.width, this.length, this.depth, placements, this.totalWeight, this.utilization, this.outerWidth, this.outerLength, this.outerDepth);
     }
 }
 //# sourceMappingURL=box-result.js.map

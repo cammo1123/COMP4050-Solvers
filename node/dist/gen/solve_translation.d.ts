@@ -1,6 +1,9 @@
 import { SolveAlgorithm, RotationPolicy } from "./fbs.js";
 export type BoxResultT = {
     boxReference: string;
+    width: number;
+    length: number;
+    depth: number;
     placements: ItemPlacementT[];
     totalWeight?: number;
     utilization?: number;

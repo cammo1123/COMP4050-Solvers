@@ -8,6 +8,9 @@ export declare class BoxResult implements flatbuffers.IUnpackableObject<BoxResul
     static getSizePrefixedRootAsBoxResult(bb: flatbuffers.ByteBuffer, obj?: BoxResult): BoxResult;
     boxReference(): string | null;
     boxReference(optionalEncoding: flatbuffers.Encoding): string | Uint8Array | null;
+    width(): number;
+    length(): number;
+    depth(): number;
     placements(index: number, obj?: ItemPlacement): ItemPlacement | null;
     placementsLength(): number;
     totalWeight(): number | null;
@@ -17,6 +20,9 @@ export declare class BoxResult implements flatbuffers.IUnpackableObject<BoxResul
     outerDepth(): number | null;
     static startBoxResult(builder: flatbuffers.Builder): void;
     static addBoxReference(builder: flatbuffers.Builder, boxReferenceOffset: flatbuffers.Offset): void;
+    static addWidth(builder: flatbuffers.Builder, width: number): void;
+    static addLength(builder: flatbuffers.Builder, length: number): void;
+    static addDepth(builder: flatbuffers.Builder, depth: number): void;
     static addPlacements(builder: flatbuffers.Builder, placementsOffset: flatbuffers.Offset): void;
     static createPlacementsVector(builder: flatbuffers.Builder, data: flatbuffers.Offset[]): flatbuffers.Offset;
     static startPlacementsVector(builder: flatbuffers.Builder, numElems: number): void;
@@ -26,19 +32,22 @@ export declare class BoxResult implements flatbuffers.IUnpackableObject<BoxResul
     static addOuterLength(builder: flatbuffers.Builder, outerLength: number): void;
     static addOuterDepth(builder: flatbuffers.Builder, outerDepth: number): void;
     static endBoxResult(builder: flatbuffers.Builder): flatbuffers.Offset;
-    static createBoxResult(builder: flatbuffers.Builder, boxReferenceOffset: flatbuffers.Offset, placementsOffset: flatbuffers.Offset, totalWeight: number | null, utilization: number | null, outerWidth: number | null, outerLength: number | null, outerDepth: number | null): flatbuffers.Offset;
+    static createBoxResult(builder: flatbuffers.Builder, boxReferenceOffset: flatbuffers.Offset, width: number, length: number, depth: number, placementsOffset: flatbuffers.Offset, totalWeight: number | null, utilization: number | null, outerWidth: number | null, outerLength: number | null, outerDepth: number | null): flatbuffers.Offset;
     unpack(): BoxResultT;
     unpackTo(_o: BoxResultT): void;
 }
 export declare class BoxResultT implements flatbuffers.IGeneratedObject {
     boxReference: string | Uint8Array | null;
+    width: number;
+    length: number;
+    depth: number;
     placements: (ItemPlacementT)[];
     totalWeight: number | null;
     utilization: number | null;
     outerWidth: number | null;
     outerLength: number | null;
     outerDepth: number | null;
-    constructor(boxReference?: string | Uint8Array | null, placements?: (ItemPlacementT)[], totalWeight?: number | null, utilization?: number | null, outerWidth?: number | null, outerLength?: number | null, outerDepth?: number | null);
+    constructor(boxReference?: string | Uint8Array | null, width?: number, length?: number, depth?: number, placements?: (ItemPlacementT)[], totalWeight?: number | null, utilization?: number | null, outerWidth?: number | null, outerLength?: number | null, outerDepth?: number | null);
     pack(builder: flatbuffers.Builder): flatbuffers.Offset;
 }
 //# sourceMappingURL=box-result.d.ts.map

@@ -49,6 +49,9 @@ table ItemPlacement {
 
 table BoxResult {
   box_reference: string;
+  width: uint;
+  length: uint;
+  depth: uint;
   placements: [ItemPlacement];
   total_weight: float = null;
   utilization: float = null;

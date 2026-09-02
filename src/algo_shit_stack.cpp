@@ -69,6 +69,9 @@ auto solve_shit_stack(SolveRequest const& request, SolveOptions const& options, 
 
 	response.results.push_back(BoxResult {
 		.box_reference = box.reference,
+		.width = box.width,
+		.length = box.length,
+		.depth = box.depth,
 		.placements = std::move(placements),
 		.total_weight = total_weight,
 		.utilization = box_volume == 0 ? 0.0f : static_cast<float>(static_cast<double>(used_volume) / static_cast<double>(box_volume)),
