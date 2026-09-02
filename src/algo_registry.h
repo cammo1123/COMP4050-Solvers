@@ -7,10 +7,10 @@
 
 namespace solver::algo {
 
-using SolveFn = fbs::domain::SolveResponse(*)(
-    fbs::domain::SolveRequest const&,
-    fbs::domain::SolveOptions const&,
-    solver::ProgressCallback const&);
+using SolveFn = fbs::domain::SolveResponse (*)(
+	fbs::domain::SolveRequest const&,
+	fbs::domain::SolveOptions const&,
+	solver::ProgressCallback const&);
 
 struct AlgoInfo {
 	SolveFn solve;

@@ -52,7 +52,7 @@ const response = await solve({
   algorithm: SolveAlgorithm.PHPSolver,
   options: {
     timeoutMs: 1000,
-    phpsolverOptions: {
+    phpSolverOptions: {
       balanceWeight: true,
       strictItemOrder: false,
       bestSubset: false,

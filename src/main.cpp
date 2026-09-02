@@ -49,7 +49,7 @@ int main()
 	solve.algorithm = SolveAlgorithm::PHPSolver;
 
 	fbs::domain::SolveOptions options;
-	options.phpsolver_options = fbs::domain::PHPSolverOptions {
+	options.php_solver_options = fbs::domain::PHPSolverOptions {
 		.balance_weight = true,
 		.best_subset = false,
 	};

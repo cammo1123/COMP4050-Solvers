@@ -90,11 +90,11 @@ export function assertValidSolution(request: SolveRequest, response: SolveRespon
 	const remaining = [...request.items];
 	const boxUsage = new Map<string, number>();
 	const options = request.options;
-	const phpsolverOptions = options && "phpsolverOptions" in options ? options.phpsolverOptions : undefined;
-	const allowRotation = phpsolverOptions?.allowRotation ?? true;
+	const phpSolverOptions = options && "phpSolverOptions" in options ? options.phpSolverOptions : undefined;
+	const allowRotation = phpSolverOptions?.allowRotation ?? true;
 
-	if (phpsolverOptions?.maxBoxes !== undefined) {
-		expect(response.results.length, "solution exceeds maxBoxes").toBeLessThanOrEqual(phpsolverOptions.maxBoxes);
+	if (phpSolverOptions?.maxBoxes !== undefined) {
+		expect(response.results.length, "solution exceeds maxBoxes").toBeLessThanOrEqual(phpSolverOptions.maxBoxes);
 	}
 
 	for (const result of response.results) {

@@ -71,7 +71,7 @@ struct SolveOptions {
 	std::optional<GreedyOptions> greedy_options = std::nullopt;
 	std::optional<ExtremePointOptions> extreme_point_options = std::nullopt;
 	std::optional<ShitStackOptions> shit_stack_options = std::nullopt;
-	std::optional<PHPSolverOptions> phpsolver_options = std::nullopt;
+	std::optional<PHPSolverOptions> php_solver_options = std::nullopt;
 };
 
 struct SolveRequest {
@@ -241,7 +241,7 @@ inline SolveOptions toDomain([[maybe_unused]] fbs::SolveOptionsT const& value)
 	}
 
 	if (value.algo_options.type == ::fbs::SolveStrategyOptions_PHPSolverOptions) {
-		out.phpsolver_options = toDomain(*value.algo_options.AsPHPSolverOptions());
+		out.php_solver_options = toDomain(*value.algo_options.AsPHPSolverOptions());
 	}
 
 	return out;
@@ -267,8 +267,8 @@ inline fbs::SolveOptionsT fromDomain([[maybe_unused]] SolveOptions const& value)
 		out.algo_options.Set(fromDomain(*value.shit_stack_options));
 	}
 
-	if (value.phpsolver_options.has_value()) {
-		out.algo_options.Set(fromDomain(*value.phpsolver_options));
+	if (value.php_solver_options.has_value()) {
+		out.algo_options.Set(fromDomain(*value.php_solver_options));
 	}
 
 	return out;

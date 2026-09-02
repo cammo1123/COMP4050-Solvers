@@ -74,7 +74,7 @@ export type SolveOptionsT = {
     greedyOptions?: GreedyOptionsT | null;
     extremePointOptions?: ExtremePointOptionsT | null;
     shitStackOptions?: ShitStackOptionsT | null;
-    phpsolverOptions?: PHPSolverOptionsT | null;
+    phpSolverOptions?: PHPSolverOptionsT | null;
 };
 export type BaseOptions = {
     timeoutMs?: number;
@@ -106,12 +106,12 @@ export type SolveRequest = {
 } | {
     algorithm: typeof SolveAlgorithm.PHPSolver;
     options?: BaseOptions & {
-        phpsolverOptions?: PHPSolverOptionsT;
+        phpSolverOptions?: PHPSolverOptionsT;
     };
 } | {
     algorithm?: undefined;
     options?: BaseOptions & {
-        phpsolverOptions?: PHPSolverOptionsT;
+        phpSolverOptions?: PHPSolverOptionsT;
     };
 });
 export declare function encodeRequest(request: SolveRequest): Uint8Array;

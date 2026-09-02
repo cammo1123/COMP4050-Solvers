@@ -10,7 +10,7 @@ const request: SolveRequest = {
 		{ itemCode: "a", itemReference: "a", width: 2, length: 2, depth: 2, weight: 2 },
 		{ itemCode: "b", itemReference: "b", width: 2, length: 2, depth: 2, weight: 3 },
 	],
-	options: { phpsolverOptions: { allowRotation: false, maxBoxes: 1 } },
+	options: { phpSolverOptions: { allowRotation: false, maxBoxes: 1 } },
 };
 
 	const validResponse: SolveResponse = {
@@ -73,7 +73,7 @@ describe("assertValidSolution", () => {
 		const rotatedOptions = rotatedRequest.options;
 		rotatedRequest.options = {
 			...rotatedOptions,
-			phpsolverOptions: { ...(rotatedOptions && "phpsolverOptions" in rotatedOptions ? rotatedOptions.phpsolverOptions : undefined), allowRotation: true },
+			phpSolverOptions: { ...(rotatedOptions && "phpSolverOptions" in rotatedOptions ? rotatedOptions.phpSolverOptions : undefined), allowRotation: true },
 		};
 		rotatedRequest.items[0] = { ...rotatedRequest.items[0], width: 1, length: 2, depth: 2 };
 		const response = cloneResponse();

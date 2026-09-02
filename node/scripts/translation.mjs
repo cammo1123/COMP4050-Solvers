@@ -219,7 +219,10 @@ function resolveTable (name, tables, unions) {
 }
 
 function toSnakeCase (name) {
-	return name.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase()
+	return name
+		.replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+		.replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')
+		.toLowerCase()
 }
 
 function collectNestedTables (schema) {
@@ -321,7 +324,7 @@ function toCamelCase (name) {
 
 function optionPropertyName (name) {
 	const stem = name.replace(/Options$/, '')
-	const firstWord = stem.match(/^[A-Z]+/)?.[0] ?? stem.charAt(0)
+	const firstWord = stem.match(/^[A-Z]+(?=[A-Z][a-z])/)?.[0] ?? stem.charAt(0)
 	return firstWord.toLowerCase() + stem.slice(firstWord.length) + 'Options'
 }
 
