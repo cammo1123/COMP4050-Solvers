@@ -77,6 +77,7 @@ if (schemaFiles.length === 0) fail("generate", `no .fbs schema files found in ${
 
 const generatedTables = new Set()
 const generatedEnums = new Set()
+const generatedUnions = new Set()
 
 function generatedName (name) {
 	return name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
@@ -100,6 +101,7 @@ for (const schemaPath of schemaFiles) {
 	schema.declaredEnums = Object.keys(localSchema.enums)
 	schema.declaredTables.forEach((name) => generatedTables.add(name))
 	schema.declaredEnums.forEach((name) => generatedEnums.add(name))
+	Object.keys(localSchema.unions ?? {}).forEach((name) => generatedUnions.add(name))
 	schema.includes = directIncludes
 	if (!schema.request && path.dirname(schemaPath) !== FBS_DIR) {
 		fail("generate", `operation schema ${label} must declare a root_type`)
@@ -126,6 +128,7 @@ const barrel = [
 	'',
 	...([...generatedTables].sort().map((name) => `export { ${name}, ${name}T } from './fbs/${generatedName(name)}.js';`)),
 	...([...generatedEnums].sort().map((name) => `export { ${name} } from './fbs/${generatedName(name)}.js';`)),
+	...([...generatedUnions].sort().map((name) => `export { ${name} } from './fbs/${generatedName(name)}.js';`)),
 	'',
 ].join('\n')
 fs.writeFileSync(path.join(TS_OUT, 'fbs.ts'), barrel)

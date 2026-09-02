@@ -14,11 +14,12 @@ describe("algorithm dispatch", () => {
 		const response = await solve({
 			...request,
 			items: [...request.items, secondItem],
+			algorithm: SolveAlgorithm.ShitStack,
 			onProgress: (done, total) => progress.push([done, total]),
 		});
 		await new Promise<void>((resolve) => setImmediate(resolve));
 
-		expect(response).toEqual({
+		expect(response).toMatchObject({
 			results: [
 				{
 					boxReference: "box",
@@ -38,16 +39,16 @@ describe("algorithm dispatch", () => {
 	});
 
 	it("dispatches the greedy enum value", async () => {
-		await expect(solve({ ...request, options: { algorithm: SolveAlgorithm.Greedy } })).rejects.toThrow("greedy solver algorithm is not implemented");
+		await expect(solve({ ...request, algorithm: SolveAlgorithm.Greedy })).rejects.toThrow("greedy solver algorithm is not implemented");
 	});
 
 	it("dispatches the extreme-point enum value", async () => {
-		await expect(solve({ ...request, options: { algorithm: SolveAlgorithm.ExtremePoint } })).rejects.toThrow("extreme-point solver algorithm is not implemented");
+		await expect(solve({ ...request, algorithm: SolveAlgorithm.ExtremePoint })).rejects.toThrow("extreme-point solver algorithm is not implemented");
 	});
 
 	it("rejects unsupported algorithm values", async () => {
-		await expect(solve({ ...request, options: { algorithm: 3 as SolveAlgorithm } })).rejects.toThrow("invalid SolveAlgorithm value");
-		await expect(solve({ ...request, options: { algorithm: -1 as SolveAlgorithm } })).rejects.toThrow("invalid SolveAlgorithm value");
+		await expect(solve({ ...request, algorithm: 255 as SolveAlgorithm })).rejects.toThrow("invalid SolveAlgorithm value");
+		await expect(solve({ ...request, algorithm: -1 as SolveAlgorithm })).rejects.toThrow("invalid SolveAlgorithm value");
 	});
 });
 

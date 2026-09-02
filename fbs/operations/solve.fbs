@@ -4,10 +4,16 @@ namespace fbs;
 
 attribute "optional";
 
-table SolveRequest {
-  boxes: [BoxType] (required);
-  items: [ItemType] (required);
-  options: SolveOptions (optional);
+table GreedyOptions {}
+
+table ExtremePointOptions {}
+
+table ShitStackOptions {}
+
+union SolveStrategyOptions {
+  GreedyOptions,
+  ExtremePointOptions,
+  ShitStackOptions,
 }
 
 enum SolveAlgorithm : byte {
@@ -16,15 +22,22 @@ enum SolveAlgorithm : byte {
 	ShitStack = 2,
 }
 
+table SolveRequest {
+  boxes: [BoxType] (required);
+  items: [ItemType] (required);
+  algorithm: SolveAlgorithm = Greedy;
+  options: SolveOptions (optional);
+}
+
 table SolveOptions {
   max_boxes: uint = null;
   allow_rotation: bool = true;
   timeout_ms: uint = null;
-  algorithm: SolveAlgorithm = null;
+  algo_options: SolveStrategyOptions;
 }
 
 table ItemPlacement {
-item_code: string;
+  item_code: string;
   item_reference: string;
   x: uint;
   y: uint;
@@ -37,11 +50,18 @@ item_code: string;
 table BoxResult {
   box_reference: string;
   placements: [ItemPlacement];
+  total_weight: float = null;
+  utilization: float = null;
+  outer_width: uint = null;
+  outer_length: uint = null;
+  outer_depth: uint = null;
 }
 
 table SolveResponse {
   results: [BoxResult];
   failed: [ItemType];
+  algorithm_us: uint = 0;
+  server_us: uint = 0;
 }
 
 root_type SolveRequest;
