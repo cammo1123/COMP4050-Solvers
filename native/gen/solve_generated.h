@@ -29,6 +29,10 @@ struct ShitStackOptions;
 struct ShitStackOptionsBuilder;
 struct ShitStackOptionsT;
 
+struct PHPSolverOptions;
+struct PHPSolverOptionsBuilder;
+struct PHPSolverOptionsT;
+
 struct SolveRequest;
 struct SolveRequestBuilder;
 struct SolveRequestT;
@@ -54,33 +58,36 @@ enum SolveStrategyOptions : uint8_t {
   SolveStrategyOptions_GreedyOptions = 1,
   SolveStrategyOptions_ExtremePointOptions = 2,
   SolveStrategyOptions_ShitStackOptions = 3,
+  SolveStrategyOptions_PHPSolverOptions = 4,
   SolveStrategyOptions_MIN = SolveStrategyOptions_NONE,
-  SolveStrategyOptions_MAX = SolveStrategyOptions_ShitStackOptions
+  SolveStrategyOptions_MAX = SolveStrategyOptions_PHPSolverOptions
 };
 
-inline const SolveStrategyOptions (&EnumValuesSolveStrategyOptions())[4] {
+inline const SolveStrategyOptions (&EnumValuesSolveStrategyOptions())[5] {
   static const SolveStrategyOptions values[] = {
     SolveStrategyOptions_NONE,
     SolveStrategyOptions_GreedyOptions,
     SolveStrategyOptions_ExtremePointOptions,
-    SolveStrategyOptions_ShitStackOptions
+    SolveStrategyOptions_ShitStackOptions,
+    SolveStrategyOptions_PHPSolverOptions
   };
   return values;
 }
 
 inline const char * const *EnumNamesSolveStrategyOptions() {
-  static const char * const names[5] = {
+  static const char * const names[6] = {
     "NONE",
     "GreedyOptions",
     "ExtremePointOptions",
     "ShitStackOptions",
+    "PHPSolverOptions",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameSolveStrategyOptions(SolveStrategyOptions e) {
-  if (::flatbuffers::IsOutRange(e, SolveStrategyOptions_NONE, SolveStrategyOptions_ShitStackOptions)) return "";
+  if (::flatbuffers::IsOutRange(e, SolveStrategyOptions_NONE, SolveStrategyOptions_PHPSolverOptions)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesSolveStrategyOptions()[index];
 }
@@ -101,6 +108,10 @@ template<> struct SolveStrategyOptionsTraits<fbs::ShitStackOptions> {
   static const SolveStrategyOptions enum_value = SolveStrategyOptions_ShitStackOptions;
 };
 
+template<> struct SolveStrategyOptionsTraits<fbs::PHPSolverOptions> {
+  static const SolveStrategyOptions enum_value = SolveStrategyOptions_PHPSolverOptions;
+};
+
 template<typename T> struct SolveStrategyOptionsUnionTraits {
   static const SolveStrategyOptions enum_value = SolveStrategyOptions_NONE;
 };
@@ -115,6 +126,10 @@ template<> struct SolveStrategyOptionsUnionTraits<fbs::ExtremePointOptionsT> {
 
 template<> struct SolveStrategyOptionsUnionTraits<fbs::ShitStackOptionsT> {
   static const SolveStrategyOptions enum_value = SolveStrategyOptions_ShitStackOptions;
+};
+
+template<> struct SolveStrategyOptionsUnionTraits<fbs::PHPSolverOptionsT> {
+  static const SolveStrategyOptions enum_value = SolveStrategyOptions_PHPSolverOptions;
 };
 
 struct SolveStrategyOptionsUnion {
@@ -171,6 +186,14 @@ struct SolveStrategyOptionsUnion {
     return type == SolveStrategyOptions_ShitStackOptions ?
       reinterpret_cast<const fbs::ShitStackOptionsT *>(value) : nullptr;
   }
+  fbs::PHPSolverOptionsT *AsPHPSolverOptions() {
+    return type == SolveStrategyOptions_PHPSolverOptions ?
+      reinterpret_cast<fbs::PHPSolverOptionsT *>(value) : nullptr;
+  }
+  const fbs::PHPSolverOptionsT *AsPHPSolverOptions() const {
+    return type == SolveStrategyOptions_PHPSolverOptions ?
+      reinterpret_cast<const fbs::PHPSolverOptionsT *>(value) : nullptr;
+  }
 };
 
 template <bool B = false>
@@ -182,31 +205,34 @@ enum SolveAlgorithm : int8_t {
   SolveAlgorithm_Greedy = 0,
   SolveAlgorithm_ExtremePoint = 1,
   SolveAlgorithm_ShitStack = 2,
+  SolveAlgorithm_PHPSolver = 3,
   SolveAlgorithm_MIN = SolveAlgorithm_Greedy,
-  SolveAlgorithm_MAX = SolveAlgorithm_ShitStack
+  SolveAlgorithm_MAX = SolveAlgorithm_PHPSolver
 };
 
-inline const SolveAlgorithm (&EnumValuesSolveAlgorithm())[3] {
+inline const SolveAlgorithm (&EnumValuesSolveAlgorithm())[4] {
   static const SolveAlgorithm values[] = {
     SolveAlgorithm_Greedy,
     SolveAlgorithm_ExtremePoint,
-    SolveAlgorithm_ShitStack
+    SolveAlgorithm_ShitStack,
+    SolveAlgorithm_PHPSolver
   };
   return values;
 }
 
 inline const char * const *EnumNamesSolveAlgorithm() {
-  static const char * const names[4] = {
+  static const char * const names[5] = {
     "Greedy",
     "ExtremePoint",
     "ShitStack",
+    "PHPSolver",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameSolveAlgorithm(SolveAlgorithm e) {
-  if (::flatbuffers::IsOutRange(e, SolveAlgorithm_Greedy, SolveAlgorithm_ShitStack)) return "";
+  if (::flatbuffers::IsOutRange(e, SolveAlgorithm_Greedy, SolveAlgorithm_PHPSolver)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesSolveAlgorithm()[index];
 }
@@ -331,11 +357,108 @@ inline ::flatbuffers::Offset<ShitStackOptions> CreateShitStackOptions(
 
 ::flatbuffers::Offset<ShitStackOptions> CreateShitStackOptions(::flatbuffers::FlatBufferBuilder &_fbb, const ShitStackOptionsT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 
+struct PHPSolverOptionsT : public ::flatbuffers::NativeTable {
+  typedef PHPSolverOptions TableType;
+  ::flatbuffers::Optional<bool> balance_weight = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<bool> all_permutations = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<bool> single_box = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<bool> strict_item_order = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<bool> best_subset = ::flatbuffers::nullopt;
+};
+
+struct PHPSolverOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef PHPSolverOptionsT NativeTableType;
+  typedef PHPSolverOptionsBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_BALANCE_WEIGHT = 4,
+    VT_ALL_PERMUTATIONS = 6,
+    VT_SINGLE_BOX = 8,
+    VT_STRICT_ITEM_ORDER = 10,
+    VT_BEST_SUBSET = 12
+  };
+  ::flatbuffers::Optional<bool> balance_weight() const {
+    return GetOptional<uint8_t, bool>(VT_BALANCE_WEIGHT);
+  }
+  ::flatbuffers::Optional<bool> all_permutations() const {
+    return GetOptional<uint8_t, bool>(VT_ALL_PERMUTATIONS);
+  }
+  ::flatbuffers::Optional<bool> single_box() const {
+    return GetOptional<uint8_t, bool>(VT_SINGLE_BOX);
+  }
+  ::flatbuffers::Optional<bool> strict_item_order() const {
+    return GetOptional<uint8_t, bool>(VT_STRICT_ITEM_ORDER);
+  }
+  ::flatbuffers::Optional<bool> best_subset() const {
+    return GetOptional<uint8_t, bool>(VT_BEST_SUBSET);
+  }
+  template <bool B = false>
+  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<uint8_t>(verifier, VT_BALANCE_WEIGHT, 1) &&
+           VerifyField<uint8_t>(verifier, VT_ALL_PERMUTATIONS, 1) &&
+           VerifyField<uint8_t>(verifier, VT_SINGLE_BOX, 1) &&
+           VerifyField<uint8_t>(verifier, VT_STRICT_ITEM_ORDER, 1) &&
+           VerifyField<uint8_t>(verifier, VT_BEST_SUBSET, 1) &&
+           verifier.EndTable();
+  }
+  PHPSolverOptionsT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(PHPSolverOptionsT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<PHPSolverOptions> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const PHPSolverOptionsT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+};
+
+struct PHPSolverOptionsBuilder {
+  typedef PHPSolverOptions Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_balance_weight(bool balance_weight) {
+    fbb_.AddElement<uint8_t>(PHPSolverOptions::VT_BALANCE_WEIGHT, static_cast<uint8_t>(balance_weight));
+  }
+  void add_all_permutations(bool all_permutations) {
+    fbb_.AddElement<uint8_t>(PHPSolverOptions::VT_ALL_PERMUTATIONS, static_cast<uint8_t>(all_permutations));
+  }
+  void add_single_box(bool single_box) {
+    fbb_.AddElement<uint8_t>(PHPSolverOptions::VT_SINGLE_BOX, static_cast<uint8_t>(single_box));
+  }
+  void add_strict_item_order(bool strict_item_order) {
+    fbb_.AddElement<uint8_t>(PHPSolverOptions::VT_STRICT_ITEM_ORDER, static_cast<uint8_t>(strict_item_order));
+  }
+  void add_best_subset(bool best_subset) {
+    fbb_.AddElement<uint8_t>(PHPSolverOptions::VT_BEST_SUBSET, static_cast<uint8_t>(best_subset));
+  }
+  explicit PHPSolverOptionsBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<PHPSolverOptions> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<PHPSolverOptions>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<PHPSolverOptions> CreatePHPSolverOptions(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Optional<bool> balance_weight = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<bool> all_permutations = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<bool> single_box = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<bool> strict_item_order = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<bool> best_subset = ::flatbuffers::nullopt) {
+  PHPSolverOptionsBuilder builder_(_fbb);
+  if(best_subset) { builder_.add_best_subset(*best_subset); }
+  if(strict_item_order) { builder_.add_strict_item_order(*strict_item_order); }
+  if(single_box) { builder_.add_single_box(*single_box); }
+  if(all_permutations) { builder_.add_all_permutations(*all_permutations); }
+  if(balance_weight) { builder_.add_balance_weight(*balance_weight); }
+  return builder_.Finish();
+}
+
+::flatbuffers::Offset<PHPSolverOptions> CreatePHPSolverOptions(::flatbuffers::FlatBufferBuilder &_fbb, const PHPSolverOptionsT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
 struct SolveRequestT : public ::flatbuffers::NativeTable {
   typedef SolveRequest TableType;
   std::vector<std::unique_ptr<fbs::BoxTypeT>> boxes{};
   std::vector<std::unique_ptr<fbs::ItemTypeT>> items{};
-  fbs::SolveAlgorithm algorithm = fbs::SolveAlgorithm_Greedy;
+  fbs::SolveAlgorithm algorithm = fbs::SolveAlgorithm_PHPSolver;
   std::unique_ptr<fbs::SolveOptionsT> options{};
   SolveRequestT() = default;
   SolveRequestT(const SolveRequestT &o);
@@ -359,7 +482,7 @@ struct SolveRequest FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<fbs::ItemType>> *>(VT_ITEMS);
   }
   fbs::SolveAlgorithm algorithm() const {
-    return static_cast<fbs::SolveAlgorithm>(GetField<int8_t>(VT_ALGORITHM, 0));
+    return static_cast<fbs::SolveAlgorithm>(GetField<int8_t>(VT_ALGORITHM, 3));
   }
   const fbs::SolveOptions *options() const {
     return GetPointer<const fbs::SolveOptions *>(VT_OPTIONS);
@@ -394,7 +517,7 @@ struct SolveRequestBuilder {
     fbb_.AddOffset(SolveRequest::VT_ITEMS, items);
   }
   void add_algorithm(fbs::SolveAlgorithm algorithm) {
-    fbb_.AddElement<int8_t>(SolveRequest::VT_ALGORITHM, static_cast<int8_t>(algorithm), 0);
+    fbb_.AddElement<int8_t>(SolveRequest::VT_ALGORITHM, static_cast<int8_t>(algorithm), 3);
   }
   void add_options(::flatbuffers::Offset<fbs::SolveOptions> options) {
     fbb_.AddOffset(SolveRequest::VT_OPTIONS, options);
@@ -416,7 +539,7 @@ inline ::flatbuffers::Offset<SolveRequest> CreateSolveRequest(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<fbs::BoxType>>> boxes = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<fbs::ItemType>>> items = 0,
-    fbs::SolveAlgorithm algorithm = fbs::SolveAlgorithm_Greedy,
+    fbs::SolveAlgorithm algorithm = fbs::SolveAlgorithm_PHPSolver,
     ::flatbuffers::Offset<fbs::SolveOptions> options = 0) {
   SolveRequestBuilder builder_(_fbb);
   builder_.add_options(options);
@@ -430,7 +553,7 @@ inline ::flatbuffers::Offset<SolveRequest> CreateSolveRequestDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     const std::vector<::flatbuffers::Offset<fbs::BoxType>> *boxes = nullptr,
     const std::vector<::flatbuffers::Offset<fbs::ItemType>> *items = nullptr,
-    fbs::SolveAlgorithm algorithm = fbs::SolveAlgorithm_Greedy,
+    fbs::SolveAlgorithm algorithm = fbs::SolveAlgorithm_PHPSolver,
     ::flatbuffers::Offset<fbs::SolveOptions> options = 0) {
   auto boxes__ = boxes ? _fbb.CreateVector<::flatbuffers::Offset<fbs::BoxType>>(*boxes) : 0;
   auto items__ = items ? _fbb.CreateVector<::flatbuffers::Offset<fbs::ItemType>>(*items) : 0;
@@ -487,6 +610,9 @@ struct SolveOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const fbs::ShitStackOptions *algo_options_as_ShitStackOptions() const {
     return algo_options_type() == fbs::SolveStrategyOptions_ShitStackOptions ? static_cast<const fbs::ShitStackOptions *>(algo_options()) : nullptr;
   }
+  const fbs::PHPSolverOptions *algo_options_as_PHPSolverOptions() const {
+    return algo_options_type() == fbs::SolveStrategyOptions_PHPSolverOptions ? static_cast<const fbs::PHPSolverOptions *>(algo_options()) : nullptr;
+  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -513,6 +639,10 @@ template<> inline const fbs::ExtremePointOptions *SolveOptions::algo_options_as<
 
 template<> inline const fbs::ShitStackOptions *SolveOptions::algo_options_as<fbs::ShitStackOptions>() const {
   return algo_options_as_ShitStackOptions();
+}
+
+template<> inline const fbs::PHPSolverOptions *SolveOptions::algo_options_as<fbs::PHPSolverOptions>() const {
+  return algo_options_as_PHPSolverOptions();
 }
 
 struct SolveOptionsBuilder {
@@ -1085,6 +1215,44 @@ inline ::flatbuffers::Offset<ShitStackOptions> ShitStackOptions::Pack(::flatbuff
       _fbb);
 }
 
+inline PHPSolverOptionsT *PHPSolverOptions::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<PHPSolverOptionsT>(new PHPSolverOptionsT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void PHPSolverOptions::UnPackTo(PHPSolverOptionsT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = balance_weight(); _o->balance_weight = _e; }
+  { auto _e = all_permutations(); _o->all_permutations = _e; }
+  { auto _e = single_box(); _o->single_box = _e; }
+  { auto _e = strict_item_order(); _o->strict_item_order = _e; }
+  { auto _e = best_subset(); _o->best_subset = _e; }
+}
+
+inline ::flatbuffers::Offset<PHPSolverOptions> CreatePHPSolverOptions(::flatbuffers::FlatBufferBuilder &_fbb, const PHPSolverOptionsT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return PHPSolverOptions::Pack(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<PHPSolverOptions> PHPSolverOptions::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const PHPSolverOptionsT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const PHPSolverOptionsT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _balance_weight = _o->balance_weight;
+  auto _all_permutations = _o->all_permutations;
+  auto _single_box = _o->single_box;
+  auto _strict_item_order = _o->strict_item_order;
+  auto _best_subset = _o->best_subset;
+  return fbs::CreatePHPSolverOptions(
+      _fbb,
+      _balance_weight,
+      _all_permutations,
+      _single_box,
+      _strict_item_order,
+      _best_subset);
+}
+
 inline SolveRequestT::SolveRequestT(const SolveRequestT &o)
       : algorithm(o.algorithm),
         options((o.options) ? new fbs::SolveOptionsT(*o.options) : nullptr) {
@@ -1373,6 +1541,10 @@ inline bool VerifySolveStrategyOptions(::flatbuffers::VerifierTemplate<B> &verif
       auto ptr = reinterpret_cast<const fbs::ShitStackOptions *>(obj);
       return verifier.VerifyTable(ptr);
     }
+    case SolveStrategyOptions_PHPSolverOptions: {
+      auto ptr = reinterpret_cast<const fbs::PHPSolverOptions *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
     default: return true;
   }
 }
@@ -1405,6 +1577,10 @@ inline void *SolveStrategyOptionsUnion::UnPack(const void *obj, SolveStrategyOpt
       auto ptr = reinterpret_cast<const fbs::ShitStackOptions *>(obj);
       return ptr->UnPack(resolver);
     }
+    case SolveStrategyOptions_PHPSolverOptions: {
+      auto ptr = reinterpret_cast<const fbs::PHPSolverOptions *>(obj);
+      return ptr->UnPack(resolver);
+    }
     default: return nullptr;
   }
 }
@@ -1424,6 +1600,10 @@ inline ::flatbuffers::Offset<void> SolveStrategyOptionsUnion::Pack(::flatbuffers
       auto ptr = reinterpret_cast<const fbs::ShitStackOptionsT *>(value);
       return CreateShitStackOptions(_fbb, ptr, _rehasher).Union();
     }
+    case SolveStrategyOptions_PHPSolverOptions: {
+      auto ptr = reinterpret_cast<const fbs::PHPSolverOptionsT *>(value);
+      return CreatePHPSolverOptions(_fbb, ptr, _rehasher).Union();
+    }
     default: return 0;
   }
 }
@@ -1440,6 +1620,10 @@ inline SolveStrategyOptionsUnion::SolveStrategyOptionsUnion(const SolveStrategyO
     }
     case SolveStrategyOptions_ShitStackOptions: {
       value = new fbs::ShitStackOptionsT(*reinterpret_cast<fbs::ShitStackOptionsT *>(u.value));
+      break;
+    }
+    case SolveStrategyOptions_PHPSolverOptions: {
+      value = new fbs::PHPSolverOptionsT(*reinterpret_cast<fbs::PHPSolverOptionsT *>(u.value));
       break;
     }
     default:
@@ -1461,6 +1645,11 @@ inline void SolveStrategyOptionsUnion::Reset() {
     }
     case SolveStrategyOptions_ShitStackOptions: {
       auto ptr = reinterpret_cast<fbs::ShitStackOptionsT *>(value);
+      delete ptr;
+      break;
+    }
+    case SolveStrategyOptions_PHPSolverOptions: {
+      auto ptr = reinterpret_cast<fbs::PHPSolverOptionsT *>(value);
       delete ptr;
       break;
     }

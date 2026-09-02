@@ -49,6 +49,13 @@ export type ItemTypeT = {
     linkedGroup?: string | Uint8Array;
     constraint?: PlacementConstraintT | null;
 };
+export type PHPSolverOptionsT = {
+    balanceWeight?: boolean;
+    allPermutations?: boolean;
+    singleBox?: boolean;
+    strictItemOrder?: boolean;
+    bestSubset?: boolean;
+};
 export type PlacementConstraintT = {
     noStacking?: boolean;
     requiredVertical?: boolean;
@@ -67,6 +74,7 @@ export type SolveOptionsT = {
     greedyOptions?: GreedyOptionsT | null;
     extremePointOptions?: ExtremePointOptionsT | null;
     shitStackOptions?: ShitStackOptionsT | null;
+    phpsolverOptions?: PHPSolverOptionsT | null;
 };
 export type BaseOptions = {
     maxBoxes?: number;
@@ -98,9 +106,14 @@ export type SolveRequest = {
         shitStackOptions?: ShitStackOptionsT;
     };
 } | {
+    algorithm: typeof SolveAlgorithm.PHPSolver;
+    options?: BaseOptions & {
+        phpsolverOptions?: PHPSolverOptionsT;
+    };
+} | {
     algorithm?: undefined;
     options?: BaseOptions & {
-        shitStackOptions?: ShitStackOptionsT;
+        phpsolverOptions?: PHPSolverOptionsT;
     };
 });
 export declare function encodeRequest(request: SolveRequest): Uint8Array;

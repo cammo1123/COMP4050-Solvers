@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
 import { ExtremePointOptions } from '../fbs/extreme-point-options.js';
 import { GreedyOptions } from '../fbs/greedy-options.js';
+import { PHPSolverOptions } from '../fbs/phpsolver-options.js';
 import { ShitStackOptions } from '../fbs/shit-stack-options.js';
 export var SolveStrategyOptions;
 (function (SolveStrategyOptions) {
@@ -9,6 +10,7 @@ export var SolveStrategyOptions;
     SolveStrategyOptions[SolveStrategyOptions["GreedyOptions"] = 1] = "GreedyOptions";
     SolveStrategyOptions[SolveStrategyOptions["ExtremePointOptions"] = 2] = "ExtremePointOptions";
     SolveStrategyOptions[SolveStrategyOptions["ShitStackOptions"] = 3] = "ShitStackOptions";
+    SolveStrategyOptions[SolveStrategyOptions["PHPSolverOptions"] = 4] = "PHPSolverOptions";
 })(SolveStrategyOptions || (SolveStrategyOptions = {}));
 export function unionToSolveStrategyOptions(type, accessor) {
     switch (SolveStrategyOptions[type]) {
@@ -16,6 +18,7 @@ export function unionToSolveStrategyOptions(type, accessor) {
         case 'GreedyOptions': return accessor(new GreedyOptions());
         case 'ExtremePointOptions': return accessor(new ExtremePointOptions());
         case 'ShitStackOptions': return accessor(new ShitStackOptions());
+        case 'PHPSolverOptions': return accessor(new PHPSolverOptions());
         default: return null;
     }
 }
@@ -25,6 +28,7 @@ export function unionListToSolveStrategyOptions(type, accessor, index) {
         case 'GreedyOptions': return accessor(index, new GreedyOptions());
         case 'ExtremePointOptions': return accessor(index, new ExtremePointOptions());
         case 'ShitStackOptions': return accessor(index, new ShitStackOptions());
+        case 'PHPSolverOptions': return accessor(index, new PHPSolverOptions());
         default: return null;
     }
 }
