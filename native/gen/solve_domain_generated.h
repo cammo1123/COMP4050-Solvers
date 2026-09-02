@@ -18,7 +18,8 @@ namespace domain {
 enum class SolveAlgorithm : int8_t {
 	Greedy = 0,
 	ExtremePoint = 1,
-	ShitStack = 2
+	ShitStack = 2,
+	PHPSolver = 3
 };
 
 inline SolveAlgorithm toDomain(::fbs::SolveAlgorithm value)
@@ -27,6 +28,7 @@ inline SolveAlgorithm toDomain(::fbs::SolveAlgorithm value)
 	case ::fbs::SolveAlgorithm_Greedy: return SolveAlgorithm::Greedy;
 	case ::fbs::SolveAlgorithm_ExtremePoint: return SolveAlgorithm::ExtremePoint;
 	case ::fbs::SolveAlgorithm_ShitStack: return SolveAlgorithm::ShitStack;
+	case ::fbs::SolveAlgorithm_PHPSolver: return SolveAlgorithm::PHPSolver;
 	default: throw std::invalid_argument("invalid SolveAlgorithm value");
 	}
 }
@@ -37,6 +39,7 @@ inline ::fbs::SolveAlgorithm fromDomain(SolveAlgorithm value)
 	case SolveAlgorithm::Greedy: return ::fbs::SolveAlgorithm_Greedy;
 	case SolveAlgorithm::ExtremePoint: return ::fbs::SolveAlgorithm_ExtremePoint;
 	case SolveAlgorithm::ShitStack: return ::fbs::SolveAlgorithm_ShitStack;
+	case SolveAlgorithm::PHPSolver: return ::fbs::SolveAlgorithm_PHPSolver;
 	default: throw std::invalid_argument("invalid SolveAlgorithm value");
 	}
 }
@@ -53,6 +56,14 @@ struct ShitStackOptions {
 
 };
 
+struct PHPSolverOptions {
+	std::optional<bool> balance_weight = std::nullopt;
+	std::optional<bool> all_permutations = std::nullopt;
+	std::optional<bool> single_box = std::nullopt;
+	std::optional<bool> strict_item_order = std::nullopt;
+	std::optional<bool> best_subset = std::nullopt;
+};
+
 struct SolveOptions {
 	std::optional<uint32_t> max_boxes = std::nullopt;
 	bool allow_rotation = true;
@@ -60,12 +71,13 @@ struct SolveOptions {
 	std::optional<GreedyOptions> greedy_options = std::nullopt;
 	std::optional<ExtremePointOptions> extreme_point_options = std::nullopt;
 	std::optional<ShitStackOptions> shit_stack_options = std::nullopt;
+	std::optional<PHPSolverOptions> phpsolver_options = std::nullopt;
 };
 
 struct SolveRequest {
 	std::vector<BoxType> boxes{};
 	std::vector<ItemType> items{};
-	SolveAlgorithm algorithm = SolveAlgorithm::Greedy;
+	SolveAlgorithm algorithm = SolveAlgorithm::PHPSolver;
 	std::optional<SolveOptions> options = std::nullopt;
 };
 
@@ -142,6 +154,60 @@ inline fbs::ShitStackOptionsT fromDomain([[maybe_unused]] ShitStackOptions const
 	return out;
 }
 
+inline PHPSolverOptions toDomain([[maybe_unused]] fbs::PHPSolverOptionsT const& value)
+{
+	PHPSolverOptions out;
+
+	if (value.balance_weight.has_value()) {
+		out.balance_weight = *value.balance_weight;
+	}
+
+	if (value.all_permutations.has_value()) {
+		out.all_permutations = *value.all_permutations;
+	}
+
+	if (value.single_box.has_value()) {
+		out.single_box = *value.single_box;
+	}
+
+	if (value.strict_item_order.has_value()) {
+		out.strict_item_order = *value.strict_item_order;
+	}
+
+	if (value.best_subset.has_value()) {
+		out.best_subset = *value.best_subset;
+	}
+
+	return out;
+}
+
+inline fbs::PHPSolverOptionsT fromDomain([[maybe_unused]] PHPSolverOptions const& value)
+{
+	fbs::PHPSolverOptionsT out;
+
+	if (value.balance_weight.has_value()) {
+		out.balance_weight = *value.balance_weight;
+	}
+
+	if (value.all_permutations.has_value()) {
+		out.all_permutations = *value.all_permutations;
+	}
+
+	if (value.single_box.has_value()) {
+		out.single_box = *value.single_box;
+	}
+
+	if (value.strict_item_order.has_value()) {
+		out.strict_item_order = *value.strict_item_order;
+	}
+
+	if (value.best_subset.has_value()) {
+		out.best_subset = *value.best_subset;
+	}
+
+	return out;
+}
+
 inline SolveOptions toDomain([[maybe_unused]] fbs::SolveOptionsT const& value)
 {
 	SolveOptions out;
@@ -166,6 +232,10 @@ inline SolveOptions toDomain([[maybe_unused]] fbs::SolveOptionsT const& value)
 
 	if (value.algo_options.type == ::fbs::SolveStrategyOptions_ShitStackOptions) {
 		out.shit_stack_options = toDomain(*value.algo_options.AsShitStackOptions());
+	}
+
+	if (value.algo_options.type == ::fbs::SolveStrategyOptions_PHPSolverOptions) {
+		out.phpsolver_options = toDomain(*value.algo_options.AsPHPSolverOptions());
 	}
 
 	return out;
@@ -195,6 +265,10 @@ inline fbs::SolveOptionsT fromDomain([[maybe_unused]] SolveOptions const& value)
 
 	if (value.shit_stack_options.has_value()) {
 		out.algo_options.Set(fromDomain(*value.shit_stack_options));
+	}
+
+	if (value.phpsolver_options.has_value()) {
+		out.algo_options.Set(fromDomain(*value.phpsolver_options));
 	}
 
 	return out;

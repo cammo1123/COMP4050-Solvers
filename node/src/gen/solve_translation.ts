@@ -9,6 +9,7 @@ import {
 	GreedyOptionsT as GreedyOptionsObject,
 	ItemPlacementT as ItemPlacementObject,
 	ItemTypeT as ItemTypeObject,
+	PHPSolverOptionsT as PHPSolverOptionsObject,
 	PlacementConstraintT as PlacementConstraintObject,
 	ShitStackOptionsT as ShitStackOptionsObject,
 	SolveOptionsT as SolveOptionsObject,
@@ -82,6 +83,14 @@ export type ItemTypeT = {
 	constraint?: PlacementConstraintT | null;
 };
 
+export type PHPSolverOptionsT = {
+	balanceWeight?: boolean;
+	allPermutations?: boolean;
+	singleBox?: boolean;
+	strictItemOrder?: boolean;
+	bestSubset?: boolean;
+};
+
 export type PlacementConstraintT = {
 	noStacking?: boolean;
 	requiredVertical?: boolean;
@@ -104,6 +113,7 @@ export type SolveOptionsT = {
 	greedyOptions?: GreedyOptionsT | null;
 	extremePointOptions?: ExtremePointOptionsT | null;
 	shitStackOptions?: ShitStackOptionsT | null;
+	phpsolverOptions?: PHPSolverOptionsT | null;
 };
 
 export type BaseOptions = {
@@ -126,7 +136,8 @@ export type SolveRequest = {
 	| { algorithm: typeof SolveAlgorithm.Greedy; options?: BaseOptions & { greedyOptions?: GreedyOptionsT } }
 	| { algorithm: typeof SolveAlgorithm.ExtremePoint; options?: BaseOptions & { extremePointOptions?: ExtremePointOptionsT } }
 	| { algorithm: typeof SolveAlgorithm.ShitStack; options?: BaseOptions & { shitStackOptions?: ShitStackOptionsT } }
-	| { algorithm?: undefined; options?: BaseOptions & { shitStackOptions?: ShitStackOptionsT } }
+	| { algorithm: typeof SolveAlgorithm.PHPSolver; options?: BaseOptions & { phpsolverOptions?: PHPSolverOptionsT } }
+	| { algorithm?: undefined; options?: BaseOptions & { phpsolverOptions?: PHPSolverOptionsT } }
 );
 
 
@@ -142,6 +153,10 @@ function toAlgoOptionsT(options: any): { type: SolveStrategyOptions; value: any 
 	if (options?.shitStackOptions) {
 		const value = options.shitStackOptions;
 		return { type: SolveStrategyOptions.ShitStackOptions, value: new ShitStackOptionsObject() };
+	}
+	if (options?.phpsolverOptions) {
+		const value = options.phpsolverOptions;
+		return { type: SolveStrategyOptions.PHPSolverOptions, value: new PHPSolverOptionsObject(value.balanceWeight ?? null, value.allPermutations ?? null, value.singleBox ?? null, value.strictItemOrder ?? null, value.bestSubset ?? null) };
 	}
 	return { type: SolveStrategyOptions.NONE, value: null };
 }
@@ -160,7 +175,7 @@ export function encodeRequest(request: SolveRequest): Uint8Array {
 	const message = new SolveRequestObject(
 		(request.boxes ?? []).map((item) => new BoxTypeObject(item.reference, item.width, item.length, item.depth, item.maxWeight, item.boxWeight, item.active, item.maximumBoxes, item.outerWidth, item.outerLength, item.outerDepth)),
 		(request.items ?? []).map((item) => new ItemTypeObject(item.itemCode, item.itemReference, item.width, item.length, item.depth, item.weight, item.quantity, item.boxGroup, item.rotationPolicy, item.linkedGroup, item.constraint ? new PlacementConstraintObject(item.constraint.noStacking, item.constraint.requiredVertical, item.constraint.minX, item.constraint.minY, item.constraint.minZ, item.constraint.maxX, item.constraint.maxY, item.constraint.maxZ) : null)),
-		('algorithm' in request && request.algorithm !== undefined && request.algorithm !== null) ? request.algorithm : SolveAlgorithm.ShitStack,
+		('algorithm' in request && request.algorithm !== undefined && request.algorithm !== null) ? request.algorithm : SolveAlgorithm.PHPSolver,
 		optionsT,
 	);
 

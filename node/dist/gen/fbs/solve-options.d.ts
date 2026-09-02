@@ -1,6 +1,7 @@
 import * as flatbuffers from 'flatbuffers';
 import { ExtremePointOptionsT } from '../fbs/extreme-point-options.js';
 import { GreedyOptionsT } from '../fbs/greedy-options.js';
+import { PHPSolverOptionsT } from '../fbs/phpsolver-options.js';
 import { ShitStackOptionsT } from '../fbs/shit-stack-options.js';
 import { SolveStrategyOptions } from '../fbs/solve-strategy-options.js';
 export declare class SolveOptions implements flatbuffers.IUnpackableObject<SolveOptionsT> {
@@ -30,8 +31,8 @@ export declare class SolveOptionsT implements flatbuffers.IGeneratedObject {
     allowRotation: boolean;
     timeoutMs: number | null;
     algoOptionsType: SolveStrategyOptions;
-    algoOptions: ExtremePointOptionsT | GreedyOptionsT | ShitStackOptionsT | null;
-    constructor(maxBoxes?: number | null, allowRotation?: boolean, timeoutMs?: number | null, algoOptionsType?: SolveStrategyOptions, algoOptions?: ExtremePointOptionsT | GreedyOptionsT | ShitStackOptionsT | null);
+    algoOptions: ExtremePointOptionsT | GreedyOptionsT | PHPSolverOptionsT | ShitStackOptionsT | null;
+    constructor(maxBoxes?: number | null, allowRotation?: boolean, timeoutMs?: number | null, algoOptionsType?: SolveStrategyOptions, algoOptions?: ExtremePointOptionsT | GreedyOptionsT | PHPSolverOptionsT | ShitStackOptionsT | null);
     pack(builder: flatbuffers.Builder): flatbuffers.Offset;
 }
 //# sourceMappingURL=solve-options.d.ts.map
