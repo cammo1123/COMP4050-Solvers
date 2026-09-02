@@ -60,15 +60,19 @@ void SolveWorker::Execute()
 
 void SolveWorker::OnOK()
 {
-	if (_tsfn)
+	if (_tsfn) {
+		_tsfn.BlockingCall();
 		_tsfn.Release();
+	}
 	_deferred.Resolve(Napi::Buffer<uint8_t>::Copy(Env(), _response.data(), _response.size()));
 }
 
 void SolveWorker::OnError(Napi::Error const& error)
 {
-	if (_tsfn)
+	if (_tsfn) {
+		_tsfn.BlockingCall();
 		_tsfn.Release();
+	}
 	_deferred.Reject(Napi::Error::New(Env(), error.Message()).Value());
 }
 
