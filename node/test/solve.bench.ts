@@ -20,7 +20,7 @@ function createRequest(itemCount: number, algorithm?: SolveAlgorithm): SolveInpu
 			itemReference: `Item ${index}`,
 			...itemShapes[index % itemShapes.length],
 		})),
-		...(algorithm === undefined ? {} : { options: { algorithm } }),
+		...(algorithm === undefined ? {} : { algorithm }),
 	};
 }
 

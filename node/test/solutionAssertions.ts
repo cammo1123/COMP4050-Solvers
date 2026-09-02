@@ -89,10 +89,12 @@ function assertContentWeight(box: BoxTypeT, items: ItemTypeT[]): void {
 export function assertValidSolution(request: SolveRequest, response: SolveResponse): void {
 	const remaining = [...request.items];
 	const boxUsage = new Map<string, number>();
-	const allowRotation = request.options?.allowRotation ?? true;
+	const options = request.options;
+	const phpsolverOptions = options && "phpsolverOptions" in options ? options.phpsolverOptions : undefined;
+	const allowRotation = phpsolverOptions?.allowRotation ?? true;
 
-	if (request.options?.maxBoxes !== undefined) {
-		expect(response.results.length, "solution exceeds maxBoxes").toBeLessThanOrEqual(request.options.maxBoxes);
+	if (phpsolverOptions?.maxBoxes !== undefined) {
+		expect(response.results.length, "solution exceeds maxBoxes").toBeLessThanOrEqual(phpsolverOptions.maxBoxes);
 	}
 
 	for (const result of response.results) {

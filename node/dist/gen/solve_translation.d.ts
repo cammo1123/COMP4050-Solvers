@@ -55,6 +55,8 @@ export type PHPSolverOptionsT = {
     singleBox?: boolean;
     strictItemOrder?: boolean;
     bestSubset?: boolean;
+    maxBoxes?: number;
+    allowRotation?: boolean;
 };
 export type PlacementConstraintT = {
     noStacking?: boolean;
@@ -68,8 +70,6 @@ export type PlacementConstraintT = {
 };
 export type ShitStackOptionsT = {};
 export type SolveOptionsT = {
-    maxBoxes?: number;
-    allowRotation?: boolean;
     timeoutMs?: number;
     greedyOptions?: GreedyOptionsT | null;
     extremePointOptions?: ExtremePointOptionsT | null;
@@ -77,8 +77,6 @@ export type SolveOptionsT = {
     phpsolverOptions?: PHPSolverOptionsT | null;
 };
 export type BaseOptions = {
-    maxBoxes?: number;
-    allowRotation?: boolean;
     timeoutMs?: number;
 };
 export type SolveResponse = {

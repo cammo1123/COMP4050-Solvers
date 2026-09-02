@@ -49,8 +49,18 @@ bestSubset():boolean|null {
   return offset ? !!this.bb!.readInt8(this.bb_pos + offset) : null;
 }
 
+maxBoxes():number|null {
+  const offset = this.bb!.__offset(this.bb_pos, 14);
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : null;
+}
+
+allowRotation():boolean {
+  const offset = this.bb!.__offset(this.bb_pos, 16);
+  return offset ? !!this.bb!.readInt8(this.bb_pos + offset) : true;
+}
+
 static startPHPSolverOptions(builder:flatbuffers.Builder) {
-  builder.startObject(5);
+  builder.startObject(7);
 }
 
 static addBalanceWeight(builder:flatbuffers.Builder, balanceWeight:boolean) {
@@ -73,12 +83,20 @@ static addBestSubset(builder:flatbuffers.Builder, bestSubset:boolean) {
   builder.addFieldInt8(4, +bestSubset, null);
 }
 
+static addMaxBoxes(builder:flatbuffers.Builder, maxBoxes:number) {
+  builder.addFieldInt32(5, maxBoxes, null);
+}
+
+static addAllowRotation(builder:flatbuffers.Builder, allowRotation:boolean) {
+  builder.addFieldInt8(6, +allowRotation, +true);
+}
+
 static endPHPSolverOptions(builder:flatbuffers.Builder):flatbuffers.Offset {
   const offset = builder.endObject();
   return offset;
 }
 
-static createPHPSolverOptions(builder:flatbuffers.Builder, balanceWeight:boolean|null, allPermutations:boolean|null, singleBox:boolean|null, strictItemOrder:boolean|null, bestSubset:boolean|null):flatbuffers.Offset {
+static createPHPSolverOptions(builder:flatbuffers.Builder, balanceWeight:boolean|null, allPermutations:boolean|null, singleBox:boolean|null, strictItemOrder:boolean|null, bestSubset:boolean|null, maxBoxes:number|null, allowRotation:boolean):flatbuffers.Offset {
   PHPSolverOptions.startPHPSolverOptions(builder);
   if (balanceWeight !== null)
     PHPSolverOptions.addBalanceWeight(builder, balanceWeight);
@@ -90,6 +108,9 @@ static createPHPSolverOptions(builder:flatbuffers.Builder, balanceWeight:boolean
     PHPSolverOptions.addStrictItemOrder(builder, strictItemOrder);
   if (bestSubset !== null)
     PHPSolverOptions.addBestSubset(builder, bestSubset);
+  if (maxBoxes !== null)
+    PHPSolverOptions.addMaxBoxes(builder, maxBoxes);
+  PHPSolverOptions.addAllowRotation(builder, allowRotation);
   return PHPSolverOptions.endPHPSolverOptions(builder);
 }
 
@@ -99,7 +120,9 @@ unpack(): PHPSolverOptionsT {
     this.allPermutations(),
     this.singleBox(),
     this.strictItemOrder(),
-    this.bestSubset()
+    this.bestSubset(),
+    this.maxBoxes(),
+    this.allowRotation()
   );
 }
 
@@ -110,6 +133,8 @@ unpackTo(_o: PHPSolverOptionsT): void {
   _o.singleBox = this.singleBox();
   _o.strictItemOrder = this.strictItemOrder();
   _o.bestSubset = this.bestSubset();
+  _o.maxBoxes = this.maxBoxes();
+  _o.allowRotation = this.allowRotation();
 }
 }
 
@@ -119,7 +144,9 @@ constructor(
   public allPermutations: boolean|null = null,
   public singleBox: boolean|null = null,
   public strictItemOrder: boolean|null = null,
-  public bestSubset: boolean|null = null
+  public bestSubset: boolean|null = null,
+  public maxBoxes: number|null = null,
+  public allowRotation: boolean = true
 ){}
 
 
@@ -129,7 +156,9 @@ pack(builder:flatbuffers.Builder): flatbuffers.Offset {
     this.allPermutations,
     this.singleBox,
     this.strictItemOrder,
-    this.bestSubset
+    this.bestSubset,
+    this.maxBoxes,
+    this.allowRotation
   );
 }
 }

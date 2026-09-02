@@ -16,13 +16,13 @@ function toAlgoOptionsT(options) {
     }
     if (options?.phpsolverOptions) {
         const value = options.phpsolverOptions;
-        return { type: SolveStrategyOptions.PHPSolverOptions, value: new PHPSolverOptionsObject(value.balanceWeight ?? null, value.allPermutations ?? null, value.singleBox ?? null, value.strictItemOrder ?? null, value.bestSubset ?? null) };
+        return { type: SolveStrategyOptions.PHPSolverOptions, value: new PHPSolverOptionsObject(value.balanceWeight ?? null, value.allPermutations ?? null, value.singleBox ?? null, value.strictItemOrder ?? null, value.bestSubset ?? null, value.maxBoxes ?? null, value.allowRotation ?? true) };
     }
     return { type: SolveStrategyOptions.NONE, value: null };
 }
 export function encodeRequest(request) {
     const algoOptions = toAlgoOptionsT(request.options);
-    const optionsT = request.options ? new SolveOptionsObject(request.options.maxBoxes ?? null, request.options.allowRotation ?? true, request.options.timeoutMs ?? null, algoOptions.type, algoOptions.value) : null;
+    const optionsT = request.options ? new SolveOptionsObject(request.options.timeoutMs ?? null, algoOptions.type, algoOptions.value) : null;
     const message = new SolveRequestObject((request.boxes ?? []).map((item) => new BoxTypeObject(item.reference, item.width, item.length, item.depth, item.maxWeight, item.boxWeight, item.active, item.maximumBoxes, item.outerWidth, item.outerLength, item.outerDepth)), (request.items ?? []).map((item) => new ItemTypeObject(item.itemCode, item.itemReference, item.width, item.length, item.depth, item.weight, item.quantity, item.boxGroup, item.rotationPolicy, item.linkedGroup, item.constraint ? new PlacementConstraintObject(item.constraint.noStacking, item.constraint.requiredVertical, item.constraint.minX, item.constraint.minY, item.constraint.minZ, item.constraint.maxX, item.constraint.maxY, item.constraint.maxZ) : null)), ('algorithm' in request && request.algorithm !== undefined && request.algorithm !== null) ? request.algorithm : SolveAlgorithm.PHPSolver, optionsT);
     const builder = new flatbuffers.Builder();
     builder.finish(message.pack(builder));

@@ -10,12 +10,15 @@ const request: SolveRequest = {
 		{ itemCode: "a", itemReference: "a", width: 2, length: 2, depth: 2, weight: 2 },
 		{ itemCode: "b", itemReference: "b", width: 2, length: 2, depth: 2, weight: 3 },
 	],
-	options: { allowRotation: false, maxBoxes: 1 },
+	options: { phpsolverOptions: { allowRotation: false, maxBoxes: 1 } },
 };
 
-const validResponse: SolveResponse = {
-	results: [{
-		boxReference: "box",
+	const validResponse: SolveResponse = {
+		results: [{
+			boxReference: "box",
+			width: 5,
+			length: 2,
+			depth: 2,
 		placements: [
 			{ itemCode: "a", itemReference: "a", x: 0, y: 0, z: 0, width: 2, length: 2, depth: 2 },
 			{ itemCode: "b", itemReference: "b", x: 3, y: 0, z: 0, width: 2, length: 2, depth: 2 },
@@ -67,7 +70,11 @@ describe("assertValidSolution", () => {
 
 	it("accepts a dimension permutation when rotation is enabled", () => {
 		const rotatedRequest = structuredClone(request);
-		rotatedRequest.options = { ...rotatedRequest.options, allowRotation: true };
+		const rotatedOptions = rotatedRequest.options;
+		rotatedRequest.options = {
+			...rotatedOptions,
+			phpsolverOptions: { ...(rotatedOptions && "phpsolverOptions" in rotatedOptions ? rotatedOptions.phpsolverOptions : undefined), allowRotation: true },
+		};
 		rotatedRequest.items[0] = { ...rotatedRequest.items[0], width: 1, length: 2, depth: 2 };
 		const response = cloneResponse();
 		response.results[0].placements[0] = { ...response.results[0].placements[0], width: 2, length: 1, depth: 2 };

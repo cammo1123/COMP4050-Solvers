@@ -364,6 +364,8 @@ struct PHPSolverOptionsT : public ::flatbuffers::NativeTable {
   ::flatbuffers::Optional<bool> single_box = ::flatbuffers::nullopt;
   ::flatbuffers::Optional<bool> strict_item_order = ::flatbuffers::nullopt;
   ::flatbuffers::Optional<bool> best_subset = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<uint32_t> max_boxes = ::flatbuffers::nullopt;
+  bool allow_rotation = true;
 };
 
 struct PHPSolverOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
@@ -374,7 +376,9 @@ struct PHPSolverOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_ALL_PERMUTATIONS = 6,
     VT_SINGLE_BOX = 8,
     VT_STRICT_ITEM_ORDER = 10,
-    VT_BEST_SUBSET = 12
+    VT_BEST_SUBSET = 12,
+    VT_MAX_BOXES = 14,
+    VT_ALLOW_ROTATION = 16
   };
   ::flatbuffers::Optional<bool> balance_weight() const {
     return GetOptional<uint8_t, bool>(VT_BALANCE_WEIGHT);
@@ -391,6 +395,12 @@ struct PHPSolverOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   ::flatbuffers::Optional<bool> best_subset() const {
     return GetOptional<uint8_t, bool>(VT_BEST_SUBSET);
   }
+  ::flatbuffers::Optional<uint32_t> max_boxes() const {
+    return GetOptional<uint32_t, uint32_t>(VT_MAX_BOXES);
+  }
+  bool allow_rotation() const {
+    return GetField<uint8_t>(VT_ALLOW_ROTATION, 1) != 0;
+  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -399,6 +409,8 @@ struct PHPSolverOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<uint8_t>(verifier, VT_SINGLE_BOX, 1) &&
            VerifyField<uint8_t>(verifier, VT_STRICT_ITEM_ORDER, 1) &&
            VerifyField<uint8_t>(verifier, VT_BEST_SUBSET, 1) &&
+           VerifyField<uint32_t>(verifier, VT_MAX_BOXES, 4) &&
+           VerifyField<uint8_t>(verifier, VT_ALLOW_ROTATION, 1) &&
            verifier.EndTable();
   }
   PHPSolverOptionsT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
@@ -425,6 +437,12 @@ struct PHPSolverOptionsBuilder {
   void add_best_subset(bool best_subset) {
     fbb_.AddElement<uint8_t>(PHPSolverOptions::VT_BEST_SUBSET, static_cast<uint8_t>(best_subset));
   }
+  void add_max_boxes(uint32_t max_boxes) {
+    fbb_.AddElement<uint32_t>(PHPSolverOptions::VT_MAX_BOXES, max_boxes);
+  }
+  void add_allow_rotation(bool allow_rotation) {
+    fbb_.AddElement<uint8_t>(PHPSolverOptions::VT_ALLOW_ROTATION, static_cast<uint8_t>(allow_rotation), 1);
+  }
   explicit PHPSolverOptionsBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -442,8 +460,12 @@ inline ::flatbuffers::Offset<PHPSolverOptions> CreatePHPSolverOptions(
     ::flatbuffers::Optional<bool> all_permutations = ::flatbuffers::nullopt,
     ::flatbuffers::Optional<bool> single_box = ::flatbuffers::nullopt,
     ::flatbuffers::Optional<bool> strict_item_order = ::flatbuffers::nullopt,
-    ::flatbuffers::Optional<bool> best_subset = ::flatbuffers::nullopt) {
+    ::flatbuffers::Optional<bool> best_subset = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<uint32_t> max_boxes = ::flatbuffers::nullopt,
+    bool allow_rotation = true) {
   PHPSolverOptionsBuilder builder_(_fbb);
+  if(max_boxes) { builder_.add_max_boxes(*max_boxes); }
+  builder_.add_allow_rotation(allow_rotation);
   if(best_subset) { builder_.add_best_subset(*best_subset); }
   if(strict_item_order) { builder_.add_strict_item_order(*strict_item_order); }
   if(single_box) { builder_.add_single_box(*single_box); }
@@ -569,8 +591,6 @@ inline ::flatbuffers::Offset<SolveRequest> CreateSolveRequestDirect(
 
 struct SolveOptionsT : public ::flatbuffers::NativeTable {
   typedef SolveOptions TableType;
-  ::flatbuffers::Optional<uint32_t> max_boxes = ::flatbuffers::nullopt;
-  bool allow_rotation = true;
   ::flatbuffers::Optional<uint32_t> timeout_ms = ::flatbuffers::nullopt;
   fbs::SolveStrategyOptionsUnion algo_options{};
 };
@@ -579,18 +599,10 @@ struct SolveOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef SolveOptionsT NativeTableType;
   typedef SolveOptionsBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_MAX_BOXES = 4,
-    VT_ALLOW_ROTATION = 6,
-    VT_TIMEOUT_MS = 8,
-    VT_ALGO_OPTIONS_TYPE = 10,
-    VT_ALGO_OPTIONS = 12
+    VT_TIMEOUT_MS = 4,
+    VT_ALGO_OPTIONS_TYPE = 6,
+    VT_ALGO_OPTIONS = 8
   };
-  ::flatbuffers::Optional<uint32_t> max_boxes() const {
-    return GetOptional<uint32_t, uint32_t>(VT_MAX_BOXES);
-  }
-  bool allow_rotation() const {
-    return GetField<uint8_t>(VT_ALLOW_ROTATION, 1) != 0;
-  }
   ::flatbuffers::Optional<uint32_t> timeout_ms() const {
     return GetOptional<uint32_t, uint32_t>(VT_TIMEOUT_MS);
   }
@@ -616,8 +628,6 @@ struct SolveOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint32_t>(verifier, VT_MAX_BOXES, 4) &&
-           VerifyField<uint8_t>(verifier, VT_ALLOW_ROTATION, 1) &&
            VerifyField<uint32_t>(verifier, VT_TIMEOUT_MS, 4) &&
            VerifyField<uint8_t>(verifier, VT_ALGO_OPTIONS_TYPE, 1) &&
            VerifyOffset(verifier, VT_ALGO_OPTIONS) &&
@@ -649,12 +659,6 @@ struct SolveOptionsBuilder {
   typedef SolveOptions Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  void add_max_boxes(uint32_t max_boxes) {
-    fbb_.AddElement<uint32_t>(SolveOptions::VT_MAX_BOXES, max_boxes);
-  }
-  void add_allow_rotation(bool allow_rotation) {
-    fbb_.AddElement<uint8_t>(SolveOptions::VT_ALLOW_ROTATION, static_cast<uint8_t>(allow_rotation), 1);
-  }
   void add_timeout_ms(uint32_t timeout_ms) {
     fbb_.AddElement<uint32_t>(SolveOptions::VT_TIMEOUT_MS, timeout_ms);
   }
@@ -677,17 +681,13 @@ struct SolveOptionsBuilder {
 
 inline ::flatbuffers::Offset<SolveOptions> CreateSolveOptions(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Optional<uint32_t> max_boxes = ::flatbuffers::nullopt,
-    bool allow_rotation = true,
     ::flatbuffers::Optional<uint32_t> timeout_ms = ::flatbuffers::nullopt,
     fbs::SolveStrategyOptions algo_options_type = fbs::SolveStrategyOptions_NONE,
     ::flatbuffers::Offset<void> algo_options = 0) {
   SolveOptionsBuilder builder_(_fbb);
   builder_.add_algo_options(algo_options);
   if(timeout_ms) { builder_.add_timeout_ms(*timeout_ms); }
-  if(max_boxes) { builder_.add_max_boxes(*max_boxes); }
   builder_.add_algo_options_type(algo_options_type);
-  builder_.add_allow_rotation(allow_rotation);
   return builder_.Finish();
 }
 
@@ -1229,6 +1229,8 @@ inline void PHPSolverOptions::UnPackTo(PHPSolverOptionsT *_o, const ::flatbuffer
   { auto _e = single_box(); _o->single_box = _e; }
   { auto _e = strict_item_order(); _o->strict_item_order = _e; }
   { auto _e = best_subset(); _o->best_subset = _e; }
+  { auto _e = max_boxes(); _o->max_boxes = _e; }
+  { auto _e = allow_rotation(); _o->allow_rotation = _e; }
 }
 
 inline ::flatbuffers::Offset<PHPSolverOptions> CreatePHPSolverOptions(::flatbuffers::FlatBufferBuilder &_fbb, const PHPSolverOptionsT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
@@ -1244,13 +1246,17 @@ inline ::flatbuffers::Offset<PHPSolverOptions> PHPSolverOptions::Pack(::flatbuff
   auto _single_box = _o->single_box;
   auto _strict_item_order = _o->strict_item_order;
   auto _best_subset = _o->best_subset;
+  auto _max_boxes = _o->max_boxes;
+  auto _allow_rotation = _o->allow_rotation;
   return fbs::CreatePHPSolverOptions(
       _fbb,
       _balance_weight,
       _all_permutations,
       _single_box,
       _strict_item_order,
-      _best_subset);
+      _best_subset,
+      _max_boxes,
+      _allow_rotation);
 }
 
 inline SolveRequestT::SolveRequestT(const SolveRequestT &o)
@@ -1314,8 +1320,6 @@ inline SolveOptionsT *SolveOptions::UnPack(const ::flatbuffers::resolver_functio
 inline void SolveOptions::UnPackTo(SolveOptionsT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
   (void)_o;
   (void)_resolver;
-  { auto _e = max_boxes(); _o->max_boxes = _e; }
-  { auto _e = allow_rotation(); _o->allow_rotation = _e; }
   { auto _e = timeout_ms(); _o->timeout_ms = _e; }
   { auto _e = algo_options_type(); _o->algo_options.type = _e; }
   { auto _e = algo_options(); if (_e) _o->algo_options.value = fbs::SolveStrategyOptionsUnion::UnPack(_e, algo_options_type(), _resolver); }
@@ -1329,15 +1333,11 @@ inline ::flatbuffers::Offset<SolveOptions> SolveOptions::Pack(::flatbuffers::Fla
   (void)_rehasher;
   (void)_o;
   struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const SolveOptionsT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
-  auto _max_boxes = _o->max_boxes;
-  auto _allow_rotation = _o->allow_rotation;
   auto _timeout_ms = _o->timeout_ms;
   auto _algo_options_type = _o->algo_options.type;
   auto _algo_options = _o->algo_options.Pack(_fbb);
   return fbs::CreateSolveOptions(
       _fbb,
-      _max_boxes,
-      _allow_rotation,
       _timeout_ms,
       _algo_options_type,
       _algo_options);
