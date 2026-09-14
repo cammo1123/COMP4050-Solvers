@@ -65,7 +65,7 @@ bool valid_rotation(Item const& item, Dimensions dimensions)
 
 bool intrinsically_stable(Dimensions dimensions, Dimensions box_dimensions)
 {
-	return std::atan(static_cast<double>(std::min(dimensions.width, dimensions.length)) / (dimensions.height == 0 ? 1 : dimensions.height)) > 0.261 || dimensions.height == box_dimensions.height;
+	return std::atan(static_cast<double>(std::min(dimensions.width, dimensions.length)) / (dimensions.depth == 0 ? 1 : dimensions.depth)) > 0.261 || dimensions.depth == box_dimensions.depth;
 }
 
 bool simple_item(Item const& item)
@@ -92,7 +92,7 @@ std::optional<PackedItem> place_repeated(Dimensions box_dimensions, Item const& 
 	std::vector<uint32_t> z_edges { 0 };
 	for (auto const& existing : placed) {
 		add_edge(x_edges, existing.x, existing.dimensions.width);
-		add_edge(y_edges, existing.y, existing.dimensions.height);
+		add_edge(y_edges, existing.y, existing.dimensions.depth);
 		add_edge(z_edges, existing.z, existing.dimensions.length);
 	}
 	std::sort(x_edges.begin(), x_edges.end());
@@ -115,13 +115,13 @@ std::optional<PackedItem> place_repeated(Dimensions box_dimensions, Item const& 
 bool supported(PackedBox const& box, PackedItem const& item)
 {
 	auto const& constraint = item.item.constraint;
-	if (!fits(item.x, item.dimensions.width, box.dimensions.width) || !fits(item.y, item.dimensions.height, box.dimensions.height) || !fits(item.z, item.dimensions.length, box.dimensions.length))
+	if (!fits(item.x, item.dimensions.width, box.dimensions.width) || !fits(item.y, item.dimensions.depth, box.dimensions.depth) || !fits(item.z, item.dimensions.length, box.dimensions.length))
 		return false;
-	if (item.dimensions.width == 0 || item.dimensions.height == 0 || item.dimensions.length == 0 || !valid_rotation(item.item, item.dimensions))
+	if (item.dimensions.width == 0 || item.dimensions.depth == 0 || item.dimensions.length == 0 || !valid_rotation(item.item, item.dimensions))
 		return false;
 	if (item.x < constraint.min_x || item.y < constraint.min_y || item.z < constraint.min_z || item.x > constraint.max_x || item.y > constraint.max_y || item.z > constraint.max_z)
 		return false;
-	if (constraint.required_vertical && item.dimensions.height != item.item.dimensions.height)
+	if (constraint.required_vertical && item.dimensions.depth != item.item.dimensions.depth)
 		return false;
 	if (constraint.no_stacking && item.y != 0)
 		return false;
@@ -139,26 +139,26 @@ void normalize_rotated(PackedBox& box)
 		auto const dimensions = item.dimensions;
 		item.x = z;
 		item.z = x;
-		item.dimensions = { dimensions.length, dimensions.height, dimensions.width };
+		item.dimensions = { dimensions.length, dimensions.depth, dimensions.width };
 		std::swap(item.item.constraint.min_x, item.item.constraint.min_z);
 		std::swap(item.item.constraint.max_x, item.item.constraint.max_z);
 	}
-	box.dimensions = { box.dimensions.length, box.dimensions.height, box.dimensions.width };
+	box.dimensions = { box.dimensions.length, box.dimensions.depth, box.dimensions.width };
 }
 
 bool valid_box(PackedBox const& box)
 {
-	if (box.dimensions.width == 0 || box.dimensions.height == 0 || box.dimensions.length == 0)
+	if (box.dimensions.width == 0 || box.dimensions.depth == 0 || box.dimensions.length == 0)
 		return false;
 	float weight = box.box.empty_weight;
 	for (size_t i = 0; i < box.items.size(); ++i) {
 		auto const& item = box.items[i];
-		if (!fits(item.x, item.dimensions.width, box.dimensions.width) || !fits(item.y, item.dimensions.height, box.dimensions.height) || !fits(item.z, item.dimensions.length, box.dimensions.length) || !valid_rotation(item.item, item.dimensions))
+		if (!fits(item.x, item.dimensions.width, box.dimensions.width) || !fits(item.y, item.dimensions.depth, box.dimensions.depth) || !fits(item.z, item.dimensions.length, box.dimensions.length) || !valid_rotation(item.item, item.dimensions))
 			return false;
-		if (item.dimensions.width == 0 || item.dimensions.height == 0 || item.dimensions.length == 0)
+		if (item.dimensions.width == 0 || item.dimensions.depth == 0 || item.dimensions.length == 0)
 			return false;
 		auto const& constraint = item.item.constraint;
-		if (item.x < constraint.min_x || item.y < constraint.min_y || item.z < constraint.min_z || item.x > constraint.max_x || item.y > constraint.max_y || item.z > constraint.max_z || (constraint.required_vertical && item.dimensions.height != item.item.dimensions.height) || (constraint.no_stacking && item.y != 0) || !stable(box, item))
+		if (item.x < constraint.min_x || item.y < constraint.min_y || item.z < constraint.min_z || item.x > constraint.max_x || item.y > constraint.max_y || item.z > constraint.max_z || (constraint.required_vertical && item.dimensions.depth != item.item.dimensions.depth) || (constraint.no_stacking && item.y != 0) || !stable(box, item))
 			return false;
 		weight += item.item.weight;
 		for (size_t j = 0; j < i; ++j)
@@ -199,7 +199,7 @@ void stabilize_layers(PackedBox& box)
 {
 	struct Layer {
 		uint32_t start_y = 0;
-		uint32_t height = 0;
+		uint32_t depth = 0;
 		uint64_t footprint = 0;
 		std::vector<size_t> items;
 	};
@@ -211,11 +211,11 @@ void stabilize_layers(PackedBox& box)
 		auto layer = std::find_if(layers.begin(), layers.end(), [&](auto const& value) { return value.start_y == item.y; });
 
 		if (layer == layers.end()) {
-			layers.push_back({ item.y, item.dimensions.height, 0, { index } });
+			layers.push_back({ item.y, item.dimensions.depth, 0, { index } });
 			layer = std::prev(layers.end());
 		} else {
 			layer->items.push_back(index);
-			layer->height = std::max(layer->height, item.dimensions.height);
+			layer->depth = std::max(layer->depth, item.dimensions.depth);
 		}
 
 		uint32_t max_x = 0;
@@ -235,7 +235,7 @@ void stabilize_layers(PackedBox& box)
 	}
 
 	std::sort(layers.begin(), layers.end(), [](auto const& a, auto const& b) {
-		return a.footprint != b.footprint ? a.footprint > b.footprint : a.height > b.height;
+		return a.footprint != b.footprint ? a.footprint > b.footprint : a.depth > b.depth;
 	});
 
 	uint32_t current_y = 0;
@@ -244,7 +244,7 @@ void stabilize_layers(PackedBox& box)
 			box.items[index].y = current_y + (box.items[index].y - layer.start_y);
 		}
 
-		current_y += layer.height;
+		current_y += layer.depth;
 	}
 }
 
@@ -281,7 +281,7 @@ std::optional<PackedItem> place(Box const& box, Dimensions box_dimensions, Item 
 			continue;
 
 		if (placed.size() <= 100)
-			debug("void_finder begin box=", box.reference, " placed=", placed.size(), " orientation=", dimensions.width, "x", dimensions.height, "x", dimensions.length);
+			debug("void_finder begin box=", box.reference, " placed=", placed.size(), " orientation=", dimensions.width, "x", dimensions.depth, "x", dimensions.length);
 		auto spaces = VoidFinder::find(box_dimensions, placed);
 		if (placed.size() <= 100)
 			debug("void_finder end box=", box.reference, " placed=", placed.size(), " spaces=", spaces.size());
@@ -294,7 +294,7 @@ std::optional<PackedItem> place(Box const& box, Dimensions box_dimensions, Item 
 			if (item.constraint.min_x > space.x && item.constraint.min_x < space.x + space.dimensions.width)
 				coordinates[0].push_back(item.constraint.min_x);
 
-			if (item.constraint.min_y > space.y && item.constraint.min_y < space.y + space.dimensions.height)
+			if (item.constraint.min_y > space.y && item.constraint.min_y < space.y + space.dimensions.depth)
 				coordinates[1].push_back(item.constraint.min_y);
 
 			if (item.constraint.min_z > space.z && item.constraint.min_z < space.z + space.dimensions.length)
@@ -317,10 +317,10 @@ std::optional<PackedItem> place(Box const& box, Dimensions box_dimensions, Item 
 
 std::optional<PackedBox> try_box_once(Box const& box, std::vector<Item> const& items, bool allow_rotation, Clock::time_point deadline, ProgressCallback const& progress)
 {
-	debug("try_box_once begin box=", box.reference, " items=", items.size(), " dimensions=", box.dimensions.width, "x", box.dimensions.height, "x", box.dimensions.length);
+	debug("try_box_once begin box=", box.reference, " items=", items.size(), " dimensions=", box.dimensions.width, "x", box.dimensions.depth, "x", box.dimensions.length);
 	std::vector<Dimensions> box_orientations { { box.dimensions } };
 	if (std::all_of(items.begin(), items.end(), [](auto const& item) { return item.rotation != RotationPolicy::Never; }))
-		box_orientations.push_back({ box.dimensions.length, box.dimensions.height, box.dimensions.width });
+		box_orientations.push_back({ box.dimensions.length, box.dimensions.depth, box.dimensions.width });
 
 	std::optional<PackedBox> best;
 	for (auto box_dimensions : box_orientations) {

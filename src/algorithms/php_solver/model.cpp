@@ -22,12 +22,12 @@ uint64_t end(uint32_t start, uint32_t size)
 
 uint64_t Dimensions::volume() const
 {
-	return multiply_safely(multiply_safely(width, height), length);
+	return multiply_safely(multiply_safely(width, depth), length);
 }
 
 bool Dimensions::operator==(Dimensions const& other) const
 {
-	return width == other.width && height == other.height && length == other.length;
+	return width == other.width && depth == other.depth && length == other.length;
 }
 
 uint64_t PackedBox::used_volume() const
@@ -40,12 +40,12 @@ uint64_t PackedBox::used_volume() const
 
 bool contains(Dimensions outer, Dimensions inner)
 {
-	return inner.width <= outer.width && inner.height <= outer.height && inner.length <= outer.length;
+	return inner.width <= outer.width && inner.depth <= outer.depth && inner.length <= outer.length;
 }
 
 bool overlaps(PackedItem const& a, PackedItem const& b)
 {
-	return static_cast<uint64_t>(a.x) < end(b.x, b.dimensions.width) && static_cast<uint64_t>(b.x) < end(a.x, a.dimensions.width) && static_cast<uint64_t>(a.y) < end(b.y, b.dimensions.height) && static_cast<uint64_t>(b.y) < end(a.y, a.dimensions.height) && static_cast<uint64_t>(a.z) < end(b.z, b.dimensions.length) && static_cast<uint64_t>(b.z) < end(a.z, a.dimensions.length);
+	return static_cast<uint64_t>(a.x) < end(b.x, b.dimensions.width) && static_cast<uint64_t>(b.x) < end(a.x, a.dimensions.width) && static_cast<uint64_t>(a.y) < end(b.y, b.dimensions.depth) && static_cast<uint64_t>(b.y) < end(a.y, a.dimensions.depth) && static_cast<uint64_t>(a.z) < end(b.z, b.dimensions.length) && static_cast<uint64_t>(b.z) < end(a.z, a.dimensions.length);
 }
 
 } // namespace packing
