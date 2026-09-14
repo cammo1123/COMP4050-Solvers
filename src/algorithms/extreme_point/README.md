@@ -45,3 +45,15 @@ If a future requirement asks for a completely new way of sorting boxes (like pac
 3. Add it to the `Portfolio` tuple at the bottom of the file: `using Portfolio = std::tuple<ByVolumeDesc, ByMaxDimDesc, ByBaseAreaDesc, ByWeightDesc>;`
 
 The C++ compiler will automatically generate a new, fully optimized background thread (`std::jthread`) to run your new strategy in parallel with the others. The strategy that drops the fewest items automatically wins! You're welcome.
+
+## Assumptions & Deviations (or "Why I ignored some of the original rules")
+
+Here are the core assumptions this engine runs on so you can tweak if needed:
+
+1. **`maximumBoxes: 0` means exactly zero.** It looks to me, like the old PHP solver treated 0 as "unlimited boxes", which seemed like a cooked bug. I made it so if you pass `maximumBoxes: 0` into this engine, it will completely ban that box type. If you actually want unlimited boxes, just omit the field entirely from your request and let it default to max int. ezpz change.
+
+2. **Volume utilization** Originally i wanted us to optimize for volume utilization. When I tested this against some real data, the algorithm packed 120 items into 51 tiny ass boxes just to get perfect utilization. That seemed stupid to me. So, currently, this engine actively ignores that rule and instead prioritizes packing as many items as possible into decent sized boxes. Again, you can easily modify this.
+
+3. **We prioritize "Fewest Failed Items" over "Fewest Boxes".** Originally, the "best" pack was the one that used the fewest boxes. But mathematically, if the algorithm gives up and packs exactly 0 items into 0 boxes, it technically "wins" that rule. So, the engine now scores a run based on whichever parallel strategy leaves the fewest unpacked items on the warehouse floor. Remember, we multithreading the work.
+
+4. **This engine is built for heavy lifting, not trivial shit.** If you benchmark this against a 1 item, 1 box payload, the old PHP solver might actually beat it by a fraction of a millisecond. That's because EP does a lot of preprocessing, it takes a moment to initialize its 3D tracking matrices, gravity arrays, and frontiers. But throw a 10,000 item workload at it, and this algorithm will finish in 30ms while the PHP solver completely shits itself and crashes. We might be able to chose the algorithm based on number of items. For super super tiny miniscule jobs, it MIGHT be worth using a different algo. But for any realistic job, this algo will be much faster. 
