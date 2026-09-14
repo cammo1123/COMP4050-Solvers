@@ -112,7 +112,7 @@ emergency stop fires, because that depends on wall-clock time.
 7. The `intrinsically_stable` aspect-ratio tipping heuristic of `PHPSolver` is
    not implemented.
 8. Entries in `failed` carry every `ItemType` field except `quantity`.
-   `PHPSolver` drops `boxGroup`, `linkedGroup`, `rotationPolicy`, and
+   `PHPSolver` drops `boxGroup`, `rotationPolicy`, and
    `constraint`.
 9. Outer box dimensions are propagated to the result when all three are
    present, which matches `PHPSolver`.
@@ -137,7 +137,7 @@ dimensions.
 Required item fields are `itemCode`, `itemReference`, `width`, `length`,
 `depth`, and `weight`. `quantity` expands one item definition into instances;
 omitting it represents one instance, while zero represents none. Optional
-grouping fields are `boxGroup` and `linkedGroup`.
+grouping fields are `boxGroup`.
 
 `RotationPolicy` values are:
 

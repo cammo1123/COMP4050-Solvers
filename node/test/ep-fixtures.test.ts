@@ -46,7 +46,6 @@ function loadFixture(name: string) {
 		weight: i.Weight,
 		quantity: i.Quantity,
 		boxGroup: i.BoxGroup,
-		linkedGroup: i.LinkedGroup,
 	}));
 
 	return { boxes, items };

@@ -62,7 +62,7 @@ int main()
 	linked_a.length = 5;
 	linked_a.depth = 5;
 	linked_a.weight = 1;
-	linked_a.linked_group = "demo-pair";
+	linked_a.box_group = "demo-pair";
 	linked_a.rotation_policy = RotationPolicy::KeepFlat;
 	linked_a.constraint = fbs::domain::PlacementConstraint { };
 	linked_a.constraint->no_stacking = true;

@@ -36,7 +36,7 @@ function loadFixture(name: string, algorithm: SolveAlgorithm): SolveInput {
 
 	return {
 		boxes: rawBoxes.map((b: any) => ({ reference: b.Reference, width: b.Width, length: b.Length, depth: b.Depth, maxWeight: b.MaxWeight, boxWeight: b.BoxWeight, active: b.Active, maximumBoxes: b.MaximumBoxes })),
-		items: rawItems.map((i: any) => ({ itemCode: i.ItemCode, itemReference: i.ItemReference, width: i.Width, length: i.Length, depth: i.Depth, weight: i.Weight, quantity: i.Quantity, boxGroup: i.BoxGroup, linkedGroup: i.LinkedGroup })),
+		items: rawItems.map((i: any) => ({ itemCode: i.ItemCode, itemReference: i.ItemReference, width: i.Width, length: i.Length, depth: i.Depth, weight: i.Weight, quantity: i.Quantity, boxGroup: i.BoxGroup })),
 		algorithm,
 	};
 }
