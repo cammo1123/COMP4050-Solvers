@@ -106,6 +106,8 @@ function(comp4050_fetch_archive url dest)
     file(ARCHIVE_EXTRACT INPUT "${archive}" DESTINATION "${dest}")
 endfunction()
 
+find_package(Threads REQUIRED)
+
 find_program(NODE_EXECUTABLE node)
 
 # The generated bindings from fbs/*.fbs define the boundary types shared by the
@@ -156,20 +158,20 @@ add_custom_command(
     VERBATIM
 )
 
-add_subdirectory(src/php_solver)
+add_subdirectory(src/algorithms/php_solver)
 
 add_library(solver_core OBJECT
     src/solver.cpp
-    src/algo_registry.cpp
-    src/algo_greedy.cpp
-    src/algo_extreme_point.cpp
-    src/algo_shit_stack.cpp
-    src/php_solver/php_solver.cpp
+    src/algorithms/algo_registry.cpp
+    src/algorithms/greedy/algo_greedy.cpp
+    src/algorithms/extreme_point/algo_extreme_point.cpp
+    src/algorithms/shit_stack/algo_shit_stack.cpp
+    src/algorithms/php_solver/php_solver.cpp
     ${GENERATED_HEADERS}
 )
 target_include_directories(solver_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR} ${GENERATED_DIR})
 target_include_directories(solver_core SYSTEM PUBLIC ${flatbuffers_include})
-target_link_libraries(solver_core PUBLIC php_solver)
+target_link_libraries(solver_core PUBLIC php_solver Threads::Threads)
 
 add_executable(solver src/main.cpp)
 target_link_libraries(solver PRIVATE solver_core)
