@@ -395,7 +395,6 @@ struct ItemTypeT : public ::flatbuffers::NativeTable {
   ::flatbuffers::Optional<uint32_t> quantity = ::flatbuffers::nullopt;
   std::string box_group{};
   ::flatbuffers::Optional<fbs::RotationPolicy> rotation_policy = ::flatbuffers::nullopt;
-  std::string linked_group{};
   std::unique_ptr<fbs::PlacementConstraintT> constraint{};
   ItemTypeT() = default;
   ItemTypeT(const ItemTypeT &o);
@@ -416,8 +415,7 @@ struct ItemType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_QUANTITY = 16,
     VT_BOX_GROUP = 18,
     VT_ROTATION_POLICY = 20,
-    VT_LINKED_GROUP = 22,
-    VT_CONSTRAINT = 24
+    VT_CONSTRAINT = 22
   };
   const ::flatbuffers::String *item_code() const {
     return GetPointer<const ::flatbuffers::String *>(VT_ITEM_CODE);
@@ -446,9 +444,6 @@ struct ItemType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   ::flatbuffers::Optional<fbs::RotationPolicy> rotation_policy() const {
     return GetOptional<int8_t, fbs::RotationPolicy>(VT_ROTATION_POLICY);
   }
-  const ::flatbuffers::String *linked_group() const {
-    return GetPointer<const ::flatbuffers::String *>(VT_LINKED_GROUP);
-  }
   const fbs::PlacementConstraint *constraint() const {
     return GetPointer<const fbs::PlacementConstraint *>(VT_CONSTRAINT);
   }
@@ -467,8 +462,6 @@ struct ItemType FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyOffset(verifier, VT_BOX_GROUP) &&
            verifier.VerifyString(box_group()) &&
            VerifyField<int8_t>(verifier, VT_ROTATION_POLICY, 1) &&
-           VerifyOffset(verifier, VT_LINKED_GROUP) &&
-           verifier.VerifyString(linked_group()) &&
            VerifyOffset(verifier, VT_CONSTRAINT) &&
            verifier.VerifyTable(constraint()) &&
            verifier.EndTable();
@@ -509,9 +502,6 @@ struct ItemTypeBuilder {
   void add_rotation_policy(fbs::RotationPolicy rotation_policy) {
     fbb_.AddElement<int8_t>(ItemType::VT_ROTATION_POLICY, static_cast<int8_t>(rotation_policy));
   }
-  void add_linked_group(::flatbuffers::Offset<::flatbuffers::String> linked_group) {
-    fbb_.AddOffset(ItemType::VT_LINKED_GROUP, linked_group);
-  }
   void add_constraint(::flatbuffers::Offset<fbs::PlacementConstraint> constraint) {
     fbb_.AddOffset(ItemType::VT_CONSTRAINT, constraint);
   }
@@ -539,11 +529,9 @@ inline ::flatbuffers::Offset<ItemType> CreateItemType(
     ::flatbuffers::Optional<uint32_t> quantity = ::flatbuffers::nullopt,
     ::flatbuffers::Offset<::flatbuffers::String> box_group = 0,
     ::flatbuffers::Optional<fbs::RotationPolicy> rotation_policy = ::flatbuffers::nullopt,
-    ::flatbuffers::Offset<::flatbuffers::String> linked_group = 0,
     ::flatbuffers::Offset<fbs::PlacementConstraint> constraint = 0) {
   ItemTypeBuilder builder_(_fbb);
   builder_.add_constraint(constraint);
-  builder_.add_linked_group(linked_group);
   builder_.add_box_group(box_group);
   if(quantity) { builder_.add_quantity(*quantity); }
   builder_.add_weight(weight);
@@ -567,12 +555,10 @@ inline ::flatbuffers::Offset<ItemType> CreateItemTypeDirect(
     ::flatbuffers::Optional<uint32_t> quantity = ::flatbuffers::nullopt,
     const char *box_group = nullptr,
     ::flatbuffers::Optional<fbs::RotationPolicy> rotation_policy = ::flatbuffers::nullopt,
-    const char *linked_group = nullptr,
     ::flatbuffers::Offset<fbs::PlacementConstraint> constraint = 0) {
   auto item_code__ = item_code ? _fbb.CreateString(item_code) : 0;
   auto item_reference__ = item_reference ? _fbb.CreateString(item_reference) : 0;
   auto box_group__ = box_group ? _fbb.CreateString(box_group) : 0;
-  auto linked_group__ = linked_group ? _fbb.CreateString(linked_group) : 0;
   return fbs::CreateItemType(
       _fbb,
       item_code__,
@@ -584,7 +570,6 @@ inline ::flatbuffers::Offset<ItemType> CreateItemTypeDirect(
       quantity,
       box_group__,
       rotation_policy,
-      linked_group__,
       constraint);
 }
 
@@ -703,7 +688,6 @@ inline ItemTypeT::ItemTypeT(const ItemTypeT &o)
         quantity(o.quantity),
         box_group(o.box_group),
         rotation_policy(o.rotation_policy),
-        linked_group(o.linked_group),
         constraint((o.constraint) ? new fbs::PlacementConstraintT(*o.constraint) : nullptr) {
 }
 
@@ -717,7 +701,6 @@ inline ItemTypeT &ItemTypeT::operator=(ItemTypeT o) FLATBUFFERS_NOEXCEPT {
   std::swap(quantity, o.quantity);
   std::swap(box_group, o.box_group);
   std::swap(rotation_policy, o.rotation_policy);
-  std::swap(linked_group, o.linked_group);
   std::swap(constraint, o.constraint);
   return *this;
 }
@@ -740,7 +723,6 @@ inline void ItemType::UnPackTo(ItemTypeT *_o, const ::flatbuffers::resolver_func
   { auto _e = quantity(); _o->quantity = _e; }
   { auto _e = box_group(); if (_e) _o->box_group = _e->str(); }
   { auto _e = rotation_policy(); _o->rotation_policy = _e; }
-  { auto _e = linked_group(); if (_e) _o->linked_group = _e->str(); }
   { auto _e = constraint(); if (_e) { if(_o->constraint) { _e->UnPackTo(_o->constraint.get(), _resolver); } else { _o->constraint = std::unique_ptr<fbs::PlacementConstraintT>(_e->UnPack(_resolver)); } } else if (_o->constraint) { _o->constraint.reset(); } }
 }
 
@@ -761,7 +743,6 @@ inline ::flatbuffers::Offset<ItemType> ItemType::Pack(::flatbuffers::FlatBufferB
   auto _quantity = _o->quantity;
   auto _box_group = _o->box_group.empty() ? 0 : _fbb.CreateString(_o->box_group);
   auto _rotation_policy = _o->rotation_policy;
-  auto _linked_group = _o->linked_group.empty() ? 0 : _fbb.CreateString(_o->linked_group);
   auto _constraint = _o->constraint ? CreatePlacementConstraint(_fbb, _o->constraint.get(), _rehasher) : 0;
   return fbs::CreateItemType(
       _fbb,
@@ -774,7 +755,6 @@ inline ::flatbuffers::Offset<ItemType> ItemType::Pack(::flatbuffers::FlatBufferB
       _quantity,
       _box_group,
       _rotation_policy,
-      _linked_group,
       _constraint);
 }
 

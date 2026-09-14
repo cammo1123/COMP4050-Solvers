@@ -77,20 +77,13 @@ rotationPolicy():RotationPolicy|null {
   return offset ? this.bb!.readInt8(this.bb_pos + offset) : null;
 }
 
-linkedGroup():string|null
-linkedGroup(optionalEncoding:flatbuffers.Encoding):string|Uint8Array|null
-linkedGroup(optionalEncoding?:any):string|Uint8Array|null {
-  const offset = this.bb!.__offset(this.bb_pos, 22);
-  return offset ? this.bb!.__string(this.bb_pos + offset, optionalEncoding) : null;
-}
-
 constraint(obj?:PlacementConstraint):PlacementConstraint|null {
-  const offset = this.bb!.__offset(this.bb_pos, 24);
+  const offset = this.bb!.__offset(this.bb_pos, 22);
   return offset ? (obj || new PlacementConstraint()).__init(this.bb!.__indirect(this.bb_pos + offset), this.bb!) : null;
 }
 
 static startItemType(builder:flatbuffers.Builder) {
-  builder.startObject(11);
+  builder.startObject(10);
 }
 
 static addItemCode(builder:flatbuffers.Builder, itemCodeOffset:flatbuffers.Offset) {
@@ -129,12 +122,8 @@ static addRotationPolicy(builder:flatbuffers.Builder, rotationPolicy:RotationPol
   builder.addFieldInt8(8, rotationPolicy, null);
 }
 
-static addLinkedGroup(builder:flatbuffers.Builder, linkedGroupOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(9, linkedGroupOffset, 0);
-}
-
 static addConstraint(builder:flatbuffers.Builder, constraintOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(10, constraintOffset, 0);
+  builder.addFieldOffset(9, constraintOffset, 0);
 }
 
 static endItemType(builder:flatbuffers.Builder):flatbuffers.Offset {
@@ -156,7 +145,6 @@ unpack(): ItemTypeT {
     this.quantity(),
     this.boxGroup(),
     this.rotationPolicy(),
-    this.linkedGroup(),
     (this.constraint() !== null ? this.constraint()!.unpack() : null)
   );
 }
@@ -172,7 +160,6 @@ unpackTo(_o: ItemTypeT): void {
   _o.quantity = this.quantity();
   _o.boxGroup = this.boxGroup();
   _o.rotationPolicy = this.rotationPolicy();
-  _o.linkedGroup = this.linkedGroup();
   _o.constraint = (this.constraint() !== null ? this.constraint()!.unpack() : null);
 }
 }
@@ -188,7 +175,6 @@ constructor(
   public quantity: number|null = null,
   public boxGroup: string|Uint8Array|null = null,
   public rotationPolicy: RotationPolicy|null = null,
-  public linkedGroup: string|Uint8Array|null = null,
   public constraint: PlacementConstraintT|null = null
 ){}
 
@@ -197,7 +183,6 @@ pack(builder:flatbuffers.Builder): flatbuffers.Offset {
   const itemCode = (this.itemCode !== null ? builder.createString(this.itemCode!) : 0);
   const itemReference = (this.itemReference !== null ? builder.createString(this.itemReference!) : 0);
   const boxGroup = (this.boxGroup !== null ? builder.createString(this.boxGroup!) : 0);
-  const linkedGroup = (this.linkedGroup !== null ? builder.createString(this.linkedGroup!) : 0);
   const constraint = (this.constraint !== null ? this.constraint!.pack(builder) : 0);
 
   ItemType.startItemType(builder);
@@ -212,7 +197,6 @@ pack(builder:flatbuffers.Builder): flatbuffers.Offset {
   ItemType.addBoxGroup(builder, boxGroup);
   if (this.rotationPolicy !== null)
     ItemType.addRotationPolicy(builder, this.rotationPolicy);
-  ItemType.addLinkedGroup(builder, linkedGroup);
   ItemType.addConstraint(builder, constraint);
 
   return ItemType.endItemType(builder);
