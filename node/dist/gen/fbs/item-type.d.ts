@@ -19,8 +19,6 @@ export declare class ItemType implements flatbuffers.IUnpackableObject<ItemTypeT
     boxGroup(): string | null;
     boxGroup(optionalEncoding: flatbuffers.Encoding): string | Uint8Array | null;
     rotationPolicy(): RotationPolicy | null;
-    linkedGroup(): string | null;
-    linkedGroup(optionalEncoding: flatbuffers.Encoding): string | Uint8Array | null;
     constraint(obj?: PlacementConstraint): PlacementConstraint | null;
     static startItemType(builder: flatbuffers.Builder): void;
     static addItemCode(builder: flatbuffers.Builder, itemCodeOffset: flatbuffers.Offset): void;
@@ -32,7 +30,6 @@ export declare class ItemType implements flatbuffers.IUnpackableObject<ItemTypeT
     static addQuantity(builder: flatbuffers.Builder, quantity: number): void;
     static addBoxGroup(builder: flatbuffers.Builder, boxGroupOffset: flatbuffers.Offset): void;
     static addRotationPolicy(builder: flatbuffers.Builder, rotationPolicy: RotationPolicy): void;
-    static addLinkedGroup(builder: flatbuffers.Builder, linkedGroupOffset: flatbuffers.Offset): void;
     static addConstraint(builder: flatbuffers.Builder, constraintOffset: flatbuffers.Offset): void;
     static endItemType(builder: flatbuffers.Builder): flatbuffers.Offset;
     unpack(): ItemTypeT;
@@ -48,9 +45,8 @@ export declare class ItemTypeT implements flatbuffers.IGeneratedObject {
     quantity: number | null;
     boxGroup: string | Uint8Array | null;
     rotationPolicy: RotationPolicy | null;
-    linkedGroup: string | Uint8Array | null;
     constraint: PlacementConstraintT | null;
-    constructor(itemCode?: string | Uint8Array | null, itemReference?: string | Uint8Array | null, width?: number, length?: number, depth?: number, weight?: number, quantity?: number | null, boxGroup?: string | Uint8Array | null, rotationPolicy?: RotationPolicy | null, linkedGroup?: string | Uint8Array | null, constraint?: PlacementConstraintT | null);
+    constructor(itemCode?: string | Uint8Array | null, itemReference?: string | Uint8Array | null, width?: number, length?: number, depth?: number, weight?: number, quantity?: number | null, boxGroup?: string | Uint8Array | null, rotationPolicy?: RotationPolicy | null, constraint?: PlacementConstraintT | null);
     pack(builder: flatbuffers.Builder): flatbuffers.Offset;
 }
 //# sourceMappingURL=item-type.d.ts.map

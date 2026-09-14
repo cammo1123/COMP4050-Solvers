@@ -53,16 +53,12 @@ export class ItemType {
         const offset = this.bb.__offset(this.bb_pos, 20);
         return offset ? this.bb.readInt8(this.bb_pos + offset) : null;
     }
-    linkedGroup(optionalEncoding) {
-        const offset = this.bb.__offset(this.bb_pos, 22);
-        return offset ? this.bb.__string(this.bb_pos + offset, optionalEncoding) : null;
-    }
     constraint(obj) {
-        const offset = this.bb.__offset(this.bb_pos, 24);
+        const offset = this.bb.__offset(this.bb_pos, 22);
         return offset ? (obj || new PlacementConstraint()).__init(this.bb.__indirect(this.bb_pos + offset), this.bb) : null;
     }
     static startItemType(builder) {
-        builder.startObject(11);
+        builder.startObject(10);
     }
     static addItemCode(builder, itemCodeOffset) {
         builder.addFieldOffset(0, itemCodeOffset, 0);
@@ -91,11 +87,8 @@ export class ItemType {
     static addRotationPolicy(builder, rotationPolicy) {
         builder.addFieldInt8(8, rotationPolicy, null);
     }
-    static addLinkedGroup(builder, linkedGroupOffset) {
-        builder.addFieldOffset(9, linkedGroupOffset, 0);
-    }
     static addConstraint(builder, constraintOffset) {
-        builder.addFieldOffset(10, constraintOffset, 0);
+        builder.addFieldOffset(9, constraintOffset, 0);
     }
     static endItemType(builder) {
         const offset = builder.endObject();
@@ -104,7 +97,7 @@ export class ItemType {
         return offset;
     }
     unpack() {
-        return new ItemTypeT(this.itemCode(), this.itemReference(), this.width(), this.length(), this.depth(), this.weight(), this.quantity(), this.boxGroup(), this.rotationPolicy(), this.linkedGroup(), (this.constraint() !== null ? this.constraint().unpack() : null));
+        return new ItemTypeT(this.itemCode(), this.itemReference(), this.width(), this.length(), this.depth(), this.weight(), this.quantity(), this.boxGroup(), this.rotationPolicy(), (this.constraint() !== null ? this.constraint().unpack() : null));
     }
     unpackTo(_o) {
         _o.itemCode = this.itemCode();
@@ -116,7 +109,6 @@ export class ItemType {
         _o.quantity = this.quantity();
         _o.boxGroup = this.boxGroup();
         _o.rotationPolicy = this.rotationPolicy();
-        _o.linkedGroup = this.linkedGroup();
         _o.constraint = (this.constraint() !== null ? this.constraint().unpack() : null);
     }
 }
@@ -130,9 +122,8 @@ export class ItemTypeT {
     quantity;
     boxGroup;
     rotationPolicy;
-    linkedGroup;
     constraint;
-    constructor(itemCode = null, itemReference = null, width = 0, length = 0, depth = 0, weight = 0.0, quantity = null, boxGroup = null, rotationPolicy = null, linkedGroup = null, constraint = null) {
+    constructor(itemCode = null, itemReference = null, width = 0, length = 0, depth = 0, weight = 0.0, quantity = null, boxGroup = null, rotationPolicy = null, constraint = null) {
         this.itemCode = itemCode;
         this.itemReference = itemReference;
         this.width = width;
@@ -142,14 +133,12 @@ export class ItemTypeT {
         this.quantity = quantity;
         this.boxGroup = boxGroup;
         this.rotationPolicy = rotationPolicy;
-        this.linkedGroup = linkedGroup;
         this.constraint = constraint;
     }
     pack(builder) {
         const itemCode = (this.itemCode !== null ? builder.createString(this.itemCode) : 0);
         const itemReference = (this.itemReference !== null ? builder.createString(this.itemReference) : 0);
         const boxGroup = (this.boxGroup !== null ? builder.createString(this.boxGroup) : 0);
-        const linkedGroup = (this.linkedGroup !== null ? builder.createString(this.linkedGroup) : 0);
         const constraint = (this.constraint !== null ? this.constraint.pack(builder) : 0);
         ItemType.startItemType(builder);
         ItemType.addItemCode(builder, itemCode);
@@ -163,7 +152,6 @@ export class ItemTypeT {
         ItemType.addBoxGroup(builder, boxGroup);
         if (this.rotationPolicy !== null)
             ItemType.addRotationPolicy(builder, this.rotationPolicy);
-        ItemType.addLinkedGroup(builder, linkedGroup);
         ItemType.addConstraint(builder, constraint);
         return ItemType.endItemType(builder);
     }

@@ -75,7 +75,6 @@ struct ItemType {
 	std::optional<uint32_t> quantity = std::nullopt;
 	std::optional<std::string> box_group = std::nullopt;
 	std::optional<RotationPolicy> rotation_policy = std::nullopt;
-	std::optional<std::string> linked_group = std::nullopt;
 	std::optional<PlacementConstraint> constraint = std::nullopt;
 };
 
@@ -271,10 +270,6 @@ inline ItemType toDomain([[maybe_unused]] fbs::ItemTypeT const& value)
 		out.rotation_policy = toDomain(*value.rotation_policy);
 	}
 
-	if (!value.linked_group.empty()) {
-		out.linked_group = value.linked_group;
-	}
-
 	if (value.constraint) {
 		out.constraint = toDomain(*value.constraint);
 	}
@@ -308,10 +303,6 @@ inline fbs::ItemTypeT fromDomain([[maybe_unused]] ItemType const& value)
 
 	if (value.rotation_policy.has_value()) {
 		out.rotation_policy = fromDomain(*value.rotation_policy);
-	}
-
-	if (value.linked_group.has_value()) {
-		out.linked_group = *value.linked_group;
 	}
 
 	if (value.constraint.has_value()) {
