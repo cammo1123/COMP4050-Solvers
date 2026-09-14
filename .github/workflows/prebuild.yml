@@ -2,7 +2,7 @@ name: prebuild
 
 on:
     push:
-        branches: [main]
+        branches: [dev]
     pull_request:
     workflow_dispatch:
 
@@ -44,7 +44,7 @@ jobs:
 
     commit:
         needs: prebuild
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         runs-on: ubuntu-latest
         permissions:
             contents: write
