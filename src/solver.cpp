@@ -1,5 +1,5 @@
 #include "solver.h"
-#include "algo_registry.h"
+#include "algorithms/algo_registry.h"
 
 #include "buildinfo.h"
 #include "solve_domain_generated.h"

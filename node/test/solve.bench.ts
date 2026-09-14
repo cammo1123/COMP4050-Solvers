@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { bench, describe } from "vitest";
 
 import { SolveAlgorithm, solve, type SolveInput } from "../src/addon";
@@ -24,12 +26,34 @@ function createRequest(itemCount: number, algorithm?: SolveAlgorithm): SolveInpu
 	};
 }
 
+// Same corpora as ep-fixtures.test.ts. These are the shapes the client actually
+// ships, so they are the numbers worth quoting, not just the synthetic ones.
+const examplesDir = resolve(__dirname, "fixtures", "thomax");
+
+function loadFixture(name: string, algorithm: SolveAlgorithm): SolveInput {
+	const rawBoxes = JSON.parse(readFileSync(resolve(examplesDir, name, "boxes.json"), "utf8"));
+	const rawItems = JSON.parse(readFileSync(resolve(examplesDir, name, "items.json"), "utf8"));
+
+	return {
+		boxes: rawBoxes.map((b: any) => ({ reference: b.Reference, width: b.Width, length: b.Length, depth: b.Depth, maxWeight: b.MaxWeight, boxWeight: b.BoxWeight, active: b.Active, maximumBoxes: b.MaximumBoxes })),
+		items: rawItems.map((i: any) => ({ itemCode: i.ItemCode, itemReference: i.ItemReference, width: i.Width, length: i.Length, depth: i.Depth, weight: i.Weight, quantity: i.Quantity, boxGroup: i.BoxGroup, linkedGroup: i.LinkedGroup })),
+		algorithm,
+	};
+}
+
 for (const itemCount of [100, 1_000, 10_000]) {
 	describe(`${itemCount.toLocaleString()}-item end-to-end workload`, () => {
-		const shitStackRequest = createRequest(itemCount);
+		// The algorithm must be named explicitly: an omitted algorithm decodes as
+		// PHPSolver (solve_translation.ts), so this bench measured PHPSolver under
+		// a shit-stack label, and at 10,000 items that does not finish.
+		const shitStackRequest = createRequest(itemCount, SolveAlgorithm.ShitStack);
 		const greedyRequest = createRequest(itemCount, SolveAlgorithm.Greedy);
 		const extremePointRequest = createRequest(itemCount, SolveAlgorithm.ExtremePoint);
+		const phpSolverRequest = createRequest(itemCount, SolveAlgorithm.PHPSolver);
 
+		// shit-stack is the do-nothing floor: it dumps everything up the Y axis and
+		// happily overflows the box, so read it as "cost of the plumbing", not as a
+		// rival packer.
 		bench(
 			"shit-stack",
 			async () => {
@@ -38,6 +62,7 @@ for (const itemCount of [100, 1_000, 10_000]) {
 			{ iterations: 3, time: 500 },
 		);
 
+		// Greedy stays skipped: its solver is still an unimplemented stub and throws.
 		bench.skip(
 			"greedy",
 			async () => {
@@ -46,7 +71,48 @@ for (const itemCount of [100, 1_000, 10_000]) {
 			{ iterations: 3, time: 500 },
 		);
 
-		bench.skip(
+		if (itemCount >= 10000) {
+			bench.skip(
+				"php-solver (too slow)",
+				async () => {
+					await solve(phpSolverRequest);
+				},
+				{ iterations: 3, time: 500 },
+			);
+		} else {
+			bench(
+				"php-solver",
+				async () => {
+					await solve(phpSolverRequest);
+				},
+				{ iterations: 3, time: 500 },
+			);
+		}
+
+		bench(
+			"extreme-point",
+			async () => {
+				await solve(extremePointRequest);
+			},
+			{ iterations: 3, time: 500 },
+		);
+	});
+}
+
+for (const fixture of ["Simple", "SemiRealistic", "Chaotic"] as const) {
+	describe(`${fixture} client fixture`, () => {
+		const extremePointRequest = loadFixture(fixture, SolveAlgorithm.ExtremePoint);
+		const phpSolverRequest = loadFixture(fixture, SolveAlgorithm.PHPSolver);
+
+		bench(
+			"php-solver",
+			async () => {
+				await solve(phpSolverRequest);
+			},
+			{ iterations: 3, time: 500 },
+		);
+
+		bench(
 			"extreme-point",
 			async () => {
 				await solve(extremePointRequest);
