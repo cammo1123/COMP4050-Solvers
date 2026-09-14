@@ -165,6 +165,15 @@ bool valid_box(PackedBox const& box)
 			if (overlaps(box.items[j], item))
 				return false;
 	}
+	std::string group;
+	for (auto const& item : box.items) {
+		if (item.item.box_group.empty())
+			continue;
+		if (group.empty())
+			group = item.item.box_group;
+		else if (group != item.item.box_group)
+			return false;
+	}
 	return box.box.max_weight <= 0 || weight <= box.box.max_weight;
 }
 
@@ -239,19 +248,12 @@ void stabilize_layers(PackedBox& box)
 	}
 }
 
-size_t linked_count(std::vector<Item> const& items, std::string const& group)
+std::string box_group_of(PackedBox const& box)
 {
-	return static_cast<size_t>(std::count_if(items.begin(), items.end(), [&](auto const& item) { return item.linked_group == group; }));
-}
-
-size_t packed_linked_count(PackedBox const& box, std::string const& group)
-{
-	return static_cast<size_t>(std::count_if(box.items.begin(), box.items.end(), [&](auto const& item) { return item.item.linked_group == group; }));
-}
-
-bool excluded(std::vector<std::string> const& groups, std::string const& group)
-{
-	return std::find(groups.begin(), groups.end(), group) != groups.end();
+	for (auto const& item : box.items)
+		if (!item.item.box_group.empty())
+			return item.item.box_group;
+	return { };
 }
 
 std::optional<PackedItem> place(Box const& box, Dimensions box_dimensions, Item const& item, std::vector<PackedItem> const& placed, float weight, Clock::time_point deadline)
@@ -324,9 +326,12 @@ std::optional<PackedBox> try_box_once(Box const& box, std::vector<Item> const& i
 	for (auto box_dimensions : box_orientations) {
 		PackedBox candidate { box, box_dimensions, { }, box.empty_weight };
 		std::vector<bool> considered(items.size());
+		std::string box_group;
 
 		for (size_t item_index = 0; item_index < items.size(); ++item_index) {
 			if (considered[item_index])
+				continue;
+			if (!box_group.empty() && !items[item_index].box_group.empty() && items[item_index].box_group != box_group)
 				continue;
 
 			if (Clock::now() >= deadline)
@@ -334,50 +339,27 @@ std::optional<PackedBox> try_box_once(Box const& box, std::vector<Item> const& i
 			if (items.size() <= 100)
 				debug("try_box_once item begin box=", box.reference, " index=", item_index, "/", items.size(), " placed=", candidate.items.size());
 
-			std::vector<size_t> group_indices { item_index };
-			if (!items[item_index].linked_group.empty()) {
-				for (size_t i = item_index + 1; i < items.size(); ++i) {
-					if (!considered[i] && items[i].linked_group == items[item_index].linked_group)
-						group_indices.push_back(i);
-				}
+			Item adjusted = items[item_index];
+
+			if (box_dimensions.width != box.dimensions.width) {
+				std::swap(adjusted.constraint.min_x, adjusted.constraint.min_z);
+				std::swap(adjusted.constraint.max_x, adjusted.constraint.max_z);
 			}
 
-			auto original_items = candidate.items.size();
-			auto original_weight = candidate.total_weight;
-			bool group_placed = true;
-			for (auto index : group_indices) {
-				Item adjusted = items[index];
+			if (!allow_rotation)
+				adjusted.rotation = RotationPolicy::Never;
 
-				if (box_dimensions.width != box.dimensions.width) {
-					std::swap(adjusted.constraint.min_x, adjusted.constraint.min_z);
-					std::swap(adjusted.constraint.max_x, adjusted.constraint.max_z);
-				}
-
-				if (!allow_rotation)
-					adjusted.rotation = RotationPolicy::Never;
-
-				if (candidate.total_weight + adjusted.weight > box.max_weight && box.max_weight > 0) {
-					group_placed = false;
-					break;
-				}
-
+			if (candidate.total_weight + adjusted.weight <= box.max_weight || box.max_weight <= 0) {
 				auto placed = place(box, box_dimensions, adjusted, candidate.items, candidate.total_weight, deadline);
-				if (!placed) {
-					group_placed = false;
-					break;
+				if (placed) {
+					candidate.total_weight += adjusted.weight;
+					candidate.items.push_back(*placed);
+					if (box_group.empty() && !adjusted.box_group.empty())
+						box_group = adjusted.box_group;
 				}
-
-				candidate.total_weight += adjusted.weight;
-				candidate.items.push_back(*placed);
 			}
 
-			if (!group_placed) {
-				candidate.items.resize(original_items);
-				candidate.total_weight = original_weight;
-			}
-
-			for (auto index : group_indices)
-				considered[index] = true;
+			considered[item_index] = true;
 
 			if (progress)
 				progress(candidate.items.size(), items.size());
@@ -399,56 +381,17 @@ std::optional<PackedBox> try_box_once(Box const& box, std::vector<Item> const& i
 	return best;
 }
 
-PackedBox enforce_linked_groups(Box const& box, std::vector<Item> const& items, PackedBox candidate, bool allow_rotation, Clock::time_point deadline)
-{
-	std::vector<std::string> excluded_groups;
-	while (true) {
-		std::vector<std::string> incomplete_groups;
-
-		for (auto const& item : items) {
-			if (item.linked_group.empty() || excluded(excluded_groups, item.linked_group) || excluded(incomplete_groups, item.linked_group))
-				continue;
-			if (packed_linked_count(candidate, item.linked_group) > 0 && packed_linked_count(candidate, item.linked_group) < linked_count(items, item.linked_group))
-				incomplete_groups.push_back(item.linked_group);
-		}
-
-		if (incomplete_groups.empty())
-			return candidate;
-
-		excluded_groups.insert(excluded_groups.end(), incomplete_groups.begin(), incomplete_groups.end());
-		std::vector<Item> eligible;
-
-		for (auto const& item : items) {
-			if (item.linked_group.empty() || !excluded(excluded_groups, item.linked_group))
-				eligible.push_back(item);
-		}
-
-		if (eligible.empty())
-			return PackedBox { box, box.dimensions, { }, box.empty_weight };
-
-		auto const repacked = try_box_once(box, eligible, allow_rotation, deadline, nullptr);
-		if (!repacked)
-			return PackedBox { box, box.dimensions, { }, box.empty_weight };
-
-		candidate = *repacked;
-	}
-}
-
 std::optional<PackedBox> try_box(Box const& box, std::vector<Item> const& items, bool allow_rotation, bool best_subset,
 	Clock::time_point deadline, ProgressCallback const& progress)
 {
-	if (!best_subset) {
-		auto candidate = try_box_once(box, items, allow_rotation, deadline, progress);
-		return candidate ? std::optional<PackedBox>(enforce_linked_groups(box, items, *candidate, allow_rotation, deadline)) : std::nullopt;
-	}
+	if (!best_subset)
+		return try_box_once(box, items, allow_rotation, deadline, progress);
 
 	std::optional<PackedBox> best;
 	for (size_t first = 0; first < items.size() && Clock::now() < deadline; ++first) {
 		std::vector<Item> subset(items.begin() + static_cast<std::ptrdiff_t>(first), items.end());
 
 		auto candidate = try_box_once(box, subset, allow_rotation, deadline, nullptr);
-		if (candidate)
-			candidate = enforce_linked_groups(box, items, *candidate, allow_rotation, deadline);
 
 		auto const packed_count = candidate ? candidate->items.size() : 0;
 
@@ -488,30 +431,25 @@ void balance_weights(std::vector<PackedBox>& boxes, Clock::time_point deadline)
 				if (source.total_weight <= target.total_weight)
 					continue;
 				for (size_t item_index = 0; item_index < source.items.size() && !moved && Clock::now() < deadline; ++item_index) {
-					std::vector<size_t> group_indices { item_index };
 					auto const& selected = source.items[item_index].item;
-					if (!selected.linked_group.empty()) {
-						for (size_t i = item_index + 1; i < source.items.size(); ++i)
-							if (source.items[i].item.linked_group == selected.linked_group)
-								group_indices.push_back(i);
+					if (!selected.box_group.empty()) {
+						auto const target_group = box_group_of(target);
+						if (!target_group.empty() && target_group != selected.box_group)
+							continue;
 					}
-					std::vector<PackedItem> moved_items;
 					auto target_items = target.items;
 					float moved_weight = 0;
 					bool legal = true;
-					for (auto index : group_indices) {
-						if (target.total_weight + moved_weight + source.items[index].item.weight > target.box.max_weight && target.box.max_weight > 0) {
+					if (target.total_weight + selected.weight > target.box.max_weight && target.box.max_weight > 0)
+						legal = false;
+					if (legal) {
+						auto placement = place(target.box, target.dimensions, selected, target_items, target.total_weight, deadline);
+						if (!placement)
 							legal = false;
-							break;
+						else {
+							target_items.push_back(*placement);
+							moved_weight += selected.weight;
 						}
-						auto placement = place(target.box, target.dimensions, source.items[index].item, target_items, target.total_weight + moved_weight, deadline);
-						if (!placement) {
-							legal = false;
-							break;
-						}
-						moved_items.push_back(*placement);
-						target_items.push_back(*placement);
-						moved_weight += source.items[index].item.weight;
 					}
 					if (!legal)
 						continue;
@@ -522,12 +460,9 @@ void balance_weights(std::vector<PackedBox>& boxes, Clock::time_point deadline)
 					weights[target_index] -= moved_weight;
 					if (new_spread >= current_spread)
 						continue;
-					std::vector<bool> selected_items(source.items.size());
-					for (auto index : group_indices)
-						selected_items[index] = true;
 					std::vector<PackedItem> source_items;
 					for (size_t i = 0; i < source.items.size(); ++i)
-						if (!selected_items[i])
+						if (i != item_index)
 							source_items.push_back(source.items[i]);
 					boxes[source_index].items = std::move(source_items);
 					boxes[source_index].total_weight -= moved_weight;
@@ -607,7 +542,7 @@ Result pack_ordered(std::vector<Box> boxes, std::vector<Item> items, Options opt
 		std::vector<bool> packed(remaining.size());
 		for (auto const& item : best->items)
 			for (size_t i = 0; i < remaining.size(); ++i)
-				if (!packed[i] && remaining[i].code == item.item.code && remaining[i].reference == item.item.reference && remaining[i].dimensions == item.item.dimensions && remaining[i].weight == item.item.weight) {
+				if (!packed[i] && remaining[i].code == item.item.code && remaining[i].reference == item.item.reference && remaining[i].dimensions == item.item.dimensions && remaining[i].weight == item.item.weight && remaining[i].box_group == item.item.box_group) {
 					packed[i] = true;
 					break;
 				}
@@ -659,8 +594,8 @@ Result pack(std::vector<Box> boxes, std::vector<Item> items, Options options, Pr
 		options.max_boxes = 1;
 	if (!options.strict_item_order) {
 		std::sort(items.begin(), items.end(), [](auto const& a, auto const& b) {
-			if (a.linked_group.empty() != b.linked_group.empty())
-				return a.linked_group.empty();
+			if (a.box_group.empty() != b.box_group.empty())
+				return a.box_group.empty();
 			if (a.dimensions.volume() != b.dimensions.volume())
 				return a.dimensions.volume() > b.dimensions.volume();
 			if (a.weight != b.weight)
