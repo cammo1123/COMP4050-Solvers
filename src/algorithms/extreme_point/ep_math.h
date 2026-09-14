@@ -1,8 +1,5 @@
 #pragma once
 
-// This file is maths shit that i don't understand too well
-// https://iris.polito.it/retrieve/handle/11583/1512183/47303 if u wanna begin to learn it ig
-
 #include <cstdint>
 #include <limits>
 #include <utility>
