@@ -82,21 +82,25 @@ auto solve_php_solver(SolveRequest const& request, SolveOptions const& options, 
 		result.total_weight = source.total_weight;
 		result.utilization = source.dimensions.volume() == 0 ? 0.0f : static_cast<float>(source.used_volume()) / static_cast<float>(source.dimensions.volume());
 
+		result.width = source.box.dimensions.width;
+		result.length = source.box.dimensions.length;
+		result.depth = source.box.dimensions.depth;
+
 		if (source.box.outer_dimensions) {
 			result.outer_width = source.box.outer_dimensions->width;
 			result.outer_length = source.box.outer_dimensions->length;
-			result.outer_depth = source.box.outer_dimensions->height;
+			result.outer_depth = source.box.outer_dimensions->depth;
 		}
 
 		for (auto const& item : source.items) {
-			result.placements.push_back({ item.item.code, item.item.reference, item.x, item.y, item.z, item.dimensions.width, item.dimensions.length, item.dimensions.height });
+			result.placements.push_back({ item.item.code, item.item.reference, item.x, item.y, item.z, item.dimensions.width, item.dimensions.length, item.dimensions.depth });
 		}
 
 		response.results.push_back(std::move(result));
 	}
 
 	for (auto const& item : packed.failed) {
-		response.failed.push_back({ item.code, item.reference, item.dimensions.width, item.dimensions.length, item.dimensions.height, item.weight });
+		response.failed.push_back({ item.code, item.reference, item.dimensions.width, item.dimensions.length, item.dimensions.depth, item.weight });
 	}
 
 	return response;

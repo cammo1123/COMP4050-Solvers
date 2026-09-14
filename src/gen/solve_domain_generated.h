@@ -77,7 +77,7 @@ struct SolveOptions {
 struct SolveRequest {
 	std::vector<BoxType> boxes{};
 	std::vector<ItemType> items{};
-	SolveAlgorithm algorithm = SolveAlgorithm::PHPSolver;
+	SolveAlgorithm algorithm = SolveAlgorithm::ExtremePoint;
 	std::optional<SolveOptions> options = std::nullopt;
 };
 

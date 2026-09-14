@@ -33,9 +33,9 @@ describe("package public API (typed entry)", () => {
 			results: [
 				{
 					boxReference: "A",
-					depth: 0,
-					length: 0,
-					width: 0,
+					depth: 10,
+					length: 10,
+					width: 10,
 					totalWeight: 10,
 					utilization: 1,
 					placements: [
@@ -84,9 +84,9 @@ describe("package public API (typed entry)", () => {
 			results: [
 				{
 					boxReference: "A",
-					depth: 0,
-					length: 0,
-					width: 0,
+					depth: 10,
+					length: 10,
+					width: 10,
 					totalWeight: 10,
 					utilization: 1,
 					placements: [

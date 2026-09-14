@@ -19,7 +19,7 @@ bool stable(PackedBox const& box, PackedItem const& item)
 	if (item.y == 0)
 		return true;
 	for (auto const& support : box.items) {
-		if (support.y + support.dimensions.height == item.y && covers_center(support, item))
+		if (support.y + support.dimensions.depth == item.y && covers_center(support, item))
 			return true;
 	}
 	return false;

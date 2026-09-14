@@ -77,7 +77,7 @@ struct Progress {
 struct Fill {
 	std::vector<Placed> placed;
 	std::vector<Point> frontier;
-	std::vector<u32> tops; // sorted distinct top-face heights
+	std::vector<u32> tops; // sorted distinct top-face depths
 	double weight = 0;
 	u64 volume = 0;
 	std::int32_t group = -1;
@@ -712,8 +712,8 @@ auto build_world(SolveRequest const& request) -> World
 		t.ori0 = static_cast<u32>(world.pool.size());
 		auto const policy = static_cast<packing::RotationPolicy>(item_request.rotation_policy.value_or(RotationPolicy::BestFit));
 		for (auto dims : packing::orientations({ item_request.width, item_request.depth, item_request.length }, policy)) // reused verbatim so EP and PHP cannot drift
-			if (!constraint.required_vertical.value_or(false) || dims.height == item_request.depth)
-				world.pool.push_back({ dims.width, dims.height, dims.length });
+			if (!constraint.required_vertical.value_or(false) || dims.depth == item_request.depth)
+				world.pool.push_back({ dims.width, dims.depth, dims.length });
 		t.ori1 = static_cast<u32>(world.pool.size());
 
 		world.inst_type.insert(world.inst_type.end(), quantity, static_cast<u32>(world.types.size()));
