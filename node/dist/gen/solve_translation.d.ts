@@ -46,7 +46,6 @@ export type ItemTypeT = {
     quantity?: number;
     boxGroup?: string | Uint8Array;
     rotationPolicy?: RotationPolicy;
-    linkedGroup?: string | Uint8Array;
     constraint?: PlacementConstraintT | null;
 };
 export type PHPSolverOptionsT = {
