@@ -45,6 +45,5 @@ table ItemType {
 
   box_group: string (optional);
   rotation_policy: RotationPolicy = null;
-  linked_group: string (optional);
   constraint: PlacementConstraint (optional);
 }
