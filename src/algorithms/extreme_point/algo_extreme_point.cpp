@@ -627,7 +627,10 @@ struct Engine {
 			auto placed = run_fill(bins[chosen], full, true);
 			if (placed == 0) {
 				chosen = select(full, false);
-				if (chosen == bins.size() || (placed = run_fill(bins[chosen], full, true)) == 0)
+				if (chosen == bins.size())
+					break;
+				placed = run_fill(bins[chosen], full, true);
+				if (placed == 0)
 					break;
 			}
 			close(chosen);
