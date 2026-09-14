@@ -38,7 +38,7 @@ export class SolveRequest {
     }
     algorithm() {
         const offset = this.bb.__offset(this.bb_pos, 8);
-        return offset ? this.bb.readInt8(this.bb_pos + offset) : SolveAlgorithm.PHPSolver;
+        return offset ? this.bb.readInt8(this.bb_pos + offset) : SolveAlgorithm.ExtremePoint;
     }
     options(obj) {
         const offset = this.bb.__offset(this.bb_pos, 10);
@@ -74,7 +74,7 @@ export class SolveRequest {
         builder.startVector(4, numElems, 4);
     }
     static addAlgorithm(builder, algorithm) {
-        builder.addFieldInt8(2, algorithm, SolveAlgorithm.PHPSolver);
+        builder.addFieldInt8(2, algorithm, SolveAlgorithm.ExtremePoint);
     }
     static addOptions(builder, optionsOffset) {
         builder.addFieldOffset(3, optionsOffset, 0);
@@ -106,7 +106,7 @@ export class SolveRequestT {
     items;
     algorithm;
     options;
-    constructor(boxes = [], items = [], algorithm = SolveAlgorithm.PHPSolver, options = null) {
+    constructor(boxes = [], items = [], algorithm = SolveAlgorithm.ExtremePoint, options = null) {
         this.boxes = boxes;
         this.items = items;
         this.algorithm = algorithm;

@@ -110,7 +110,7 @@ export type SolveRequest = {
 } | {
     algorithm?: undefined;
     options?: BaseOptions & {
-        phpSolverOptions?: PHPSolverOptionsT;
+        extremePointOptions?: ExtremePointOptionsT;
     };
 });
 export declare function encodeRequest(request: SolveRequest): Uint8Array;

@@ -321,13 +321,11 @@ function generateTsUnion(schema, label, parts) {
 		}
 		return `\t| { algorithm?: typeof ${algorithmEnum}.${algoName}; options?: BaseOptions }`;
 	});
+	const highestValueAlgorithm = Object.keys(algorithmValues).find(
+		(name) => algorithmValues[name] === Math.max(...Object.values(algorithmValues)),
+	);
 	const defaultMember =
-		algoToMember[
-			Object.keys(algorithmValues).find(
-				(name) =>
-					algorithmValues[name] === Math.max(...Object.values(algorithmValues)),
-			)
-		];
+		algoToMember[algorithmField?.defaultValue] ?? algoToMember[highestValueAlgorithm];
 	const defaultOptions = defaultMember
 		? `BaseOptions & { ${optionPropertyName(defaultMember)}?: ${defaultMember}T }`
 		: "BaseOptions";

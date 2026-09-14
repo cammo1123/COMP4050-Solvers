@@ -12,7 +12,7 @@ uint64_t end(uint32_t start, uint32_t size)
 
 bool overlaps(RectangularVoid const& space, PackedItem const& item)
 {
-	return space.x < end(item.x, item.dimensions.width) && item.x < end(space.x, space.dimensions.width) && space.y < end(item.y, item.dimensions.height) && item.y < end(space.y, space.dimensions.height) && space.z < end(item.z, item.dimensions.length) && item.z < end(space.z, space.dimensions.length);
+	return space.x < end(item.x, item.dimensions.width) && item.x < end(space.x, space.dimensions.width) && space.y < end(item.y, item.dimensions.depth) && item.y < end(space.y, space.dimensions.depth) && space.z < end(item.z, item.dimensions.length) && item.z < end(space.z, space.dimensions.length);
 }
 
 bool empty(RectangularVoid const& space, std::vector<PackedItem> const& packed)
@@ -25,7 +25,7 @@ bool empty(RectangularVoid const& space, std::vector<PackedItem> const& packed)
 
 void add_if_nonempty(std::vector<RectangularVoid>& result, uint32_t x, uint32_t y, uint32_t z, Dimensions dimensions)
 {
-	if (dimensions.width && dimensions.height && dimensions.length)
+	if (dimensions.width && dimensions.depth && dimensions.length)
 		result.push_back({ x, y, z, dimensions });
 }
 
@@ -35,19 +35,19 @@ std::vector<RectangularVoid> subtract(RectangularVoid const& space, PackedItem c
 		return { space };
 
 	auto const sx2 = end(space.x, space.dimensions.width);
-	auto const sy2 = end(space.y, space.dimensions.height);
+	auto const sy2 = end(space.y, space.dimensions.depth);
 	auto const sz2 = end(space.z, space.dimensions.length);
 	auto const ix1 = std::max(space.x, item.x);
 	auto const iy1 = std::max(space.y, item.y);
 	auto const iz1 = std::max(space.z, item.z);
 	auto const ix2 = std::min(sx2, end(item.x, item.dimensions.width));
-	auto const iy2 = std::min(sy2, end(item.y, item.dimensions.height));
+	auto const iy2 = std::min(sy2, end(item.y, item.dimensions.depth));
 	auto const iz2 = std::min(sz2, end(item.z, item.dimensions.length));
 	std::vector<RectangularVoid> result;
 	// Partition around the intersection into disjoint slabs. The middle
 	// slabs are restricted to the intersection footprint on preceding axes.
-	add_if_nonempty(result, space.x, space.y, space.z, { ix1 - space.x, space.dimensions.height, space.dimensions.length });
-	add_if_nonempty(result, ix2, space.y, space.z, { static_cast<uint32_t>(sx2 - ix2), space.dimensions.height, space.dimensions.length });
+	add_if_nonempty(result, space.x, space.y, space.z, { ix1 - space.x, space.dimensions.depth, space.dimensions.length });
+	add_if_nonempty(result, ix2, space.y, space.z, { static_cast<uint32_t>(sx2 - ix2), space.dimensions.depth, space.dimensions.length });
 	add_if_nonempty(result, ix1, space.y, space.z, { static_cast<uint32_t>(ix2 - ix1), static_cast<uint32_t>(iy1 - space.y), space.dimensions.length });
 	add_if_nonempty(result, ix1, iy2, space.z, { static_cast<uint32_t>(ix2 - ix1), static_cast<uint32_t>(sy2 - iy2), space.dimensions.length });
 	add_if_nonempty(result, ix1, iy1, space.z, { static_cast<uint32_t>(ix2 - ix1), static_cast<uint32_t>(iy2 - iy1), static_cast<uint32_t>(iz1 - space.z) });
@@ -59,7 +59,7 @@ std::vector<RectangularVoid> subtract(RectangularVoid const& space, PackedItem c
 
 uint64_t RectangularVoid::volume() const
 {
-	return static_cast<uint64_t>(dimensions.width) * dimensions.height * dimensions.length;
+	return static_cast<uint64_t>(dimensions.width) * dimensions.depth * dimensions.length;
 }
 
 std::vector<RectangularVoid> VoidFinder::find(Dimensions container, std::vector<PackedItem> const& packed)
@@ -82,7 +82,7 @@ std::vector<RectangularVoid> VoidFinder::find(Dimensions container, std::vector<
 		x_edges.push_back(item.x);
 		x_edges.push_back(item.x + item.dimensions.width);
 		y_edges.push_back(item.y);
-		y_edges.push_back(item.y + item.dimensions.height);
+		y_edges.push_back(item.y + item.dimensions.depth);
 		z_edges.push_back(item.z);
 		z_edges.push_back(item.z + item.dimensions.length);
 	}
@@ -90,9 +90,9 @@ std::vector<RectangularVoid> VoidFinder::find(Dimensions container, std::vector<
 	for (auto x : x_edges) {
 		for (auto y : y_edges) {
 			for (auto z : z_edges) {
-				if (x >= container.width || y >= container.height || z >= container.length)
+				if (x >= container.width || y >= container.depth || z >= container.length)
 					continue;
-				RectangularVoid candidate { x, y, z, { container.width - x, container.height - y, container.length - z } };
+				RectangularVoid candidate { x, y, z, { container.width - x, container.depth - y, container.length - z } };
 				if (empty(candidate, packed))
 					spaces.push_back(candidate);
 			}

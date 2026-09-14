@@ -9,7 +9,7 @@ namespace packing {
 
 struct Dimensions {
 	uint32_t width = 0;	 // X axis.
-	uint32_t height = 0; // Y axis (up).
+	uint32_t depth = 0;	 // Y axis (up).
 	uint32_t length = 0; // Z axis.
 
 	uint64_t volume() const;

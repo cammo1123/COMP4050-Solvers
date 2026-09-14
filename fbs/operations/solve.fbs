@@ -38,7 +38,7 @@ enum SolveAlgorithm : byte {
 table SolveRequest {
   boxes: [BoxType] (required);
   items: [ItemType] (required);
-  algorithm: SolveAlgorithm = PHPSolver;
+  algorithm: SolveAlgorithm = ExtremePoint;
   options: SolveOptions (optional);
 }
 

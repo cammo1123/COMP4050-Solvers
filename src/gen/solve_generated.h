@@ -480,7 +480,7 @@ struct SolveRequestT : public ::flatbuffers::NativeTable {
   typedef SolveRequest TableType;
   std::vector<std::unique_ptr<fbs::BoxTypeT>> boxes{};
   std::vector<std::unique_ptr<fbs::ItemTypeT>> items{};
-  fbs::SolveAlgorithm algorithm = fbs::SolveAlgorithm_PHPSolver;
+  fbs::SolveAlgorithm algorithm = fbs::SolveAlgorithm_ExtremePoint;
   std::unique_ptr<fbs::SolveOptionsT> options{};
   SolveRequestT() = default;
   SolveRequestT(const SolveRequestT &o);
@@ -504,7 +504,7 @@ struct SolveRequest FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<fbs::ItemType>> *>(VT_ITEMS);
   }
   fbs::SolveAlgorithm algorithm() const {
-    return static_cast<fbs::SolveAlgorithm>(GetField<int8_t>(VT_ALGORITHM, 3));
+    return static_cast<fbs::SolveAlgorithm>(GetField<int8_t>(VT_ALGORITHM, 1));
   }
   const fbs::SolveOptions *options() const {
     return GetPointer<const fbs::SolveOptions *>(VT_OPTIONS);
@@ -539,7 +539,7 @@ struct SolveRequestBuilder {
     fbb_.AddOffset(SolveRequest::VT_ITEMS, items);
   }
   void add_algorithm(fbs::SolveAlgorithm algorithm) {
-    fbb_.AddElement<int8_t>(SolveRequest::VT_ALGORITHM, static_cast<int8_t>(algorithm), 3);
+    fbb_.AddElement<int8_t>(SolveRequest::VT_ALGORITHM, static_cast<int8_t>(algorithm), 1);
   }
   void add_options(::flatbuffers::Offset<fbs::SolveOptions> options) {
     fbb_.AddOffset(SolveRequest::VT_OPTIONS, options);
@@ -561,7 +561,7 @@ inline ::flatbuffers::Offset<SolveRequest> CreateSolveRequest(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<fbs::BoxType>>> boxes = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<fbs::ItemType>>> items = 0,
-    fbs::SolveAlgorithm algorithm = fbs::SolveAlgorithm_PHPSolver,
+    fbs::SolveAlgorithm algorithm = fbs::SolveAlgorithm_ExtremePoint,
     ::flatbuffers::Offset<fbs::SolveOptions> options = 0) {
   SolveRequestBuilder builder_(_fbb);
   builder_.add_options(options);
@@ -575,7 +575,7 @@ inline ::flatbuffers::Offset<SolveRequest> CreateSolveRequestDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     const std::vector<::flatbuffers::Offset<fbs::BoxType>> *boxes = nullptr,
     const std::vector<::flatbuffers::Offset<fbs::ItemType>> *items = nullptr,
-    fbs::SolveAlgorithm algorithm = fbs::SolveAlgorithm_PHPSolver,
+    fbs::SolveAlgorithm algorithm = fbs::SolveAlgorithm_ExtremePoint,
     ::flatbuffers::Offset<fbs::SolveOptions> options = 0) {
   auto boxes__ = boxes ? _fbb.CreateVector<::flatbuffers::Offset<fbs::BoxType>>(*boxes) : 0;
   auto items__ = items ? _fbb.CreateVector<::flatbuffers::Offset<fbs::ItemType>>(*items) : 0;
