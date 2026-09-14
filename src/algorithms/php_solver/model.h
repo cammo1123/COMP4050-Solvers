@@ -25,7 +25,7 @@ enum class RotationPolicy : int8_t {
 struct Item {
 	std::string code;
 	std::string reference;
-	std::string linked_group;
+	std::string box_group;
 	Dimensions dimensions;
 	float weight = 0;
 	RotationPolicy rotation = RotationPolicy::BestFit;

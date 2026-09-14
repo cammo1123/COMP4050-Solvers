@@ -38,7 +38,7 @@ auto solve_php_solver(SolveRequest const& request, SolveOptions const& options, 
 			packing::Item item;
 			item.code = source.item_code;
 			item.reference = source.item_reference;
-			item.linked_group = source.linked_group.value_or("");
+			item.box_group = source.box_group.value_or("");
 			item.dimensions = { source.width, source.depth, source.length };
 			item.weight = source.weight;
 			item.rotation = static_cast<packing::RotationPolicy>(source.rotation_policy.value_or(RotationPolicy::BestFit));
