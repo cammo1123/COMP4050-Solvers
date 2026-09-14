@@ -564,7 +564,7 @@ struct Engine {
 		prefix.assign(full.begin(), full.begin() + static_cast<std::ptrdiff_t>(m));
 		if (world.links == 0)
 			return;
-		// extend to linkedgroup closure
+		// extend to group closure
 		std::ranges::fill(link_seen, std::uint8_t { 0 });
 		for (auto instance_idx : prefix)
 			if (auto const link = type_of(instance_idx).link; link >= 0)
@@ -671,8 +671,6 @@ auto build_world(SolveRequest const& request) -> World
 	for (auto const& item_request : request.items) {
 		if (item_request.box_group && !item_request.box_group->empty())
 			groups.emplace_back(*item_request.box_group);
-		if (item_request.linked_group && !item_request.linked_group->empty())
-			links.emplace_back(*item_request.linked_group);
 	}
 	auto densify = [](std::vector<std::string_view>& v) {
 		std::ranges::sort(v);
@@ -700,7 +698,6 @@ auto build_world(SolveRequest const& request) -> World
 		t.key_max_dim = std::max({ item_request.width, item_request.depth, item_request.length });
 		t.key_base_area = sat_mul(item_request.width, item_request.length);
 		t.group = intern(groups, item_request.box_group);
-		t.link = intern(links, item_request.linked_group);
 
 		auto const constraint = item_request.constraint.value_or(PlacementConstraint { });
 		t.no_stacking = constraint.no_stacking.value_or(false);
@@ -757,7 +754,7 @@ auto build_world(SolveRequest const& request) -> World
 		world.type_dead[ti] = fits ? 0 : 1;
 	}
 
-	// linkedgroup atomicity checks
+	// group atomicity checks
 	if (world.links != 0) {
 		auto bad = std::vector<std::uint8_t>(world.links, std::uint8_t { 0 });
 		auto seen = std::vector<std::int32_t>(world.links, -2);
@@ -882,7 +879,7 @@ auto solve_extreme_point(SolveRequest const& request, SolveOptions const& option
 	response.failed.reserve(best.failed.size());
 	for (auto instance_idx : best.failed) {
 		auto const& item = request.items[world.types[world.inst_type[instance_idx]].src];
-		response.failed.push_back({ item.item_code, item.item_reference, item.width, item.length, item.depth, item.weight, std::nullopt, item.box_group, item.rotation_policy, item.linked_group, item.constraint });
+		response.failed.push_back({ item.item_code, item.item_reference, item.width, item.length, item.depth, item.weight, std::nullopt, item.box_group, item.rotation_policy, item.constraint });
 	}
 
 	progress.emit(best.placed);
