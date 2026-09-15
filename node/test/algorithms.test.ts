@@ -52,7 +52,7 @@ describe("algorithm dispatch", () => {
 		const response = await solve({
 			...request,
 			items: [...request.items, secondItem],
-			algorithm: SolveAlgorithm.ShitStack,
+			algorithm: SolveAlgorithm.StackBased,
 			onProgress: (done, total) => progress.push([done, total]),
 		});
 		await new Promise<void>((resolve) => setImmediate(resolve));
