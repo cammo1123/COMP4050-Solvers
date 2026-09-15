@@ -46,14 +46,7 @@ int main()
 		.depth = 100,
 	});
 
-	solve.algorithm = SolveAlgorithm::PHPSolver;
-
-	fbs::domain::SolveOptions options;
-	options.php_solver_options = fbs::domain::PHPSolverOptions {
-		.balance_weight = true,
-		.best_subset = false,
-	};
-	solve.options = options;
+	solve.algorithm = SolveAlgorithm::ExtremePoint;
 
 	fbs::domain::ItemType linked_a;
 	linked_a.item_code = "LinkedA";
