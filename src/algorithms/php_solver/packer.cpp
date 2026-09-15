@@ -150,7 +150,7 @@ bool valid_box(PackedBox const& box)
 {
 	if (box.dimensions.width == 0 || box.dimensions.depth == 0 || box.dimensions.length == 0)
 		return false;
-	float weight = box.box.empty_weight;
+	float weight = 0.0f;
 	for (size_t i = 0; i < box.items.size(); ++i) {
 		auto const& item = box.items[i];
 		if (!fits(item.x, item.dimensions.width, box.dimensions.width) || !fits(item.y, item.dimensions.depth, box.dimensions.depth) || !fits(item.z, item.dimensions.length, box.dimensions.length) || !valid_rotation(item.item, item.dimensions))
@@ -324,7 +324,7 @@ std::optional<PackedBox> try_box_once(Box const& box, std::vector<Item> const& i
 
 	std::optional<PackedBox> best;
 	for (auto box_dimensions : box_orientations) {
-		PackedBox candidate { box, box_dimensions, { }, box.empty_weight };
+		PackedBox candidate { box, box_dimensions, { }, 0.0f };
 		std::vector<bool> considered(items.size());
 		std::string box_group;
 
@@ -488,7 +488,7 @@ Result pack_ordered(std::vector<Box> boxes, std::vector<Item> items, Options opt
 			return a.dimensions.volume() < b.dimensions.volume();
 		if (a.empty_weight != b.empty_weight)
 			return a.empty_weight < b.empty_weight;
-		auto const capacity = [](auto const& box) { return box.max_weight > 0 ? box.max_weight - box.empty_weight : std::numeric_limits<float>::infinity(); };
+		auto const capacity = [](auto const& box) { return box.max_weight > 0 ? box.max_weight : std::numeric_limits<float>::infinity(); };
 		return capacity(a) < capacity(b);
 	});
 	Result result;
@@ -501,7 +501,7 @@ Result pack_ordered(std::vector<Box> boxes, std::vector<Item> items, Options opt
 		std::optional<PackedBox> best;
 		size_t best_box = 0;
 		for (size_t i = 0; i < boxes.size(); ++i) {
-			if (!boxes[i].active || (boxes[i].quantity && used[i] >= boxes[i].quantity))
+			if (!boxes[i].active || used[i] >= boxes[i].quantity)
 				continue;
 			// Candidate evaluation is search work, not completed packing progress.
 			// Reporting it makes the item-based denominator reset for each box.
