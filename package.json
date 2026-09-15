@@ -10,11 +10,18 @@
 			"import": "./node/dist/addon.js",
 			"require": "./node/index.cjs",
 			"default": "./node/dist/addon.js"
+		},
+		"./enums": {
+			"types": "./node/dist/enums.d.ts",
+			"import": "./node/dist/enums.js",
+			"require": "./node/enums.cjs",
+			"default": "./node/dist/enums.js"
 		}
 	},
 	"files": [
 		"node/dist",
 		"node/index.cjs",
+		"node/enums.cjs",
 		"node/native.cjs",
 		"node/native.d.cts",
 		"node/index.d.cts",
