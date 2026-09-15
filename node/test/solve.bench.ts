@@ -45,19 +45,19 @@ for (const itemCount of [100, 1_000, 10_000]) {
 	describe(`${itemCount.toLocaleString()}-item end-to-end workload`, () => {
 		// The algorithm must be named explicitly: an omitted algorithm decodes as
 		// PHPSolver (solve_translation.ts), so this bench measured PHPSolver under
-		// a shit-stack label, and at 10,000 items that does not finish.
-		const shitStackRequest = createRequest(itemCount, SolveAlgorithm.ShitStack);
+		// a stack-based label, and at 10,000 items that does not finish.
+		const stackBasedRequest = createRequest(itemCount, SolveAlgorithm.StackBased);
 		const greedyRequest = createRequest(itemCount, SolveAlgorithm.Greedy);
 		const extremePointRequest = createRequest(itemCount, SolveAlgorithm.ExtremePoint);
 		const phpSolverRequest = createRequest(itemCount, SolveAlgorithm.PHPSolver);
 
-		// shit-stack is the do-nothing floor: it dumps everything up the Y axis and
+		// stack-based is the do-nothing floor: it dumps everything up the Y axis and
 		// happily overflows the box, so read it as "cost of the plumbing", not as a
 		// rival packer.
 		bench(
-			"shit-stack",
+			"stack-based",
 			async () => {
-				await solve(shitStackRequest);
+				await solve(stackBasedRequest);
 			},
 			{ iterations: 3, time: 500 },
 		);

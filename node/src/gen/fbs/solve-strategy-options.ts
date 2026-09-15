@@ -5,26 +5,26 @@
 import { ExtremePointOptions, ExtremePointOptionsT } from '../fbs/extreme-point-options.js';
 import { GreedyOptions, GreedyOptionsT } from '../fbs/greedy-options.js';
 import { PHPSolverOptions, PHPSolverOptionsT } from '../fbs/phpsolver-options.js';
-import { ShitStackOptions, ShitStackOptionsT } from '../fbs/shit-stack-options.js';
+import { StackBasedOptions, StackBasedOptionsT } from '../fbs/stack-based-options.js';
 
 
 export enum SolveStrategyOptions {
   NONE = 0,
   GreedyOptions = 1,
   ExtremePointOptions = 2,
-  ShitStackOptions = 3,
+  StackBasedOptions = 3,
   PHPSolverOptions = 4
 }
 
 export function unionToSolveStrategyOptions(
   type: SolveStrategyOptions,
-  accessor: (obj:ExtremePointOptions|GreedyOptions|PHPSolverOptions|ShitStackOptions) => ExtremePointOptions|GreedyOptions|PHPSolverOptions|ShitStackOptions|null
-): ExtremePointOptions|GreedyOptions|PHPSolverOptions|ShitStackOptions|null {
+  accessor: (obj:ExtremePointOptions|GreedyOptions|PHPSolverOptions|StackBasedOptions) => ExtremePointOptions|GreedyOptions|PHPSolverOptions|StackBasedOptions|null
+): ExtremePointOptions|GreedyOptions|PHPSolverOptions|StackBasedOptions|null {
   switch(SolveStrategyOptions[type]) {
     case 'NONE': return null; 
     case 'GreedyOptions': return accessor(new GreedyOptions())! as GreedyOptions;
     case 'ExtremePointOptions': return accessor(new ExtremePointOptions())! as ExtremePointOptions;
-    case 'ShitStackOptions': return accessor(new ShitStackOptions())! as ShitStackOptions;
+    case 'StackBasedOptions': return accessor(new StackBasedOptions())! as StackBasedOptions;
     case 'PHPSolverOptions': return accessor(new PHPSolverOptions())! as PHPSolverOptions;
     default: return null;
   }
@@ -32,14 +32,14 @@ export function unionToSolveStrategyOptions(
 
 export function unionListToSolveStrategyOptions(
   type: SolveStrategyOptions, 
-  accessor: (index: number, obj:ExtremePointOptions|GreedyOptions|PHPSolverOptions|ShitStackOptions) => ExtremePointOptions|GreedyOptions|PHPSolverOptions|ShitStackOptions|null, 
+  accessor: (index: number, obj:ExtremePointOptions|GreedyOptions|PHPSolverOptions|StackBasedOptions) => ExtremePointOptions|GreedyOptions|PHPSolverOptions|StackBasedOptions|null, 
   index: number
-): ExtremePointOptions|GreedyOptions|PHPSolverOptions|ShitStackOptions|null {
+): ExtremePointOptions|GreedyOptions|PHPSolverOptions|StackBasedOptions|null {
   switch(SolveStrategyOptions[type]) {
     case 'NONE': return null; 
     case 'GreedyOptions': return accessor(index, new GreedyOptions())! as GreedyOptions;
     case 'ExtremePointOptions': return accessor(index, new ExtremePointOptions())! as ExtremePointOptions;
-    case 'ShitStackOptions': return accessor(index, new ShitStackOptions())! as ShitStackOptions;
+    case 'StackBasedOptions': return accessor(index, new StackBasedOptions())! as StackBasedOptions;
     case 'PHPSolverOptions': return accessor(index, new PHPSolverOptions())! as PHPSolverOptions;
     default: return null;
   }

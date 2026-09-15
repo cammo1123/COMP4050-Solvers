@@ -25,9 +25,9 @@ struct ExtremePointOptions;
 struct ExtremePointOptionsBuilder;
 struct ExtremePointOptionsT;
 
-struct ShitStackOptions;
-struct ShitStackOptionsBuilder;
-struct ShitStackOptionsT;
+struct StackBasedOptions;
+struct StackBasedOptionsBuilder;
+struct StackBasedOptionsT;
 
 struct PHPSolverOptions;
 struct PHPSolverOptionsBuilder;
@@ -57,7 +57,7 @@ enum SolveStrategyOptions : uint8_t {
   SolveStrategyOptions_NONE = 0,
   SolveStrategyOptions_GreedyOptions = 1,
   SolveStrategyOptions_ExtremePointOptions = 2,
-  SolveStrategyOptions_ShitStackOptions = 3,
+  SolveStrategyOptions_StackBasedOptions = 3,
   SolveStrategyOptions_PHPSolverOptions = 4,
   SolveStrategyOptions_MIN = SolveStrategyOptions_NONE,
   SolveStrategyOptions_MAX = SolveStrategyOptions_PHPSolverOptions
@@ -68,7 +68,7 @@ inline const SolveStrategyOptions (&EnumValuesSolveStrategyOptions())[5] {
     SolveStrategyOptions_NONE,
     SolveStrategyOptions_GreedyOptions,
     SolveStrategyOptions_ExtremePointOptions,
-    SolveStrategyOptions_ShitStackOptions,
+    SolveStrategyOptions_StackBasedOptions,
     SolveStrategyOptions_PHPSolverOptions
   };
   return values;
@@ -79,7 +79,7 @@ inline const char * const *EnumNamesSolveStrategyOptions() {
     "NONE",
     "GreedyOptions",
     "ExtremePointOptions",
-    "ShitStackOptions",
+    "StackBasedOptions",
     "PHPSolverOptions",
     nullptr
   };
@@ -104,8 +104,8 @@ template<> struct SolveStrategyOptionsTraits<fbs::ExtremePointOptions> {
   static const SolveStrategyOptions enum_value = SolveStrategyOptions_ExtremePointOptions;
 };
 
-template<> struct SolveStrategyOptionsTraits<fbs::ShitStackOptions> {
-  static const SolveStrategyOptions enum_value = SolveStrategyOptions_ShitStackOptions;
+template<> struct SolveStrategyOptionsTraits<fbs::StackBasedOptions> {
+  static const SolveStrategyOptions enum_value = SolveStrategyOptions_StackBasedOptions;
 };
 
 template<> struct SolveStrategyOptionsTraits<fbs::PHPSolverOptions> {
@@ -124,8 +124,8 @@ template<> struct SolveStrategyOptionsUnionTraits<fbs::ExtremePointOptionsT> {
   static const SolveStrategyOptions enum_value = SolveStrategyOptions_ExtremePointOptions;
 };
 
-template<> struct SolveStrategyOptionsUnionTraits<fbs::ShitStackOptionsT> {
-  static const SolveStrategyOptions enum_value = SolveStrategyOptions_ShitStackOptions;
+template<> struct SolveStrategyOptionsUnionTraits<fbs::StackBasedOptionsT> {
+  static const SolveStrategyOptions enum_value = SolveStrategyOptions_StackBasedOptions;
 };
 
 template<> struct SolveStrategyOptionsUnionTraits<fbs::PHPSolverOptionsT> {
@@ -178,13 +178,13 @@ struct SolveStrategyOptionsUnion {
     return type == SolveStrategyOptions_ExtremePointOptions ?
       reinterpret_cast<const fbs::ExtremePointOptionsT *>(value) : nullptr;
   }
-  fbs::ShitStackOptionsT *AsShitStackOptions() {
-    return type == SolveStrategyOptions_ShitStackOptions ?
-      reinterpret_cast<fbs::ShitStackOptionsT *>(value) : nullptr;
+  fbs::StackBasedOptionsT *AsStackBasedOptions() {
+    return type == SolveStrategyOptions_StackBasedOptions ?
+      reinterpret_cast<fbs::StackBasedOptionsT *>(value) : nullptr;
   }
-  const fbs::ShitStackOptionsT *AsShitStackOptions() const {
-    return type == SolveStrategyOptions_ShitStackOptions ?
-      reinterpret_cast<const fbs::ShitStackOptionsT *>(value) : nullptr;
+  const fbs::StackBasedOptionsT *AsStackBasedOptions() const {
+    return type == SolveStrategyOptions_StackBasedOptions ?
+      reinterpret_cast<const fbs::StackBasedOptionsT *>(value) : nullptr;
   }
   fbs::PHPSolverOptionsT *AsPHPSolverOptions() {
     return type == SolveStrategyOptions_PHPSolverOptions ?
@@ -204,7 +204,7 @@ bool VerifySolveStrategyOptionsVector(::flatbuffers::VerifierTemplate<B> &verifi
 enum SolveAlgorithm : int8_t {
   SolveAlgorithm_Greedy = 0,
   SolveAlgorithm_ExtremePoint = 1,
-  SolveAlgorithm_ShitStack = 2,
+  SolveAlgorithm_StackBased = 2,
   SolveAlgorithm_PHPSolver = 3,
   SolveAlgorithm_MIN = SolveAlgorithm_Greedy,
   SolveAlgorithm_MAX = SolveAlgorithm_PHPSolver
@@ -214,7 +214,7 @@ inline const SolveAlgorithm (&EnumValuesSolveAlgorithm())[4] {
   static const SolveAlgorithm values[] = {
     SolveAlgorithm_Greedy,
     SolveAlgorithm_ExtremePoint,
-    SolveAlgorithm_ShitStack,
+    SolveAlgorithm_StackBased,
     SolveAlgorithm_PHPSolver
   };
   return values;
@@ -224,7 +224,7 @@ inline const char * const *EnumNamesSolveAlgorithm() {
   static const char * const names[5] = {
     "Greedy",
     "ExtremePoint",
-    "ShitStack",
+    "StackBased",
     "PHPSolver",
     nullptr
   };
@@ -317,45 +317,45 @@ inline ::flatbuffers::Offset<ExtremePointOptions> CreateExtremePointOptions(
 
 ::flatbuffers::Offset<ExtremePointOptions> CreateExtremePointOptions(::flatbuffers::FlatBufferBuilder &_fbb, const ExtremePointOptionsT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 
-struct ShitStackOptionsT : public ::flatbuffers::NativeTable {
-  typedef ShitStackOptions TableType;
+struct StackBasedOptionsT : public ::flatbuffers::NativeTable {
+  typedef StackBasedOptions TableType;
 };
 
-struct ShitStackOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef ShitStackOptionsT NativeTableType;
-  typedef ShitStackOptionsBuilder Builder;
+struct StackBasedOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef StackBasedOptionsT NativeTableType;
+  typedef StackBasedOptionsBuilder Builder;
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
            verifier.EndTable();
   }
-  ShitStackOptionsT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
-  void UnPackTo(ShitStackOptionsT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
-  static ::flatbuffers::Offset<ShitStackOptions> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ShitStackOptionsT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+  StackBasedOptionsT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(StackBasedOptionsT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<StackBasedOptions> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const StackBasedOptionsT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
-struct ShitStackOptionsBuilder {
-  typedef ShitStackOptions Table;
+struct StackBasedOptionsBuilder {
+  typedef StackBasedOptions Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  explicit ShitStackOptionsBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+  explicit StackBasedOptionsBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  ::flatbuffers::Offset<ShitStackOptions> Finish() {
+  ::flatbuffers::Offset<StackBasedOptions> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<ShitStackOptions>(end);
+    auto o = ::flatbuffers::Offset<StackBasedOptions>(end);
     return o;
   }
 };
 
-inline ::flatbuffers::Offset<ShitStackOptions> CreateShitStackOptions(
+inline ::flatbuffers::Offset<StackBasedOptions> CreateStackBasedOptions(
     ::flatbuffers::FlatBufferBuilder &_fbb) {
-  ShitStackOptionsBuilder builder_(_fbb);
+  StackBasedOptionsBuilder builder_(_fbb);
   return builder_.Finish();
 }
 
-::flatbuffers::Offset<ShitStackOptions> CreateShitStackOptions(::flatbuffers::FlatBufferBuilder &_fbb, const ShitStackOptionsT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+::flatbuffers::Offset<StackBasedOptions> CreateStackBasedOptions(::flatbuffers::FlatBufferBuilder &_fbb, const StackBasedOptionsT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 
 struct PHPSolverOptionsT : public ::flatbuffers::NativeTable {
   typedef PHPSolverOptions TableType;
@@ -619,8 +619,8 @@ struct SolveOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const fbs::ExtremePointOptions *algo_options_as_ExtremePointOptions() const {
     return algo_options_type() == fbs::SolveStrategyOptions_ExtremePointOptions ? static_cast<const fbs::ExtremePointOptions *>(algo_options()) : nullptr;
   }
-  const fbs::ShitStackOptions *algo_options_as_ShitStackOptions() const {
-    return algo_options_type() == fbs::SolveStrategyOptions_ShitStackOptions ? static_cast<const fbs::ShitStackOptions *>(algo_options()) : nullptr;
+  const fbs::StackBasedOptions *algo_options_as_StackBasedOptions() const {
+    return algo_options_type() == fbs::SolveStrategyOptions_StackBasedOptions ? static_cast<const fbs::StackBasedOptions *>(algo_options()) : nullptr;
   }
   const fbs::PHPSolverOptions *algo_options_as_PHPSolverOptions() const {
     return algo_options_type() == fbs::SolveStrategyOptions_PHPSolverOptions ? static_cast<const fbs::PHPSolverOptions *>(algo_options()) : nullptr;
@@ -647,8 +647,8 @@ template<> inline const fbs::ExtremePointOptions *SolveOptions::algo_options_as<
   return algo_options_as_ExtremePointOptions();
 }
 
-template<> inline const fbs::ShitStackOptions *SolveOptions::algo_options_as<fbs::ShitStackOptions>() const {
-  return algo_options_as_ShitStackOptions();
+template<> inline const fbs::StackBasedOptions *SolveOptions::algo_options_as<fbs::StackBasedOptions>() const {
+  return algo_options_as_StackBasedOptions();
 }
 
 template<> inline const fbs::PHPSolverOptions *SolveOptions::algo_options_as<fbs::PHPSolverOptions>() const {
@@ -1192,26 +1192,26 @@ inline ::flatbuffers::Offset<ExtremePointOptions> ExtremePointOptions::Pack(::fl
       _fbb);
 }
 
-inline ShitStackOptionsT *ShitStackOptions::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
-  auto _o = std::unique_ptr<ShitStackOptionsT>(new ShitStackOptionsT());
+inline StackBasedOptionsT *StackBasedOptions::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<StackBasedOptionsT>(new StackBasedOptionsT());
   UnPackTo(_o.get(), _resolver);
   return _o.release();
 }
 
-inline void ShitStackOptions::UnPackTo(ShitStackOptionsT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+inline void StackBasedOptions::UnPackTo(StackBasedOptionsT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
   (void)_o;
   (void)_resolver;
 }
 
-inline ::flatbuffers::Offset<ShitStackOptions> CreateShitStackOptions(::flatbuffers::FlatBufferBuilder &_fbb, const ShitStackOptionsT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
-  return ShitStackOptions::Pack(_fbb, _o, _rehasher);
+inline ::flatbuffers::Offset<StackBasedOptions> CreateStackBasedOptions(::flatbuffers::FlatBufferBuilder &_fbb, const StackBasedOptionsT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return StackBasedOptions::Pack(_fbb, _o, _rehasher);
 }
 
-inline ::flatbuffers::Offset<ShitStackOptions> ShitStackOptions::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const ShitStackOptionsT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+inline ::flatbuffers::Offset<StackBasedOptions> StackBasedOptions::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const StackBasedOptionsT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
   (void)_rehasher;
   (void)_o;
-  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const ShitStackOptionsT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
-  return fbs::CreateShitStackOptions(
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const StackBasedOptionsT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  return fbs::CreateStackBasedOptions(
       _fbb);
 }
 
@@ -1537,8 +1537,8 @@ inline bool VerifySolveStrategyOptions(::flatbuffers::VerifierTemplate<B> &verif
       auto ptr = reinterpret_cast<const fbs::ExtremePointOptions *>(obj);
       return verifier.VerifyTable(ptr);
     }
-    case SolveStrategyOptions_ShitStackOptions: {
-      auto ptr = reinterpret_cast<const fbs::ShitStackOptions *>(obj);
+    case SolveStrategyOptions_StackBasedOptions: {
+      auto ptr = reinterpret_cast<const fbs::StackBasedOptions *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case SolveStrategyOptions_PHPSolverOptions: {
@@ -1573,8 +1573,8 @@ inline void *SolveStrategyOptionsUnion::UnPack(const void *obj, SolveStrategyOpt
       auto ptr = reinterpret_cast<const fbs::ExtremePointOptions *>(obj);
       return ptr->UnPack(resolver);
     }
-    case SolveStrategyOptions_ShitStackOptions: {
-      auto ptr = reinterpret_cast<const fbs::ShitStackOptions *>(obj);
+    case SolveStrategyOptions_StackBasedOptions: {
+      auto ptr = reinterpret_cast<const fbs::StackBasedOptions *>(obj);
       return ptr->UnPack(resolver);
     }
     case SolveStrategyOptions_PHPSolverOptions: {
@@ -1596,9 +1596,9 @@ inline ::flatbuffers::Offset<void> SolveStrategyOptionsUnion::Pack(::flatbuffers
       auto ptr = reinterpret_cast<const fbs::ExtremePointOptionsT *>(value);
       return CreateExtremePointOptions(_fbb, ptr, _rehasher).Union();
     }
-    case SolveStrategyOptions_ShitStackOptions: {
-      auto ptr = reinterpret_cast<const fbs::ShitStackOptionsT *>(value);
-      return CreateShitStackOptions(_fbb, ptr, _rehasher).Union();
+    case SolveStrategyOptions_StackBasedOptions: {
+      auto ptr = reinterpret_cast<const fbs::StackBasedOptionsT *>(value);
+      return CreateStackBasedOptions(_fbb, ptr, _rehasher).Union();
     }
     case SolveStrategyOptions_PHPSolverOptions: {
       auto ptr = reinterpret_cast<const fbs::PHPSolverOptionsT *>(value);
@@ -1618,8 +1618,8 @@ inline SolveStrategyOptionsUnion::SolveStrategyOptionsUnion(const SolveStrategyO
       value = new fbs::ExtremePointOptionsT(*reinterpret_cast<fbs::ExtremePointOptionsT *>(u.value));
       break;
     }
-    case SolveStrategyOptions_ShitStackOptions: {
-      value = new fbs::ShitStackOptionsT(*reinterpret_cast<fbs::ShitStackOptionsT *>(u.value));
+    case SolveStrategyOptions_StackBasedOptions: {
+      value = new fbs::StackBasedOptionsT(*reinterpret_cast<fbs::StackBasedOptionsT *>(u.value));
       break;
     }
     case SolveStrategyOptions_PHPSolverOptions: {
@@ -1643,8 +1643,8 @@ inline void SolveStrategyOptionsUnion::Reset() {
       delete ptr;
       break;
     }
-    case SolveStrategyOptions_ShitStackOptions: {
-      auto ptr = reinterpret_cast<fbs::ShitStackOptionsT *>(value);
+    case SolveStrategyOptions_StackBasedOptions: {
+      auto ptr = reinterpret_cast<fbs::StackBasedOptionsT *>(value);
       delete ptr;
       break;
     }

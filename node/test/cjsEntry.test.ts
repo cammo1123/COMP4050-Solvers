@@ -21,7 +21,7 @@ describe("CommonJS entry (node/index.cjs)", () => {
 		const result = await entry.solve({
 			boxes: [{ reference: "box", width: 10, length: 10, depth: 10, maxWeight: 100 }],
 			items: [{ itemCode: "item", itemReference: "item", width: 2, length: 2, depth: 2, weight: 1, rotationPolicy: 0 }],
-			algorithm: entry.SolveAlgorithm.ShitStack,
+			algorithm: entry.SolveAlgorithm.StackBased,
 		});
 		expect(result.results.length).toBe(1);
 		expect(result.results[0].placements.length).toBe(1);

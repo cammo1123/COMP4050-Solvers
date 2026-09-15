@@ -65,7 +65,7 @@ const response = await solve({
 ```
 
 The default algorithm is `SolveAlgorithm.PHPSolver`. The available algorithms
-are `Greedy`, `ExtremePoint`, `ShitStack`, and `PHPSolver`. `ShitStack` is the
+are `Greedy`, `ExtremePoint`, `StackBased`, and `PHPSolver`. `StackBased` is the
 current stacking implementation and `ExtremePoint` is a full extreme-point
 solver. `Greedy` is dispatchable but currently rejects requests because its
 solver is not implemented.
@@ -99,7 +99,7 @@ emergency stop fires, because that depends on wall-clock time.
    client specified as the rated capacity of the box. The PHP port counts box
    tare against the limit.
 2. `totalWeight` reports content weight rather than gross weight, matching
-   `ShitStack` and the JS oracle.
+   `StackBased` and the JS oracle.
 3. `boxGroup` is enforced: a box holds at most one non-empty `boxGroup`, and
    ungrouped items may join any box. `PHPSolver` never reads the field.
 4. `maximumBoxes: 0` means no box of that type may be used. `PHPSolver` treats
@@ -203,7 +203,7 @@ local FlatBuffers compiler cache.
 ## Repository Layout
 
 - `src/` — C++ core, CLI, and native addon boundary.
-- `src/algorithms/` — algorithm registry plus isolated ExtremePoint, Greedy, ShitStack, and PHPSolver implementations.
+- `src/algorithms/` — algorithm registry plus isolated ExtremePoint, Greedy, StackBased, and PHPSolver implementations.
 - `fbs/` — FlatBuffers schemas shared by the core and addon.
 - `src/gen/` — generated C++ bindings.
 - `node/src/` — TypeScript API and generated TypeScript bindings.
