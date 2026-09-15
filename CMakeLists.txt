@@ -165,7 +165,7 @@ add_library(solver_core OBJECT
     src/algorithms/algo_registry.cpp
     src/algorithms/greedy/algo_greedy.cpp
     src/algorithms/extreme_point/algo_extreme_point.cpp
-    src/algorithms/shit_stack/algo_shit_stack.cpp
+    src/algorithms/stack_based/algo_stack_based.cpp
     src/algorithms/php_solver/php_solver.cpp
     ${GENERATED_HEADERS}
 )
@@ -242,12 +242,12 @@ if(COMP4050_BUILD_ADDON)
         endif()
     endif()
 
-    set(napi_dir "${CMAKE_BINARY_DIR}/node-addon-api-8.9.1")
+    set(napi_dir "${CMAKE_BINARY_DIR}/node-addon-api/node-addon-api-8.9.1")
 
     if(NOT EXISTS "${napi_dir}/napi.h")
         comp4050_fetch_archive(
             "https://github.com/nodejs/node-addon-api/archive/refs/tags/v8.9.1.tar.gz"
-            "${CMAKE_BINARY_DIR}"
+            "${CMAKE_BINARY_DIR}/node-addon-api"
         )
     endif()
 

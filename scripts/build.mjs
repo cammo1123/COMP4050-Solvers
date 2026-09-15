@@ -72,7 +72,7 @@ function prebuildAddonPath () {
 
 function copyAddon (dest) {
 	fs.mkdirSync(path.dirname(dest), { recursive: true })
-	fs.copyFileSync(builtAddonPath('build/addon'), dest)
+	fs.copyFileSync(builtAddonPath('build'), dest)
 	log("build", `wrote ${dest}`)
 }
 
@@ -114,12 +114,12 @@ if (!BUILD_TYPES.includes(buildType)) {
 }
 const doPrebuild = args.includes('--prebuild')
 const optimize = args.includes('--optimize')
-const buildDir = `build/${target}`
+const buildDir = 'build'
 const buildsAddon = target === 'addon'
 
 if (doPrebuild && first === undefined) {
 	if (!fs.existsSync(builtAddonPath(buildDir))) {
-		fail("build", 'addon.node not found in build/addon. Run "pnpm build" first.')
+		fail("build", 'addon.node not found in build. Run "pnpm build" first.')
 	}
 	copyAddon(prebuildAddonPath())
 	process.exit(0)

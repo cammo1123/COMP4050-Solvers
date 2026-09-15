@@ -52,7 +52,7 @@ describe("algorithm dispatch", () => {
 		const response = await solve({
 			...request,
 			items: [...request.items, secondItem],
-			algorithm: SolveAlgorithm.ShitStack,
+			algorithm: SolveAlgorithm.StackBased,
 			onProgress: (done, total) => progress.push([done, total]),
 		});
 		await new Promise<void>((resolve) => setImmediate(resolve));
@@ -129,8 +129,7 @@ describe("extreme-point algorithm correctness", () => {
 		expect(result.results[0].placements).toHaveLength(1);
 		expect(result.results[0].placements[0]).toMatchObject({ itemCode: "exact", x: 0, y: 0, z: 0, width: 10, length: 10, depth: 10 });
 		expect(result.results[0].utilization).toBe(1);
-		// Divergence from PHPSolver, which leaves these at 0: the BoxResult
-		// reports the dimensions of the box type it was cut from.
+		// The BoxResult reports the dimensions of the box type it was cut from.
 		expect(result.results[0]).toMatchObject({ boxReference: "box", width: 10, length: 10, depth: 10 });
 	});
 
@@ -230,8 +229,7 @@ describe("extreme-point algorithm correctness", () => {
 		expect(capped.failed).toHaveLength(2);
 		expect(capped.failed.every((item) => item.itemCode === "item")).toBe(true);
 
-		// Divergence from PHPSolver, where 0 means unlimited: here zero boxes of
-		// this type may be used, so nothing can be packed at all.
+		// Zero boxes of this type may be used, so nothing can be packed at all.
 		const none = await solve({
 			boxes: [{ reference: "box", width: 10, length: 10, depth: 10, maximumBoxes: 0 }],
 			items: [{ itemCode: "item", itemReference: "item", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: RotationPolicy.Never }],
@@ -326,7 +324,7 @@ describe("extreme-point algorithm correctness", () => {
 		assertCentreSupported(unstable);
 
 		// boxWeight: maxWeight is the rated content capacity and excludes the
-		// tare. Divergence from PHPSolver, which counts the tare against it.
+		// tare.
 		const tare = await solve({
 			boxes: [{ reference: "box", width: 10, length: 10, depth: 10, maxWeight: 5, boxWeight: 3 }],
 			items: [{ itemCode: "heavy", itemReference: "heavy", width: 10, length: 10, depth: 10, weight: 5, rotationPolicy: RotationPolicy.Never }],

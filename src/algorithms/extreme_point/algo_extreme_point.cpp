@@ -150,7 +150,7 @@ struct Engine {
 	auto is_top(u32 y) const noexcept -> bool { return std::ranges::binary_search(fill.tops, y); }
 	auto free_volume(Bin const& bin) const noexcept -> u64 { return bin.volume > fill.volume ? bin.volume - fill.volume : 0; }
 
-	// some maths magic shit here, probs read an extreme point white paper online for details
+	// projection of residual space along each axis from this point
 	auto rays(Bin const& bin, u32 x, u32 y, u32 z) const noexcept -> Point
 	{
 		auto point = Point { x, y, z, bin.width - x, bin.depth - y, bin.length - z };
@@ -168,7 +168,7 @@ struct Engine {
 		return point;
 	}
 
-	// some maths magic shit here, probs read an extreme point white paper online for details
+	// projection of residual space along each axis from this point
 	auto legal(u32 x, u32 y, u32 z, Shape shape) const noexcept -> bool
 	{
 		auto supported = y == 0;
@@ -217,7 +217,7 @@ struct Engine {
 		});
 	}
 
-	// some maths magic shit here, probs read an extreme point white paper online for details
+	// projection of residual space along each axis from this point
 	void insert_points(std::span<Point> new_points)
 	{
 		if (new_points.empty())
@@ -250,7 +250,7 @@ struct Engine {
 		fill.frontier.swap(merge);
 	}
 
-	// some maths magic shit here, probs read an extreme point white paper online for details
+	// projection of residual space along each axis from this point
 	void commit(Bin const& bin, u32 instance_idx, u32 x, u32 y, u32 z, Shape shape)
 	{
 		auto const max_x = x + shape.width, max_y = y + shape.depth, max_z = z + shape.length;
@@ -335,7 +335,7 @@ struct Engine {
 						}
 					if (!item_type.clamped || budget == 0)
 						continue;
-					// some maths magic shit here, probs read an extreme point white paper online for details
+					// projection of residual space along each axis from this point
 					auto const constraint_x = std::max(point.x, item_type.min_x), constraint_y = std::max(point.y, item_type.min_y), constraint_z = std::max(point.z, item_type.min_z);
 					if ((constraint_x == point.x && constraint_y == point.y && constraint_z == point.z) || constraint_x - point.x >= point.residual_x || constraint_y - point.y >= point.residual_y || constraint_z - point.z >= point.residual_z)
 						continue;
@@ -374,7 +374,7 @@ struct Engine {
 							}
 						if (!item_type.clamped || budget == 0)
 							continue;
-						// some maths magic shit here, probs read an extreme point white paper online for details
+						// projection of residual space along each axis from this point
 						auto const constraint_x = std::max(point.x, item_type.min_x), constraint_y = std::max(point.y, item_type.min_y), constraint_z = std::max(point.z, item_type.min_z);
 						if ((constraint_x == point.x && constraint_y == point.y && constraint_z == point.z) || constraint_x - point.x >= point.residual_x || constraint_y - point.y >= point.residual_y || constraint_z - point.z >= point.residual_z)
 							continue;
@@ -821,7 +821,7 @@ auto solve_extreme_point(SolveRequest const& request, SolveOptions const& option
 		// only main thread emits progress
 		auto fan_out = [&]<std::size_t I>(std::integral_constant<std::size_t, I>) {
 			auto body = [&outcomes, &errors, &world, deadline, timed, evals] {
-				try { // don't let exceptions escape jthread, wld be scuffed
+				try { // don't let exceptions escape jthread
 					outcomes[I] = run_strategy<I>(world, deadline, timed, evals, nullptr);
 				} catch (...) {
 					errors[I] = std::current_exception();
@@ -865,7 +865,7 @@ auto solve_extreme_point(SolveRequest const& request, SolveOptions const& option
 			auto const& item = request.items[world.types[world.inst_type[point.instance]].src];
 			result.placements.push_back({ item.item_code, item.item_reference, point.x, point.y, point.z, point.width, point.length, point.depth });
 		}
-		result.total_weight = static_cast<float>(bin.weight); // content only, matching ShitStack
+		result.total_weight = static_cast<float>(bin.weight); // content only, matching StackBased
 		auto const volume = world.bins[bin.bin].volume;
 		result.utilization = volume == 0 ? 0.0f : static_cast<float>(static_cast<double>(bin.volume) / static_cast<double>(volume));
 		if (box.outer_width && box.outer_length && box.outer_depth) {

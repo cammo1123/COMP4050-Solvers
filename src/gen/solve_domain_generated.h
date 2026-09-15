@@ -18,7 +18,7 @@ namespace domain {
 enum class SolveAlgorithm : int8_t {
 	Greedy = 0,
 	ExtremePoint = 1,
-	ShitStack = 2,
+	StackBased = 2,
 	PHPSolver = 3
 };
 
@@ -27,7 +27,7 @@ inline SolveAlgorithm toDomain(::fbs::SolveAlgorithm value)
 	switch (value) {
 	case ::fbs::SolveAlgorithm_Greedy: return SolveAlgorithm::Greedy;
 	case ::fbs::SolveAlgorithm_ExtremePoint: return SolveAlgorithm::ExtremePoint;
-	case ::fbs::SolveAlgorithm_ShitStack: return SolveAlgorithm::ShitStack;
+	case ::fbs::SolveAlgorithm_StackBased: return SolveAlgorithm::StackBased;
 	case ::fbs::SolveAlgorithm_PHPSolver: return SolveAlgorithm::PHPSolver;
 	default: throw std::invalid_argument("invalid SolveAlgorithm value");
 	}
@@ -38,7 +38,7 @@ inline ::fbs::SolveAlgorithm fromDomain(SolveAlgorithm value)
 	switch (value) {
 	case SolveAlgorithm::Greedy: return ::fbs::SolveAlgorithm_Greedy;
 	case SolveAlgorithm::ExtremePoint: return ::fbs::SolveAlgorithm_ExtremePoint;
-	case SolveAlgorithm::ShitStack: return ::fbs::SolveAlgorithm_ShitStack;
+	case SolveAlgorithm::StackBased: return ::fbs::SolveAlgorithm_StackBased;
 	case SolveAlgorithm::PHPSolver: return ::fbs::SolveAlgorithm_PHPSolver;
 	default: throw std::invalid_argument("invalid SolveAlgorithm value");
 	}
@@ -52,7 +52,7 @@ struct ExtremePointOptions {
 
 };
 
-struct ShitStackOptions {
+struct StackBasedOptions {
 
 };
 
@@ -70,7 +70,7 @@ struct SolveOptions {
 	std::optional<uint32_t> timeout_ms = std::nullopt;
 	std::optional<GreedyOptions> greedy_options = std::nullopt;
 	std::optional<ExtremePointOptions> extreme_point_options = std::nullopt;
-	std::optional<ShitStackOptions> shit_stack_options = std::nullopt;
+	std::optional<StackBasedOptions> stack_based_options = std::nullopt;
 	std::optional<PHPSolverOptions> php_solver_options = std::nullopt;
 };
 
@@ -140,16 +140,16 @@ inline fbs::ExtremePointOptionsT fromDomain([[maybe_unused]] ExtremePointOptions
 	return out;
 }
 
-inline ShitStackOptions toDomain([[maybe_unused]] fbs::ShitStackOptionsT const& value)
+inline StackBasedOptions toDomain([[maybe_unused]] fbs::StackBasedOptionsT const& value)
 {
-	ShitStackOptions out;
+	StackBasedOptions out;
 
 	return out;
 }
 
-inline fbs::ShitStackOptionsT fromDomain([[maybe_unused]] ShitStackOptions const& value)
+inline fbs::StackBasedOptionsT fromDomain([[maybe_unused]] StackBasedOptions const& value)
 {
-	fbs::ShitStackOptionsT out;
+	fbs::StackBasedOptionsT out;
 
 	return out;
 }
@@ -236,8 +236,8 @@ inline SolveOptions toDomain([[maybe_unused]] fbs::SolveOptionsT const& value)
 		out.extreme_point_options = toDomain(*value.algo_options.AsExtremePointOptions());
 	}
 
-	if (value.algo_options.type == ::fbs::SolveStrategyOptions_ShitStackOptions) {
-		out.shit_stack_options = toDomain(*value.algo_options.AsShitStackOptions());
+	if (value.algo_options.type == ::fbs::SolveStrategyOptions_StackBasedOptions) {
+		out.stack_based_options = toDomain(*value.algo_options.AsStackBasedOptions());
 	}
 
 	if (value.algo_options.type == ::fbs::SolveStrategyOptions_PHPSolverOptions) {
@@ -263,8 +263,8 @@ inline fbs::SolveOptionsT fromDomain([[maybe_unused]] SolveOptions const& value)
 		out.algo_options.Set(fromDomain(*value.extreme_point_options));
 	}
 
-	if (value.shit_stack_options.has_value()) {
-		out.algo_options.Set(fromDomain(*value.shit_stack_options));
+	if (value.stack_based_options.has_value()) {
+		out.algo_options.Set(fromDomain(*value.stack_based_options));
 	}
 
 	if (value.php_solver_options.has_value()) {
