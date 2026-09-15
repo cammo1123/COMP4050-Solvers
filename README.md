@@ -7,7 +7,7 @@ standalone command-line program.
 
 ## Requirements
 
-- Node.js 22 or newer
+- Node.js 22.12 or newer
 - pnpm 11 or newer
 - CMake 3.18 or newer
 - Ninja (recommended)
