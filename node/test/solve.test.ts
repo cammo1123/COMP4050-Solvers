@@ -278,7 +278,17 @@ describe("packing invariants", () => {
 		expect(result.failed.map((item) => item.itemCode)).toEqual(["two"]);
 	});
 
-	it("enforces maximum box count and empty-box weight", async () => {
+	it("treats a zero maximumBoxes as banning the box type", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 10, length: 10, depth: 10, maximumBoxes: 0 }],
+			items: [{ itemCode: "item", itemReference: "item", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: 0 }],
+			algorithm: SolveAlgorithm.PHPSolver,
+		});
+		expect(result.results).toHaveLength(0);
+		expect(result.failed.map((item) => item.itemCode)).toEqual(["item"]);
+	});
+
+	it("enforces maximum box count and treats maxWeight as content-only capacity", async () => {
 		const result = await solve({
 			boxes: [
 				{ reference: "A", width: 10, length: 10, depth: 10, boxWeight: 3, maxWeight: 5 },
@@ -292,8 +302,8 @@ describe("packing invariants", () => {
 			algorithm: SolveAlgorithm.PHPSolver
 		});
 		expect(result.results).toHaveLength(1);
-		expect(result.results[0].totalWeight).toBe(4);
-		expect(result.failed.map((item) => item.itemCode)).toEqual(["one"]);
+		expect(result.results[0].totalWeight).toBe(3);
+		expect(result.failed.map((item) => item.itemCode)).toEqual(["two"]);
 	});
 
 	it("expands explicit item quantities into instances", async () => {

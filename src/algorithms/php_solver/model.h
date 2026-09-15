@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -29,6 +30,7 @@ struct Item {
 	Dimensions dimensions;
 	float weight = 0;
 	RotationPolicy rotation = RotationPolicy::BestFit;
+	std::size_t src = 0;
 	struct Constraint {
 		bool no_stacking = false;
 		bool required_vertical = false;
@@ -47,7 +49,7 @@ struct Box {
 	std::optional<Dimensions> outer_dimensions;
 	float empty_weight = 0;
 	float max_weight = 0;
-	uint32_t quantity = 0;
+	uint32_t quantity = UINT32_MAX;
 	bool active = true;
 };
 

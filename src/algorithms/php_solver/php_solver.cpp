@@ -26,13 +26,15 @@ auto solve_php_solver(SolveRequest const& request, SolveOptions const& options, 
 		}
 		box.empty_weight = source.box_weight.value_or(0);
 		box.max_weight = source.max_weight.value_or(0);
-		box.quantity = source.maximum_boxes.value_or(0);
+		box.quantity = source.maximum_boxes.value_or(UINT32_MAX);
 		box.active = source.active.value_or(true);
 		boxes.push_back(std::move(box));
 	}
 
 	std::vector<packing::Item> items;
-	for (auto const& source : request.items) {
+	items.reserve(request.items.size());
+	for (std::size_t i = 0; i < request.items.size(); ++i) {
+		auto const& source = request.items[i];
 		uint32_t const quantity = source.quantity.value_or(1);
 		for (uint32_t instance = 0; instance < quantity; ++instance) {
 			packing::Item item;
@@ -42,6 +44,7 @@ auto solve_php_solver(SolveRequest const& request, SolveOptions const& options, 
 			item.dimensions = { source.width, source.depth, source.length };
 			item.weight = source.weight;
 			item.rotation = static_cast<packing::RotationPolicy>(source.rotation_policy.value_or(RotationPolicy::BestFit));
+			item.src = i;
 
 			auto const constraint = source.constraint.value_or(fbs::domain::PlacementConstraint { });
 			item.constraint.no_stacking = constraint.no_stacking.value_or(false);
@@ -100,7 +103,8 @@ auto solve_php_solver(SolveRequest const& request, SolveOptions const& options, 
 	}
 
 	for (auto const& item : packed.failed) {
-		response.failed.push_back({ item.code, item.reference, item.dimensions.width, item.dimensions.length, item.dimensions.depth, item.weight });
+		auto const& source = request.items[item.src];
+		response.failed.push_back({ source.item_code, source.item_reference, source.width, source.length, source.depth, source.weight, std::nullopt, source.box_group, source.rotation_policy, source.constraint });
 	}
 
 	return response;
