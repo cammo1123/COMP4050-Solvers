@@ -4,7 +4,7 @@
     "*.gypi": "json"
   },
   "clangd.arguments": [
-    "--compile-commands-dir=build/addon",
+    "--compile-commands-dir=build",
     "--background-index"
   ],
   "C_Cpp.intelliSenseEngine": "disabled",
@@ -16,7 +16,7 @@
   "[cpp]": {
     "editor.defaultFormatter": "xaver.clang-format"
   },
-  "cmake.buildDirectory": "${workspaceFolder}/build/cmake",
+  "cmake.buildDirectory": "${workspaceFolder}/build",
   "cmake.configureOnOpen": true,
   "cmake.buildBeforeRun": true,
   "editor.codeActionsOnSave": {
