@@ -110,7 +110,7 @@ via `add_custom_command`) whenever a schema or generator changes. Schemas under
 hardcoded.
 
 - `fbs/types.fbs` contains shared tables and produces
-  `native/gen/types_generated.h` and `native/gen/types_domain_generated.h`.
+  `src/gen/types_generated.h` and `src/gen/types_domain_generated.h`.
 - Operation schemas under `fbs/operations/` produce their own generated C++
   headers, domain headers, translation headers, and TypeScript translation
   layer.

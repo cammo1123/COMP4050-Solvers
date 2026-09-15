@@ -183,7 +183,7 @@ To create a platform-specific package prebuild after building the addon:
 pnpm prebuild:binaries
 ```
 
-Generated bindings are produced from `fbs/` and written under `native/gen/` and
+Generated bindings are produced from `fbs/` and written under `src/gen/` and
 `node/src/gen/`. Do not edit generated files manually.
 
 ## Testing And Checks
@@ -205,7 +205,7 @@ local FlatBuffers compiler cache.
 - `src/` — C++ core, CLI, and native addon boundary.
 - `src/algorithms/` — algorithm registry plus isolated ExtremePoint, Greedy, ShitStack, and PHPSolver implementations.
 - `fbs/` — FlatBuffers schemas shared by the core and addon.
-- `native/gen/` — generated C++ bindings.
+- `src/gen/` — generated C++ bindings.
 - `node/src/` — TypeScript API and generated TypeScript bindings.
 - `node/test/` — Vitest tests and benchmarks.
 - `scripts/` — generation, build, run, clean, and codegen scripts.
