@@ -242,12 +242,12 @@ if(COMP4050_BUILD_ADDON)
         endif()
     endif()
 
-    set(napi_dir "${CMAKE_BINARY_DIR}/node-addon-api-8.9.1")
+    set(napi_dir "${CMAKE_BINARY_DIR}/node-addon-api/node-addon-api-8.9.1")
 
     if(NOT EXISTS "${napi_dir}/napi.h")
         comp4050_fetch_archive(
             "https://github.com/nodejs/node-addon-api/archive/refs/tags/v8.9.1.tar.gz"
-            "${CMAKE_BINARY_DIR}"
+            "${CMAKE_BINARY_DIR}/node-addon-api"
         )
     endif()
 

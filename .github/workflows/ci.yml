@@ -49,4 +49,4 @@ jobs:
 
       - name: Run clang-tidy
         shell: bash
-        run: clang-tidy -p build/addon -quiet -warnings-as-errors=* $(git ls-files '*.cpp' '*.cc' '*.cxx')
+        run: clang-tidy -p build -quiet -warnings-as-errors=* $(git ls-files '*.cpp' '*.cc' '*.cxx')

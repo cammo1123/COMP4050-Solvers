@@ -33,7 +33,7 @@ jobs:
             - name: Standalone smoke test
               shell: bash
               run: |
-                  BINARY=$([[ "$RUNNER_OS" == "Windows" ]] && echo "build/addon/solver.exe" || echo "build/addon/solver")
+                  BINARY=$([[ "$RUNNER_OS" == "Windows" ]] && echo "build/solver.exe" || echo "build/solver")
                   "$BINARY"
 
             - name: Upload prebuilds

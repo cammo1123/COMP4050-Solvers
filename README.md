@@ -175,7 +175,7 @@ pnpm build:ts          # TypeScript output only
 ```
 
 The addon is copied to `node/build/Release/addon.node`. The standalone binary
-is written to `build/core/solver` or `build/core/solver.exe` on Windows.
+is written to `build/solver` or `build/solver.exe` on Windows.
 
 To create a platform-specific package prebuild after building the addon:
 
