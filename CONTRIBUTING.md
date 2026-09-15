@@ -68,18 +68,19 @@ merge, rebase stale feature branches rather than merging `dev` into them.
 
 ## Development
 
-- **IntelliSense** — CMake exports `build/*/compile_commands.json`; clangd
-  picks it up via `.clangd`.
+- **IntelliSense** — CMake exports `build/compile_commands.json`; clangd
+  picks it up via `.clangd`. Both the addon and core-only builds configure
+  into `build/`, so the compilation database is always fresh.
 - **Formatting** — `.clang-format` defines the project style (tabs, Allman
   braces). `pnpm lint:fix` applies it; `pnpm lint:check` validates it.
 - **Debugging** — **Run > Start Debugging (F5)** rebuilds the standalone binary
-  (`build:core`) and points the debugger at `build/core/solver.exe`.
+  (`build:core`) and points the debugger at `build/solver.exe`.
 - **Dependencies** — Use Node.js 22 and pnpm 11. Run `pnpm install` from the
   repository root before building or testing.
 - **Build outputs** — `pnpm build` generates bindings, builds the addon, and
   compiles the TypeScript package. The addon is copied to
   `node/build/Release/addon.node`; standalone binaries are written under
-  `build/core/` or `build/addon/`.
+  `build/`.
 
 ## Testing
 
