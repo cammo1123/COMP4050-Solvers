@@ -19,3 +19,4 @@ function runPnpm(args) {
 
 runPnpm(['run', 'lint:check'])
 runPnpm(['run', 'build:ts'])
+runPnpm(['run', 'typecheck'])
