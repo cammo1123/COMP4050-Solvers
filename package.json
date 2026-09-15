@@ -1,7 +1,7 @@
 {
 	"name": "@bionic/solver",
 	"version": "1.0.0",
-	"description": "",
+	"description": "Node.js packing engine with a C++ core via N-API and FlatBuffers",
 	"main": "node/dist/addon.js",
 	"types": "node/dist/addon.d.ts",
 	"exports": {
@@ -50,7 +50,7 @@
 		"typecheck": "tsc -p node/tsconfig.json"
 	},
 	"keywords": [],
-	"author": "",
+	"author": "COMP4050 Bionic Solver",
 	"license": "ISC",
 	"type": "module",
 	"engines": {
