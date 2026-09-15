@@ -11,9 +11,9 @@ import {
 	ItemTypeT as ItemTypeObject,
 	PHPSolverOptionsT as PHPSolverOptionsObject,
 	PlacementConstraintT as PlacementConstraintObject,
-	ShitStackOptionsT as ShitStackOptionsObject,
 	SolveOptionsT as SolveOptionsObject,
 	SolveRequestT as SolveRequestObject,
+	StackBasedOptionsT as StackBasedOptionsObject,
 	SolveAlgorithm,
 	RotationPolicy,
 	SolveStrategyOptions,
@@ -102,16 +102,16 @@ export type PlacementConstraintT = {
 	maxZ?: number;
 };
 
-export type ShitStackOptionsT = {
-
-};
-
 export type SolveOptionsT = {
 	timeoutMs?: number;
 	greedyOptions?: GreedyOptionsT | null;
 	extremePointOptions?: ExtremePointOptionsT | null;
-	shitStackOptions?: ShitStackOptionsT | null;
+	stackBasedOptions?: StackBasedOptionsT | null;
 	phpSolverOptions?: PHPSolverOptionsT | null;
+};
+
+export type StackBasedOptionsT = {
+
 };
 
 export type BaseOptions = {
@@ -131,7 +131,7 @@ export type SolveRequest = {
 } & (
 	| { algorithm: typeof SolveAlgorithm.Greedy; options?: BaseOptions & { greedyOptions?: GreedyOptionsT } }
 	| { algorithm: typeof SolveAlgorithm.ExtremePoint; options?: BaseOptions & { extremePointOptions?: ExtremePointOptionsT } }
-	| { algorithm: typeof SolveAlgorithm.ShitStack; options?: BaseOptions & { shitStackOptions?: ShitStackOptionsT } }
+	| { algorithm: typeof SolveAlgorithm.StackBased; options?: BaseOptions & { stackBasedOptions?: StackBasedOptionsT } }
 	| { algorithm: typeof SolveAlgorithm.PHPSolver; options?: BaseOptions & { phpSolverOptions?: PHPSolverOptionsT } }
 	| { algorithm?: undefined; options?: BaseOptions & { extremePointOptions?: ExtremePointOptionsT } }
 );
@@ -146,9 +146,9 @@ function toAlgoOptionsT(options: any): { type: SolveStrategyOptions; value: any 
 		const value = options.extremePointOptions;
 		return { type: SolveStrategyOptions.ExtremePointOptions, value: new ExtremePointOptionsObject() };
 	}
-	if (options?.shitStackOptions) {
-		const value = options.shitStackOptions;
-		return { type: SolveStrategyOptions.ShitStackOptions, value: new ShitStackOptionsObject() };
+	if (options?.stackBasedOptions) {
+		const value = options.stackBasedOptions;
+		return { type: SolveStrategyOptions.StackBasedOptions, value: new StackBasedOptionsObject() };
 	}
 	if (options?.phpSolverOptions) {
 		const value = options.phpSolverOptions;

@@ -67,14 +67,14 @@ export type PlacementConstraintT = {
     maxY?: number;
     maxZ?: number;
 };
-export type ShitStackOptionsT = {};
 export type SolveOptionsT = {
     timeoutMs?: number;
     greedyOptions?: GreedyOptionsT | null;
     extremePointOptions?: ExtremePointOptionsT | null;
-    shitStackOptions?: ShitStackOptionsT | null;
+    stackBasedOptions?: StackBasedOptionsT | null;
     phpSolverOptions?: PHPSolverOptionsT | null;
 };
+export type StackBasedOptionsT = {};
 export type BaseOptions = {
     timeoutMs?: number;
 };
@@ -98,9 +98,9 @@ export type SolveRequest = {
         extremePointOptions?: ExtremePointOptionsT;
     };
 } | {
-    algorithm: typeof SolveAlgorithm.ShitStack;
+    algorithm: typeof SolveAlgorithm.StackBased;
     options?: BaseOptions & {
-        shitStackOptions?: ShitStackOptionsT;
+        stackBasedOptions?: StackBasedOptionsT;
     };
 } | {
     algorithm: typeof SolveAlgorithm.PHPSolver;

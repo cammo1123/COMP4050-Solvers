@@ -9,7 +9,7 @@ table GreedyOptions {}
 
 table ExtremePointOptions {}
 
-table ShitStackOptions {}
+table StackBasedOptions {}
 
 table PHPSolverOptions {
   balance_weight: bool = null;
@@ -24,14 +24,14 @@ table PHPSolverOptions {
 union SolveStrategyOptions {
   GreedyOptions,
   ExtremePointOptions,
-  ShitStackOptions,
+  StackBasedOptions,
   PHPSolverOptions,
 }
 
 enum SolveAlgorithm : byte {
 	Greedy = 0,
 	ExtremePoint = 1,
-	ShitStack = 2,
+	StackBased = 2,
   PHPSolver = 3,
 }
 

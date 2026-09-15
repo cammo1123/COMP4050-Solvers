@@ -12,7 +12,7 @@ using namespace fbs::domain;
 
 namespace solver::algo {
 
-auto solve_shit_stack(SolveRequest const& request, SolveOptions const& options, ProgressCallback const& on_progress) -> SolveResponse
+auto solve_stack_based(SolveRequest const& request, SolveOptions const& options, ProgressCallback const& on_progress) -> SolveResponse
 {
 	(void)options;
 
@@ -79,8 +79,8 @@ auto solve_shit_stack(SolveRequest const& request, SolveOptions const& options, 
 	return response;
 }
 
-static struct ShitStackRegistrar {
-	ShitStackRegistrar() { register_algo(fbs::domain::SolveAlgorithm::ShitStack, { solve_shit_stack }); }
+static struct StackBasedRegistrar {
+	StackBasedRegistrar() { register_algo(fbs::domain::SolveAlgorithm::StackBased, { solve_stack_based }); }
 } registrar;
 
 }
