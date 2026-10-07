@@ -3,40 +3,48 @@
 /* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
 
 import { ExtremePointOptions, ExtremePointOptionsT } from '../fbs/extreme-point-options.js';
+import { GreedyOptions, GreedyOptionsT } from '../fbs/greedy-options.js';
+import { HeightmapSolverOptions, HeightmapSolverOptionsT } from '../fbs/heightmap-solver-options.js';
 import { PHPSolverOptions, PHPSolverOptionsT } from '../fbs/phpsolver-options.js';
-import { StackBasedOptions, StackBasedOptionsT } from '../fbs/stack-based-options.js';
+import { ShitStackOptions, ShitStackOptionsT } from '../fbs/shit-stack-options.js';
 
 
 export enum SolveStrategyOptions {
   NONE = 0,
-  ExtremePointOptions = 1,
-  StackBasedOptions = 2,
-  PHPSolverOptions = 3
+  GreedyOptions = 1,
+  ExtremePointOptions = 2,
+  ShitStackOptions = 3,
+  PHPSolverOptions = 4,
+  HeightmapSolverOptions = 5
 }
 
 export function unionToSolveStrategyOptions(
   type: SolveStrategyOptions,
-  accessor: (obj:ExtremePointOptions|PHPSolverOptions|StackBasedOptions) => ExtremePointOptions|PHPSolverOptions|StackBasedOptions|null
-): ExtremePointOptions|PHPSolverOptions|StackBasedOptions|null {
+  accessor: (obj:ExtremePointOptions|GreedyOptions|HeightmapSolverOptions|PHPSolverOptions|ShitStackOptions) => ExtremePointOptions|GreedyOptions|HeightmapSolverOptions|PHPSolverOptions|ShitStackOptions|null
+): ExtremePointOptions|GreedyOptions|HeightmapSolverOptions|PHPSolverOptions|ShitStackOptions|null {
   switch(SolveStrategyOptions[type]) {
     case 'NONE': return null; 
+    case 'GreedyOptions': return accessor(new GreedyOptions())! as GreedyOptions;
     case 'ExtremePointOptions': return accessor(new ExtremePointOptions())! as ExtremePointOptions;
-    case 'StackBasedOptions': return accessor(new StackBasedOptions())! as StackBasedOptions;
+    case 'ShitStackOptions': return accessor(new ShitStackOptions())! as ShitStackOptions;
     case 'PHPSolverOptions': return accessor(new PHPSolverOptions())! as PHPSolverOptions;
+    case 'HeightmapSolverOptions': return accessor(new HeightmapSolverOptions())! as HeightmapSolverOptions;
     default: return null;
   }
 }
 
 export function unionListToSolveStrategyOptions(
   type: SolveStrategyOptions, 
-  accessor: (index: number, obj:ExtremePointOptions|PHPSolverOptions|StackBasedOptions) => ExtremePointOptions|PHPSolverOptions|StackBasedOptions|null, 
+  accessor: (index: number, obj:ExtremePointOptions|GreedyOptions|HeightmapSolverOptions|PHPSolverOptions|ShitStackOptions) => ExtremePointOptions|GreedyOptions|HeightmapSolverOptions|PHPSolverOptions|ShitStackOptions|null, 
   index: number
-): ExtremePointOptions|PHPSolverOptions|StackBasedOptions|null {
+): ExtremePointOptions|GreedyOptions|HeightmapSolverOptions|PHPSolverOptions|ShitStackOptions|null {
   switch(SolveStrategyOptions[type]) {
     case 'NONE': return null; 
+    case 'GreedyOptions': return accessor(index, new GreedyOptions())! as GreedyOptions;
     case 'ExtremePointOptions': return accessor(index, new ExtremePointOptions())! as ExtremePointOptions;
-    case 'StackBasedOptions': return accessor(index, new StackBasedOptions())! as StackBasedOptions;
+    case 'ShitStackOptions': return accessor(index, new ShitStackOptions())! as ShitStackOptions;
     case 'PHPSolverOptions': return accessor(index, new PHPSolverOptions())! as PHPSolverOptions;
+    case 'HeightmapSolverOptions': return accessor(index, new HeightmapSolverOptions())! as HeightmapSolverOptions;
     default: return null;
   }
 }
