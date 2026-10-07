@@ -72,7 +72,7 @@ struct Candidate {
 };
 
 // Can `dims`-oriented item sit with its corner at real position (x, y)?
-// Checks, in order: bounds -> resting height (max of H under the footprint)
+// Checks, in order: bounds -> resting heipnpmght (max of H under the footprint)
 // -> vertical fit & zTop pruning -> support ratio. No overlap check is
 // needed: resting on the max of the heightmap makes overlap impossible.
 inline std::optional<Candidate>
