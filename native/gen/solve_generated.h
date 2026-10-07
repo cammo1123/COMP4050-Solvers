@@ -29,6 +29,10 @@ struct ShitStackOptions;
 struct ShitStackOptionsBuilder;
 struct ShitStackOptionsT;
 
+struct HeightmapSolverOptions;
+struct HeightmapSolverOptionsBuilder;
+struct HeightmapSolverOptionsT;
+
 struct PHPSolverOptions;
 struct PHPSolverOptionsBuilder;
 struct PHPSolverOptionsT;
@@ -59,35 +63,38 @@ enum SolveStrategyOptions : uint8_t {
   SolveStrategyOptions_ExtremePointOptions = 2,
   SolveStrategyOptions_ShitStackOptions = 3,
   SolveStrategyOptions_PHPSolverOptions = 4,
+  SolveStrategyOptions_HeightmapSolverOptions = 5,
   SolveStrategyOptions_MIN = SolveStrategyOptions_NONE,
-  SolveStrategyOptions_MAX = SolveStrategyOptions_PHPSolverOptions
+  SolveStrategyOptions_MAX = SolveStrategyOptions_HeightmapSolverOptions
 };
 
-inline const SolveStrategyOptions (&EnumValuesSolveStrategyOptions())[5] {
+inline const SolveStrategyOptions (&EnumValuesSolveStrategyOptions())[6] {
   static const SolveStrategyOptions values[] = {
     SolveStrategyOptions_NONE,
     SolveStrategyOptions_GreedyOptions,
     SolveStrategyOptions_ExtremePointOptions,
     SolveStrategyOptions_ShitStackOptions,
-    SolveStrategyOptions_PHPSolverOptions
+    SolveStrategyOptions_PHPSolverOptions,
+    SolveStrategyOptions_HeightmapSolverOptions
   };
   return values;
 }
 
 inline const char * const *EnumNamesSolveStrategyOptions() {
-  static const char * const names[6] = {
+  static const char * const names[7] = {
     "NONE",
     "GreedyOptions",
     "ExtremePointOptions",
     "ShitStackOptions",
     "PHPSolverOptions",
+    "HeightmapSolverOptions",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameSolveStrategyOptions(SolveStrategyOptions e) {
-  if (::flatbuffers::IsOutRange(e, SolveStrategyOptions_NONE, SolveStrategyOptions_PHPSolverOptions)) return "";
+  if (::flatbuffers::IsOutRange(e, SolveStrategyOptions_NONE, SolveStrategyOptions_HeightmapSolverOptions)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesSolveStrategyOptions()[index];
 }
@@ -112,6 +119,10 @@ template<> struct SolveStrategyOptionsTraits<fbs::PHPSolverOptions> {
   static const SolveStrategyOptions enum_value = SolveStrategyOptions_PHPSolverOptions;
 };
 
+template<> struct SolveStrategyOptionsTraits<fbs::HeightmapSolverOptions> {
+  static const SolveStrategyOptions enum_value = SolveStrategyOptions_HeightmapSolverOptions;
+};
+
 template<typename T> struct SolveStrategyOptionsUnionTraits {
   static const SolveStrategyOptions enum_value = SolveStrategyOptions_NONE;
 };
@@ -130,6 +141,10 @@ template<> struct SolveStrategyOptionsUnionTraits<fbs::ShitStackOptionsT> {
 
 template<> struct SolveStrategyOptionsUnionTraits<fbs::PHPSolverOptionsT> {
   static const SolveStrategyOptions enum_value = SolveStrategyOptions_PHPSolverOptions;
+};
+
+template<> struct SolveStrategyOptionsUnionTraits<fbs::HeightmapSolverOptionsT> {
+  static const SolveStrategyOptions enum_value = SolveStrategyOptions_HeightmapSolverOptions;
 };
 
 struct SolveStrategyOptionsUnion {
@@ -194,6 +209,14 @@ struct SolveStrategyOptionsUnion {
     return type == SolveStrategyOptions_PHPSolverOptions ?
       reinterpret_cast<const fbs::PHPSolverOptionsT *>(value) : nullptr;
   }
+  fbs::HeightmapSolverOptionsT *AsHeightmapSolverOptions() {
+    return type == SolveStrategyOptions_HeightmapSolverOptions ?
+      reinterpret_cast<fbs::HeightmapSolverOptionsT *>(value) : nullptr;
+  }
+  const fbs::HeightmapSolverOptionsT *AsHeightmapSolverOptions() const {
+    return type == SolveStrategyOptions_HeightmapSolverOptions ?
+      reinterpret_cast<const fbs::HeightmapSolverOptionsT *>(value) : nullptr;
+  }
 };
 
 template <bool B = false>
@@ -206,33 +229,36 @@ enum SolveAlgorithm : int8_t {
   SolveAlgorithm_ExtremePoint = 1,
   SolveAlgorithm_ShitStack = 2,
   SolveAlgorithm_PHPSolver = 3,
+  SolveAlgorithm_HeightmapSolver = 4,
   SolveAlgorithm_MIN = SolveAlgorithm_Greedy,
-  SolveAlgorithm_MAX = SolveAlgorithm_PHPSolver
+  SolveAlgorithm_MAX = SolveAlgorithm_HeightmapSolver
 };
 
-inline const SolveAlgorithm (&EnumValuesSolveAlgorithm())[4] {
+inline const SolveAlgorithm (&EnumValuesSolveAlgorithm())[5] {
   static const SolveAlgorithm values[] = {
     SolveAlgorithm_Greedy,
     SolveAlgorithm_ExtremePoint,
     SolveAlgorithm_ShitStack,
-    SolveAlgorithm_PHPSolver
+    SolveAlgorithm_PHPSolver,
+    SolveAlgorithm_HeightmapSolver
   };
   return values;
 }
 
 inline const char * const *EnumNamesSolveAlgorithm() {
-  static const char * const names[5] = {
+  static const char * const names[6] = {
     "Greedy",
     "ExtremePoint",
     "ShitStack",
     "PHPSolver",
+    "HeightmapSolver",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameSolveAlgorithm(SolveAlgorithm e) {
-  if (::flatbuffers::IsOutRange(e, SolveAlgorithm_Greedy, SolveAlgorithm_PHPSolver)) return "";
+  if (::flatbuffers::IsOutRange(e, SolveAlgorithm_Greedy, SolveAlgorithm_HeightmapSolver)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesSolveAlgorithm()[index];
 }
@@ -356,6 +382,125 @@ inline ::flatbuffers::Offset<ShitStackOptions> CreateShitStackOptions(
 }
 
 ::flatbuffers::Offset<ShitStackOptions> CreateShitStackOptions(::flatbuffers::FlatBufferBuilder &_fbb, const ShitStackOptionsT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
+struct HeightmapSolverOptionsT : public ::flatbuffers::NativeTable {
+  typedef HeightmapSolverOptions TableType;
+  ::flatbuffers::Optional<uint32_t> max_boxes = ::flatbuffers::nullopt;
+  bool allow_rotation = true;
+  ::flatbuffers::Optional<double> min_support = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<uint32_t> cell_size = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<uint32_t> restarts = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<uint32_t> seed = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<bool> strict_unsupported = ::flatbuffers::nullopt;
+};
+
+struct HeightmapSolverOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef HeightmapSolverOptionsT NativeTableType;
+  typedef HeightmapSolverOptionsBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_MAX_BOXES = 4,
+    VT_ALLOW_ROTATION = 6,
+    VT_MIN_SUPPORT = 8,
+    VT_CELL_SIZE = 10,
+    VT_RESTARTS = 12,
+    VT_SEED = 14,
+    VT_STRICT_UNSUPPORTED = 16
+  };
+  ::flatbuffers::Optional<uint32_t> max_boxes() const {
+    return GetOptional<uint32_t, uint32_t>(VT_MAX_BOXES);
+  }
+  bool allow_rotation() const {
+    return GetField<uint8_t>(VT_ALLOW_ROTATION, 1) != 0;
+  }
+  ::flatbuffers::Optional<double> min_support() const {
+    return GetOptional<double, double>(VT_MIN_SUPPORT);
+  }
+  ::flatbuffers::Optional<uint32_t> cell_size() const {
+    return GetOptional<uint32_t, uint32_t>(VT_CELL_SIZE);
+  }
+  ::flatbuffers::Optional<uint32_t> restarts() const {
+    return GetOptional<uint32_t, uint32_t>(VT_RESTARTS);
+  }
+  ::flatbuffers::Optional<uint32_t> seed() const {
+    return GetOptional<uint32_t, uint32_t>(VT_SEED);
+  }
+  ::flatbuffers::Optional<bool> strict_unsupported() const {
+    return GetOptional<uint8_t, bool>(VT_STRICT_UNSUPPORTED);
+  }
+  template <bool B = false>
+  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<uint32_t>(verifier, VT_MAX_BOXES, 4) &&
+           VerifyField<uint8_t>(verifier, VT_ALLOW_ROTATION, 1) &&
+           VerifyField<double>(verifier, VT_MIN_SUPPORT, 8) &&
+           VerifyField<uint32_t>(verifier, VT_CELL_SIZE, 4) &&
+           VerifyField<uint32_t>(verifier, VT_RESTARTS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_SEED, 4) &&
+           VerifyField<uint8_t>(verifier, VT_STRICT_UNSUPPORTED, 1) &&
+           verifier.EndTable();
+  }
+  HeightmapSolverOptionsT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(HeightmapSolverOptionsT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<HeightmapSolverOptions> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const HeightmapSolverOptionsT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+};
+
+struct HeightmapSolverOptionsBuilder {
+  typedef HeightmapSolverOptions Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_max_boxes(uint32_t max_boxes) {
+    fbb_.AddElement<uint32_t>(HeightmapSolverOptions::VT_MAX_BOXES, max_boxes);
+  }
+  void add_allow_rotation(bool allow_rotation) {
+    fbb_.AddElement<uint8_t>(HeightmapSolverOptions::VT_ALLOW_ROTATION, static_cast<uint8_t>(allow_rotation), 1);
+  }
+  void add_min_support(double min_support) {
+    fbb_.AddElement<double>(HeightmapSolverOptions::VT_MIN_SUPPORT, min_support);
+  }
+  void add_cell_size(uint32_t cell_size) {
+    fbb_.AddElement<uint32_t>(HeightmapSolverOptions::VT_CELL_SIZE, cell_size);
+  }
+  void add_restarts(uint32_t restarts) {
+    fbb_.AddElement<uint32_t>(HeightmapSolverOptions::VT_RESTARTS, restarts);
+  }
+  void add_seed(uint32_t seed) {
+    fbb_.AddElement<uint32_t>(HeightmapSolverOptions::VT_SEED, seed);
+  }
+  void add_strict_unsupported(bool strict_unsupported) {
+    fbb_.AddElement<uint8_t>(HeightmapSolverOptions::VT_STRICT_UNSUPPORTED, static_cast<uint8_t>(strict_unsupported));
+  }
+  explicit HeightmapSolverOptionsBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<HeightmapSolverOptions> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<HeightmapSolverOptions>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<HeightmapSolverOptions> CreateHeightmapSolverOptions(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Optional<uint32_t> max_boxes = ::flatbuffers::nullopt,
+    bool allow_rotation = true,
+    ::flatbuffers::Optional<double> min_support = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<uint32_t> cell_size = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<uint32_t> restarts = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<uint32_t> seed = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<bool> strict_unsupported = ::flatbuffers::nullopt) {
+  HeightmapSolverOptionsBuilder builder_(_fbb);
+  if(min_support) { builder_.add_min_support(*min_support); }
+  if(seed) { builder_.add_seed(*seed); }
+  if(restarts) { builder_.add_restarts(*restarts); }
+  if(cell_size) { builder_.add_cell_size(*cell_size); }
+  if(max_boxes) { builder_.add_max_boxes(*max_boxes); }
+  if(strict_unsupported) { builder_.add_strict_unsupported(*strict_unsupported); }
+  builder_.add_allow_rotation(allow_rotation);
+  return builder_.Finish();
+}
+
+::flatbuffers::Offset<HeightmapSolverOptions> CreateHeightmapSolverOptions(::flatbuffers::FlatBufferBuilder &_fbb, const HeightmapSolverOptionsT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 
 struct PHPSolverOptionsT : public ::flatbuffers::NativeTable {
   typedef PHPSolverOptions TableType;
@@ -625,6 +770,9 @@ struct SolveOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const fbs::PHPSolverOptions *algo_options_as_PHPSolverOptions() const {
     return algo_options_type() == fbs::SolveStrategyOptions_PHPSolverOptions ? static_cast<const fbs::PHPSolverOptions *>(algo_options()) : nullptr;
   }
+  const fbs::HeightmapSolverOptions *algo_options_as_HeightmapSolverOptions() const {
+    return algo_options_type() == fbs::SolveStrategyOptions_HeightmapSolverOptions ? static_cast<const fbs::HeightmapSolverOptions *>(algo_options()) : nullptr;
+  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -653,6 +801,10 @@ template<> inline const fbs::ShitStackOptions *SolveOptions::algo_options_as<fbs
 
 template<> inline const fbs::PHPSolverOptions *SolveOptions::algo_options_as<fbs::PHPSolverOptions>() const {
   return algo_options_as_PHPSolverOptions();
+}
+
+template<> inline const fbs::HeightmapSolverOptions *SolveOptions::algo_options_as<fbs::HeightmapSolverOptions>() const {
+  return algo_options_as_HeightmapSolverOptions();
 }
 
 struct SolveOptionsBuilder {
@@ -1215,6 +1367,50 @@ inline ::flatbuffers::Offset<ShitStackOptions> ShitStackOptions::Pack(::flatbuff
       _fbb);
 }
 
+inline HeightmapSolverOptionsT *HeightmapSolverOptions::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<HeightmapSolverOptionsT>(new HeightmapSolverOptionsT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void HeightmapSolverOptions::UnPackTo(HeightmapSolverOptionsT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = max_boxes(); _o->max_boxes = _e; }
+  { auto _e = allow_rotation(); _o->allow_rotation = _e; }
+  { auto _e = min_support(); _o->min_support = _e; }
+  { auto _e = cell_size(); _o->cell_size = _e; }
+  { auto _e = restarts(); _o->restarts = _e; }
+  { auto _e = seed(); _o->seed = _e; }
+  { auto _e = strict_unsupported(); _o->strict_unsupported = _e; }
+}
+
+inline ::flatbuffers::Offset<HeightmapSolverOptions> CreateHeightmapSolverOptions(::flatbuffers::FlatBufferBuilder &_fbb, const HeightmapSolverOptionsT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return HeightmapSolverOptions::Pack(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<HeightmapSolverOptions> HeightmapSolverOptions::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const HeightmapSolverOptionsT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const HeightmapSolverOptionsT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _max_boxes = _o->max_boxes;
+  auto _allow_rotation = _o->allow_rotation;
+  auto _min_support = _o->min_support;
+  auto _cell_size = _o->cell_size;
+  auto _restarts = _o->restarts;
+  auto _seed = _o->seed;
+  auto _strict_unsupported = _o->strict_unsupported;
+  return fbs::CreateHeightmapSolverOptions(
+      _fbb,
+      _max_boxes,
+      _allow_rotation,
+      _min_support,
+      _cell_size,
+      _restarts,
+      _seed,
+      _strict_unsupported);
+}
+
 inline PHPSolverOptionsT *PHPSolverOptions::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
   auto _o = std::unique_ptr<PHPSolverOptionsT>(new PHPSolverOptionsT());
   UnPackTo(_o.get(), _resolver);
@@ -1545,6 +1741,10 @@ inline bool VerifySolveStrategyOptions(::flatbuffers::VerifierTemplate<B> &verif
       auto ptr = reinterpret_cast<const fbs::PHPSolverOptions *>(obj);
       return verifier.VerifyTable(ptr);
     }
+    case SolveStrategyOptions_HeightmapSolverOptions: {
+      auto ptr = reinterpret_cast<const fbs::HeightmapSolverOptions *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
     default: return true;
   }
 }
@@ -1581,6 +1781,10 @@ inline void *SolveStrategyOptionsUnion::UnPack(const void *obj, SolveStrategyOpt
       auto ptr = reinterpret_cast<const fbs::PHPSolverOptions *>(obj);
       return ptr->UnPack(resolver);
     }
+    case SolveStrategyOptions_HeightmapSolverOptions: {
+      auto ptr = reinterpret_cast<const fbs::HeightmapSolverOptions *>(obj);
+      return ptr->UnPack(resolver);
+    }
     default: return nullptr;
   }
 }
@@ -1604,6 +1808,10 @@ inline ::flatbuffers::Offset<void> SolveStrategyOptionsUnion::Pack(::flatbuffers
       auto ptr = reinterpret_cast<const fbs::PHPSolverOptionsT *>(value);
       return CreatePHPSolverOptions(_fbb, ptr, _rehasher).Union();
     }
+    case SolveStrategyOptions_HeightmapSolverOptions: {
+      auto ptr = reinterpret_cast<const fbs::HeightmapSolverOptionsT *>(value);
+      return CreateHeightmapSolverOptions(_fbb, ptr, _rehasher).Union();
+    }
     default: return 0;
   }
 }
@@ -1624,6 +1832,10 @@ inline SolveStrategyOptionsUnion::SolveStrategyOptionsUnion(const SolveStrategyO
     }
     case SolveStrategyOptions_PHPSolverOptions: {
       value = new fbs::PHPSolverOptionsT(*reinterpret_cast<fbs::PHPSolverOptionsT *>(u.value));
+      break;
+    }
+    case SolveStrategyOptions_HeightmapSolverOptions: {
+      value = new fbs::HeightmapSolverOptionsT(*reinterpret_cast<fbs::HeightmapSolverOptionsT *>(u.value));
       break;
     }
     default:
@@ -1650,6 +1862,11 @@ inline void SolveStrategyOptionsUnion::Reset() {
     }
     case SolveStrategyOptions_PHPSolverOptions: {
       auto ptr = reinterpret_cast<fbs::PHPSolverOptionsT *>(value);
+      delete ptr;
+      break;
+    }
+    case SolveStrategyOptions_HeightmapSolverOptions: {
+      auto ptr = reinterpret_cast<fbs::HeightmapSolverOptionsT *>(value);
       delete ptr;
       break;
     }

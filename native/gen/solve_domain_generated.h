@@ -19,7 +19,8 @@ enum class SolveAlgorithm : int8_t {
 	Greedy = 0,
 	ExtremePoint = 1,
 	ShitStack = 2,
-	PHPSolver = 3
+	PHPSolver = 3,
+	HeightmapSolver = 4
 };
 
 inline SolveAlgorithm toDomain(::fbs::SolveAlgorithm value)
@@ -29,6 +30,7 @@ inline SolveAlgorithm toDomain(::fbs::SolveAlgorithm value)
 	case ::fbs::SolveAlgorithm_ExtremePoint: return SolveAlgorithm::ExtremePoint;
 	case ::fbs::SolveAlgorithm_ShitStack: return SolveAlgorithm::ShitStack;
 	case ::fbs::SolveAlgorithm_PHPSolver: return SolveAlgorithm::PHPSolver;
+	case ::fbs::SolveAlgorithm_HeightmapSolver: return SolveAlgorithm::HeightmapSolver;
 	default: throw std::invalid_argument("invalid SolveAlgorithm value");
 	}
 }
@@ -40,6 +42,7 @@ inline ::fbs::SolveAlgorithm fromDomain(SolveAlgorithm value)
 	case SolveAlgorithm::ExtremePoint: return ::fbs::SolveAlgorithm_ExtremePoint;
 	case SolveAlgorithm::ShitStack: return ::fbs::SolveAlgorithm_ShitStack;
 	case SolveAlgorithm::PHPSolver: return ::fbs::SolveAlgorithm_PHPSolver;
+	case SolveAlgorithm::HeightmapSolver: return ::fbs::SolveAlgorithm_HeightmapSolver;
 	default: throw std::invalid_argument("invalid SolveAlgorithm value");
 	}
 }
@@ -54,6 +57,16 @@ struct ExtremePointOptions {
 
 struct ShitStackOptions {
 
+};
+
+struct HeightmapSolverOptions {
+	std::optional<uint32_t> max_boxes = std::nullopt;
+	bool allow_rotation = true;
+	std::optional<double> min_support = std::nullopt;
+	std::optional<uint32_t> cell_size = std::nullopt;
+	std::optional<uint32_t> restarts = std::nullopt;
+	std::optional<uint32_t> seed = std::nullopt;
+	std::optional<bool> strict_unsupported = std::nullopt;
 };
 
 struct PHPSolverOptions {
@@ -72,6 +85,7 @@ struct SolveOptions {
 	std::optional<ExtremePointOptions> extreme_point_options = std::nullopt;
 	std::optional<ShitStackOptions> shit_stack_options = std::nullopt;
 	std::optional<PHPSolverOptions> php_solver_options = std::nullopt;
+	std::optional<HeightmapSolverOptions> heightmap_solver_options = std::nullopt;
 };
 
 struct SolveRequest {
@@ -150,6 +164,72 @@ inline ShitStackOptions toDomain([[maybe_unused]] fbs::ShitStackOptionsT const& 
 inline fbs::ShitStackOptionsT fromDomain([[maybe_unused]] ShitStackOptions const& value)
 {
 	fbs::ShitStackOptionsT out;
+
+	return out;
+}
+
+inline HeightmapSolverOptions toDomain([[maybe_unused]] fbs::HeightmapSolverOptionsT const& value)
+{
+	HeightmapSolverOptions out;
+
+	if (value.max_boxes.has_value()) {
+		out.max_boxes = *value.max_boxes;
+	}
+
+	out.allow_rotation = value.allow_rotation;
+
+	if (value.min_support.has_value()) {
+		out.min_support = *value.min_support;
+	}
+
+	if (value.cell_size.has_value()) {
+		out.cell_size = *value.cell_size;
+	}
+
+	if (value.restarts.has_value()) {
+		out.restarts = *value.restarts;
+	}
+
+	if (value.seed.has_value()) {
+		out.seed = *value.seed;
+	}
+
+	if (value.strict_unsupported.has_value()) {
+		out.strict_unsupported = *value.strict_unsupported;
+	}
+
+	return out;
+}
+
+inline fbs::HeightmapSolverOptionsT fromDomain([[maybe_unused]] HeightmapSolverOptions const& value)
+{
+	fbs::HeightmapSolverOptionsT out;
+
+	if (value.max_boxes.has_value()) {
+		out.max_boxes = *value.max_boxes;
+	}
+
+	out.allow_rotation = value.allow_rotation;
+
+	if (value.min_support.has_value()) {
+		out.min_support = *value.min_support;
+	}
+
+	if (value.cell_size.has_value()) {
+		out.cell_size = *value.cell_size;
+	}
+
+	if (value.restarts.has_value()) {
+		out.restarts = *value.restarts;
+	}
+
+	if (value.seed.has_value()) {
+		out.seed = *value.seed;
+	}
+
+	if (value.strict_unsupported.has_value()) {
+		out.strict_unsupported = *value.strict_unsupported;
+	}
 
 	return out;
 }
@@ -244,6 +324,10 @@ inline SolveOptions toDomain([[maybe_unused]] fbs::SolveOptionsT const& value)
 		out.php_solver_options = toDomain(*value.algo_options.AsPHPSolverOptions());
 	}
 
+	if (value.algo_options.type == ::fbs::SolveStrategyOptions_HeightmapSolverOptions) {
+		out.heightmap_solver_options = toDomain(*value.algo_options.AsHeightmapSolverOptions());
+	}
+
 	return out;
 }
 
@@ -269,6 +353,10 @@ inline fbs::SolveOptionsT fromDomain([[maybe_unused]] SolveOptions const& value)
 
 	if (value.php_solver_options.has_value()) {
 		out.algo_options.Set(fromDomain(*value.php_solver_options));
+	}
+
+	if (value.heightmap_solver_options.has_value()) {
+		out.algo_options.Set(fromDomain(*value.heightmap_solver_options));
 	}
 
 	return out;

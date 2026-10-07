@@ -7,6 +7,7 @@ import {
 	BoxTypeT as BoxTypeObject,
 	ExtremePointOptionsT as ExtremePointOptionsObject,
 	GreedyOptionsT as GreedyOptionsObject,
+	HeightmapSolverOptionsT as HeightmapSolverOptionsObject,
 	ItemPlacementT as ItemPlacementObject,
 	ItemTypeT as ItemTypeObject,
 	PHPSolverOptionsT as PHPSolverOptionsObject,
@@ -55,6 +56,16 @@ export type ExtremePointOptionsT = {
 
 export type GreedyOptionsT = {
 
+};
+
+export type HeightmapSolverOptionsT = {
+	maxBoxes?: number;
+	allowRotation?: boolean;
+	minSupport?: number;
+	cellSize?: number;
+	restarts?: number;
+	seed?: number;
+	strictUnsupported?: boolean;
 };
 
 export type ItemPlacementT = {
@@ -113,6 +124,7 @@ export type SolveOptionsT = {
 	extremePointOptions?: ExtremePointOptionsT | null;
 	shitStackOptions?: ShitStackOptionsT | null;
 	phpSolverOptions?: PHPSolverOptionsT | null;
+	heightmapSolverOptions?: HeightmapSolverOptionsT | null;
 };
 
 export type BaseOptions = {
@@ -134,7 +146,8 @@ export type SolveRequest = {
 	| { algorithm: typeof SolveAlgorithm.ExtremePoint; options?: BaseOptions & { extremePointOptions?: ExtremePointOptionsT } }
 	| { algorithm: typeof SolveAlgorithm.ShitStack; options?: BaseOptions & { shitStackOptions?: ShitStackOptionsT } }
 	| { algorithm: typeof SolveAlgorithm.PHPSolver; options?: BaseOptions & { phpSolverOptions?: PHPSolverOptionsT } }
-	| { algorithm?: undefined; options?: BaseOptions & { phpSolverOptions?: PHPSolverOptionsT } }
+	| { algorithm: typeof SolveAlgorithm.HeightmapSolver; options?: BaseOptions & { heightmapSolverOptions?: HeightmapSolverOptionsT } }
+	| { algorithm?: undefined; options?: BaseOptions & { heightmapSolverOptions?: HeightmapSolverOptionsT } }
 );
 
 
@@ -154,6 +167,10 @@ function toAlgoOptionsT(options: any): { type: SolveStrategyOptions; value: any 
 	if (options?.phpSolverOptions) {
 		const value = options.phpSolverOptions;
 		return { type: SolveStrategyOptions.PHPSolverOptions, value: new PHPSolverOptionsObject(value.balanceWeight ?? null, value.allPermutations ?? null, value.singleBox ?? null, value.strictItemOrder ?? null, value.bestSubset ?? null, value.maxBoxes ?? null, value.allowRotation ?? true) };
+	}
+	if (options?.heightmapSolverOptions) {
+		const value = options.heightmapSolverOptions;
+		return { type: SolveStrategyOptions.HeightmapSolverOptions, value: new HeightmapSolverOptionsObject(value.maxBoxes ?? null, value.allowRotation ?? true, value.minSupport ?? null, value.cellSize ?? null, value.restarts ?? null, value.seed ?? null, value.strictUnsupported ?? null) };
 	}
 	return { type: SolveStrategyOptions.NONE, value: null };
 }

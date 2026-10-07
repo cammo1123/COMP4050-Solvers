@@ -11,6 +11,17 @@ table ExtremePointOptions {}
 
 table ShitStackOptions {}
 
+table HeightmapSolverOptions {
+  max_boxes: uint = null;
+  allow_rotation: bool = true;
+  min_support : double = null;
+  cell_size : uint = null;
+  restarts : uint = null;
+  seed : uint = null;
+  strict_unsupported : bool = null;
+}
+
+
 table PHPSolverOptions {
   balance_weight: bool = null;
   all_permutations: bool = null;
@@ -26,6 +37,7 @@ union SolveStrategyOptions {
   ExtremePointOptions,
   ShitStackOptions,
   PHPSolverOptions,
+  HeightmapSolverOptions
 }
 
 enum SolveAlgorithm : byte {
@@ -33,6 +45,7 @@ enum SolveAlgorithm : byte {
 	ExtremePoint = 1,
 	ShitStack = 2,
   PHPSolver = 3,
+  HeightmapSolver = 4,
 }
 
 table SolveRequest {
