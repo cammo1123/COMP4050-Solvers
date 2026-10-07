@@ -3,7 +3,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
 
 export enum SolveAlgorithm {
-  ExtremePoint = 0,
-  StackBased = 1,
-  PHPSolver = 2
+  Greedy = 0,
+  ExtremePoint = 1,
+  ShitStack = 2,
+  PHPSolver = 3,
+  HeightmapSolver = 4
 }

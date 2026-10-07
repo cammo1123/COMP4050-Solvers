@@ -16,17 +16,21 @@ namespace fbs {
 namespace domain {
 
 enum class SolveAlgorithm : int8_t {
-	ExtremePoint = 0,
-	StackBased = 1,
-	PHPSolver = 2
+	Greedy = 0,
+	ExtremePoint = 1,
+	ShitStack = 2,
+	PHPSolver = 3,
+	HeightmapSolver = 4
 };
 
 inline SolveAlgorithm toDomain(::fbs::SolveAlgorithm value)
 {
 	switch (value) {
+	case ::fbs::SolveAlgorithm_Greedy: return SolveAlgorithm::Greedy;
 	case ::fbs::SolveAlgorithm_ExtremePoint: return SolveAlgorithm::ExtremePoint;
-	case ::fbs::SolveAlgorithm_StackBased: return SolveAlgorithm::StackBased;
+	case ::fbs::SolveAlgorithm_ShitStack: return SolveAlgorithm::ShitStack;
 	case ::fbs::SolveAlgorithm_PHPSolver: return SolveAlgorithm::PHPSolver;
+	case ::fbs::SolveAlgorithm_HeightmapSolver: return SolveAlgorithm::HeightmapSolver;
 	default: throw std::invalid_argument("invalid SolveAlgorithm value");
 	}
 }
@@ -34,19 +38,35 @@ inline SolveAlgorithm toDomain(::fbs::SolveAlgorithm value)
 inline ::fbs::SolveAlgorithm fromDomain(SolveAlgorithm value)
 {
 	switch (value) {
+	case SolveAlgorithm::Greedy: return ::fbs::SolveAlgorithm_Greedy;
 	case SolveAlgorithm::ExtremePoint: return ::fbs::SolveAlgorithm_ExtremePoint;
-	case SolveAlgorithm::StackBased: return ::fbs::SolveAlgorithm_StackBased;
+	case SolveAlgorithm::ShitStack: return ::fbs::SolveAlgorithm_ShitStack;
 	case SolveAlgorithm::PHPSolver: return ::fbs::SolveAlgorithm_PHPSolver;
+	case SolveAlgorithm::HeightmapSolver: return ::fbs::SolveAlgorithm_HeightmapSolver;
 	default: throw std::invalid_argument("invalid SolveAlgorithm value");
 	}
 }
+
+struct GreedyOptions {
+
+};
 
 struct ExtremePointOptions {
 
 };
 
-struct StackBasedOptions {
+struct ShitStackOptions {
 
+};
+
+struct HeightmapSolverOptions {
+	std::optional<uint32_t> max_boxes = std::nullopt;
+	bool allow_rotation = true;
+	std::optional<double> min_support = std::nullopt;
+	std::optional<uint32_t> cell_size = std::nullopt;
+	std::optional<uint32_t> restarts = std::nullopt;
+	std::optional<uint32_t> seed = std::nullopt;
+	std::optional<bool> strict_unsupported = std::nullopt;
 };
 
 struct PHPSolverOptions {
@@ -61,23 +81,29 @@ struct PHPSolverOptions {
 
 struct SolveOptions {
 	std::optional<uint32_t> timeout_ms = std::nullopt;
+	std::optional<GreedyOptions> greedy_options = std::nullopt;
 	std::optional<ExtremePointOptions> extreme_point_options = std::nullopt;
-	std::optional<StackBasedOptions> stack_based_options = std::nullopt;
+	std::optional<ShitStackOptions> shit_stack_options = std::nullopt;
 	std::optional<PHPSolverOptions> php_solver_options = std::nullopt;
+	std::optional<HeightmapSolverOptions> heightmap_solver_options = std::nullopt;
 };
 
 struct SolveRequest {
 	std::vector<BoxType> boxes{};
 	std::vector<ItemType> items{};
-	SolveAlgorithm algorithm = SolveAlgorithm::ExtremePoint;
+	SolveAlgorithm algorithm = SolveAlgorithm::PHPSolver;
 	std::optional<SolveOptions> options = std::nullopt;
 };
 
 struct ItemPlacement {
+	std::string item_code{};
+	std::string item_reference{};
 	uint32_t x = 0;
 	uint32_t y = 0;
 	uint32_t z = 0;
-	ItemType item{};
+	uint32_t width = 0;
+	uint32_t length = 0;
+	uint32_t depth = 0;
 };
 
 struct BoxResult {
@@ -100,6 +126,20 @@ struct SolveResponse {
 	uint32_t server_us = 0;
 };
 
+inline GreedyOptions toDomain([[maybe_unused]] fbs::GreedyOptionsT const& value)
+{
+	GreedyOptions out;
+
+	return out;
+}
+
+inline fbs::GreedyOptionsT fromDomain([[maybe_unused]] GreedyOptions const& value)
+{
+	fbs::GreedyOptionsT out;
+
+	return out;
+}
+
 inline ExtremePointOptions toDomain([[maybe_unused]] fbs::ExtremePointOptionsT const& value)
 {
 	ExtremePointOptions out;
@@ -114,16 +154,82 @@ inline fbs::ExtremePointOptionsT fromDomain([[maybe_unused]] ExtremePointOptions
 	return out;
 }
 
-inline StackBasedOptions toDomain([[maybe_unused]] fbs::StackBasedOptionsT const& value)
+inline ShitStackOptions toDomain([[maybe_unused]] fbs::ShitStackOptionsT const& value)
 {
-	StackBasedOptions out;
+	ShitStackOptions out;
 
 	return out;
 }
 
-inline fbs::StackBasedOptionsT fromDomain([[maybe_unused]] StackBasedOptions const& value)
+inline fbs::ShitStackOptionsT fromDomain([[maybe_unused]] ShitStackOptions const& value)
 {
-	fbs::StackBasedOptionsT out;
+	fbs::ShitStackOptionsT out;
+
+	return out;
+}
+
+inline HeightmapSolverOptions toDomain([[maybe_unused]] fbs::HeightmapSolverOptionsT const& value)
+{
+	HeightmapSolverOptions out;
+
+	if (value.max_boxes.has_value()) {
+		out.max_boxes = *value.max_boxes;
+	}
+
+	out.allow_rotation = value.allow_rotation;
+
+	if (value.min_support.has_value()) {
+		out.min_support = *value.min_support;
+	}
+
+	if (value.cell_size.has_value()) {
+		out.cell_size = *value.cell_size;
+	}
+
+	if (value.restarts.has_value()) {
+		out.restarts = *value.restarts;
+	}
+
+	if (value.seed.has_value()) {
+		out.seed = *value.seed;
+	}
+
+	if (value.strict_unsupported.has_value()) {
+		out.strict_unsupported = *value.strict_unsupported;
+	}
+
+	return out;
+}
+
+inline fbs::HeightmapSolverOptionsT fromDomain([[maybe_unused]] HeightmapSolverOptions const& value)
+{
+	fbs::HeightmapSolverOptionsT out;
+
+	if (value.max_boxes.has_value()) {
+		out.max_boxes = *value.max_boxes;
+	}
+
+	out.allow_rotation = value.allow_rotation;
+
+	if (value.min_support.has_value()) {
+		out.min_support = *value.min_support;
+	}
+
+	if (value.cell_size.has_value()) {
+		out.cell_size = *value.cell_size;
+	}
+
+	if (value.restarts.has_value()) {
+		out.restarts = *value.restarts;
+	}
+
+	if (value.seed.has_value()) {
+		out.seed = *value.seed;
+	}
+
+	if (value.strict_unsupported.has_value()) {
+		out.strict_unsupported = *value.strict_unsupported;
+	}
 
 	return out;
 }
@@ -202,16 +308,24 @@ inline SolveOptions toDomain([[maybe_unused]] fbs::SolveOptionsT const& value)
 		out.timeout_ms = *value.timeout_ms;
 	}
 
+	if (value.algo_options.type == ::fbs::SolveStrategyOptions_GreedyOptions) {
+		out.greedy_options = toDomain(*value.algo_options.AsGreedyOptions());
+	}
+
 	if (value.algo_options.type == ::fbs::SolveStrategyOptions_ExtremePointOptions) {
 		out.extreme_point_options = toDomain(*value.algo_options.AsExtremePointOptions());
 	}
 
-	if (value.algo_options.type == ::fbs::SolveStrategyOptions_StackBasedOptions) {
-		out.stack_based_options = toDomain(*value.algo_options.AsStackBasedOptions());
+	if (value.algo_options.type == ::fbs::SolveStrategyOptions_ShitStackOptions) {
+		out.shit_stack_options = toDomain(*value.algo_options.AsShitStackOptions());
 	}
 
 	if (value.algo_options.type == ::fbs::SolveStrategyOptions_PHPSolverOptions) {
 		out.php_solver_options = toDomain(*value.algo_options.AsPHPSolverOptions());
+	}
+
+	if (value.algo_options.type == ::fbs::SolveStrategyOptions_HeightmapSolverOptions) {
+		out.heightmap_solver_options = toDomain(*value.algo_options.AsHeightmapSolverOptions());
 	}
 
 	return out;
@@ -225,16 +339,24 @@ inline fbs::SolveOptionsT fromDomain([[maybe_unused]] SolveOptions const& value)
 		out.timeout_ms = *value.timeout_ms;
 	}
 
+	if (value.greedy_options.has_value()) {
+		out.algo_options.Set(fromDomain(*value.greedy_options));
+	}
+
 	if (value.extreme_point_options.has_value()) {
 		out.algo_options.Set(fromDomain(*value.extreme_point_options));
 	}
 
-	if (value.stack_based_options.has_value()) {
-		out.algo_options.Set(fromDomain(*value.stack_based_options));
+	if (value.shit_stack_options.has_value()) {
+		out.algo_options.Set(fromDomain(*value.shit_stack_options));
 	}
 
 	if (value.php_solver_options.has_value()) {
 		out.algo_options.Set(fromDomain(*value.php_solver_options));
+	}
+
+	if (value.heightmap_solver_options.has_value()) {
+		out.algo_options.Set(fromDomain(*value.heightmap_solver_options));
 	}
 
 	return out;
@@ -290,15 +412,21 @@ inline ItemPlacement toDomain([[maybe_unused]] fbs::ItemPlacementT const& value)
 {
 	ItemPlacement out;
 
+	out.item_code = value.item_code;
+
+	out.item_reference = value.item_reference;
+
 	out.x = value.x;
 
 	out.y = value.y;
 
 	out.z = value.z;
 
-	if (value.item) {
-		out.item = toDomain(*value.item);
-	}
+	out.width = value.width;
+
+	out.length = value.length;
+
+	out.depth = value.depth;
 
 	return out;
 }
@@ -307,13 +435,21 @@ inline fbs::ItemPlacementT fromDomain([[maybe_unused]] ItemPlacement const& valu
 {
 	fbs::ItemPlacementT out;
 
+	out.item_code = value.item_code;
+
+	out.item_reference = value.item_reference;
+
 	out.x = value.x;
 
 	out.y = value.y;
 
 	out.z = value.z;
 
-	out.item = std::make_unique<fbs::ItemTypeT>(fromDomain(value.item));
+	out.width = value.width;
+
+	out.length = value.length;
+
+	out.depth = value.depth;
 
 	return out;
 }
