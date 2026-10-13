@@ -159,7 +159,6 @@ add_custom_command(
 )
 
 add_subdirectory(src/php_solver)
-add_subdirectory(src/hightmap_solver)
 
 add_library(solver_core OBJECT
     src/solver.cpp
@@ -172,12 +171,12 @@ add_library(solver_core OBJECT
     ${GENERATED_HEADERS}
 )
 target_include_directories(solver_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR} ${GENERATED_DIR} ${flatbuffers_include})
-target_link_libraries(solver_core PUBLIC php_solver hightmap_solver)
+target_link_libraries(solver_core PUBLIC php_solver)
 
 add_executable(solver src/main.cpp)
 target_link_libraries(solver PRIVATE solver_core)
 
-foreach(target php_solver solver_core solver hightmap_solver)
+foreach(target php_solver solver_core solver)
     if(MSVC)
         target_compile_options(${target} PRIVATE /W4)
     else()
@@ -187,7 +186,7 @@ endforeach()
 
 # solver_core and php_solver are linked into the Node addon module, which
 # requires position-independent code.
-set_target_properties(php_solver solver_core hightmap_solver PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(php_solver solver_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 if(COMP4050_BUILD_ADDON)
     execute_process(

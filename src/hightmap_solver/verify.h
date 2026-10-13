@@ -74,12 +74,8 @@ inline bool verifySolution(Solution const& s,
                     if (ox1 < ox2 && oy1 < oy2)
                         supported += uint64_t(ox2 - ox1) * (oy2 - oy1);
                 }
-                // The packer's support test works on covering CELLS (slightly
-                // pessimistic), so the exact recomputation here can only be
-                // MORE supported than the packer believed — a strict check
-                // needs the tolerance of one cell-row along each edge.
-                double slack = double(opt.cellSize) * (p.w + p.l);
-                if (double(supported) + slack < opt.minSupport * double(baseArea))
+                // The packer's support test is exact in mm, so this is strict.
+                if (double(supported) < opt.minSupport * double(baseArea) - 1e-6)
                     fail(it.code + " under-supported");
             }
         }

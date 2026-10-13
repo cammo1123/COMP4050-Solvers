@@ -29,7 +29,7 @@ inline void downsizeSweep(std::vector<ItemSpec> const& items,
         std::vector<int> smaller;
         for (int t = 0; t < int(types.size()); t++)
             if (types[t].volume() < cur.volume()) smaller.push_back(t);
-        std::sort(smaller.begin(), smaller.end(), [&](int a, int b) {
+        std::stable_sort(smaller.begin(), smaller.end(), [&](int a, int b) {
             return types[a].volume() < types[b].volume();
         });
 
@@ -54,7 +54,7 @@ inline void downsizeSweep(std::vector<ItemSpec> const& items,
             for (auto const& p : box.placements) residents.push_back(p.itemIndex);
             sortLargeFirst(residents, items);
 
-            OpenBox trial(t, types[t], opt.cellSize);
+            OpenBox trial(t);
             bool allPlaced = true;
             for (int i : residents) {
                 auto c = findBestInBox(trial, types[t], items[i], opt, UINT32_MAX);

@@ -15,7 +15,7 @@ table HeightmapSolverOptions {
   max_boxes: uint = null;
   allow_rotation: bool = true;
   min_support : double = null;
-  cell_size : uint = null;
+  cell_size : uint = null;  // ignored: the heightmap is exact in mm
   restarts : uint = null;
   seed : uint = null;
   strict_unsupported : bool = null;

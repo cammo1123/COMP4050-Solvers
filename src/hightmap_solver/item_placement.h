@@ -1,23 +1,29 @@
 // ============================================================================
 // STEP 6 — PLACEMENT ENGINE (heightmap + feasibility test)
 //
-// The state of an open box is a matrix over its floor:
-//   H[cx][cy] = height (mm) of the tallest thing covering that cell.
-// Every horizontal layer of the box is implicitly a slice of this matrix.
+// The state of an open box is a heightmap over its floor:
+//   H(x, y) = height (mm) of the tallest thing covering that point.
+// Every horizontal layer of the box is implicitly a slice of this map.
 //
-// Two refinements over the first reference implementation, both from the
-// efficiency/brainstorm sessions:
+// H is NOT stored as a grid. Each commit raises H to the item's top over
+// its footprint, and that top is above everything under it, so
+//   H(x, y) == max top of the placed items whose footprint covers (x, y).
+// Querying the placement list gives the exact 1 mm heightmap in
+// O(items in box) per candidate, instead of O(footprint mm^2) for a 1 mm
+// grid — and no multi-MB grid per box to allocate and copy every restart.
+//
+// Refinements from the efficiency/brainstorm sessions:
 //   * REAL-MILLIMETRE ANCHORS: candidate positions are the walls plus placed
-//     items' true edges in mm — items sit flush, so a coarse cell grid no
-//     longer leaks (cell-1) mm of waste at every seam. The matrix is only
-//     used for height/support queries, mapped conservatively onto covering
-//     cells.
+//     items' true edges in mm, so items sit flush.
 //   * PRUNING: evaluate() takes the best zTop found so far and abandons a
 //     candidate mid-scan the moment it provably can't win (zTop is the
-//     first score field, so larger can never beat it). Measured ~3x.
+//     first score field, so larger can never beat it).
 // ============================================================================
 #pragma once
 
+#include <algorithm>
+#include <array>
+#include <cmath>
 #include <optional>
 #include <tuple>
 
@@ -28,31 +34,17 @@
 struct OpenBox {
     int      typeIndex;                 // which BoxTypeSpec this instance is
     std::string groupTag;               // "" until a grouped item stamps it
-    uint32_t gridW, gridL;              // matrix size in CELLS
-    uint32_t cell;                      // cell side, mm
-    std::vector<uint32_t> H;            // heightmap, mm (flat: cx * gridL + cy)
     double   cargoWeight = 0.0;         // kg of items inside
-    std::vector<Placement> placements;  // committed placements
+    uint64_t usedVolume = 0;            // mm^3 of items inside
+    std::vector<Placement> placements;  // committed placements (= the heightmap)
     std::vector<uint32_t> ax, ay;       // cached candidate anchors in REAL mm,
                                         // sorted+unique; updated on commit
 
-    OpenBox(int type, BoxTypeSpec const& bt, uint32_t cellSize)
-        : typeIndex(type),
-          gridW(ceilDiv(bt.width,  cellSize)),   // ceil: cover the whole floor
-          gridL(ceilDiv(bt.length, cellSize)),
-          cell(cellSize),
-          H(size_t(gridW) * gridL, 0)
-    { ax.push_back(0); ay.push_back(0); }        // empty box: the two walls
-
-    size_t idx(uint32_t cx, uint32_t cy) const { return size_t(cx) * gridL + cy; }
+    explicit OpenBox(int type) : typeIndex(type), ax{ 0 }, ay{ 0 } {}  // empty box: the two walls
 
     // Free volume left (interior minus item volume) — used by the Best Fit
     // backfill rule in step 8 ("fill the box with least space to be full").
-    uint64_t freeVolume(BoxTypeSpec const& bt) const {
-        uint64_t used = 0;
-        for (auto const& p : placements) used += uint64_t(p.w) * p.l * p.d;
-        return bt.volume() - used;
-    }
+    uint64_t freeVolume(BoxTypeSpec const& bt) const { return bt.volume() - usedVolume; }
 };
 
 // A fully specified placement candidate plus its score. Score fields are
@@ -61,18 +53,18 @@ struct OpenBox {
 struct Candidate {
     uint32_t zTop;                       // z + d — resulting pile height
     uint32_t z;                          // resting height
-    uint32_t wasteCells;                 // footprint cells NOT at height z
+    uint64_t wasteArea;                  // footprint mm^2 NOT resting at height z
     uint32_t y, x;                       // back-left tie-break, real mm
     std::array<uint32_t, 3> dims;        // oriented (w, l, d)
 
     bool operator<(Candidate const& rhs) const {
-        return std::tie(zTop, z, wasteCells, y, x)
-             < std::tie(rhs.zTop, rhs.z, rhs.wasteCells, rhs.y, rhs.x);
+        return std::tie(zTop, z, wasteArea, y, x)
+             < std::tie(rhs.zTop, rhs.z, rhs.wasteArea, rhs.y, rhs.x);
     }
 };
 
 // Can `dims`-oriented item sit with its corner at real position (x, y)?
-// Checks, in order: bounds -> resting heipnpmght (max of H under the footprint)
+// Checks, in order: bounds -> resting height (max top under the footprint)
 // -> vertical fit & zTop pruning -> support ratio. No overlap check is
 // needed: resting on the max of the heightmap makes overlap impossible.
 inline std::optional<Candidate>
@@ -82,46 +74,43 @@ evaluate(OpenBox const& box, BoxTypeSpec const& bt, Options const& opt,
 {
     const uint32_t w = dims[0], l = dims[1], d = dims[2];
 
-    // (1) BOUNDS — exact, in real mm; the matrix never decides fit.
+    // (1) BOUNDS — exact, in real mm.
     if (x + w > bt.width || y + l > bt.length) return std::nullopt;
 
-    // Footprint mapped CONSERVATIVELY onto covering cells: partial cells
-    // count as covered (safe: support reads get pessimistic, never wrong).
-    const uint32_t cx0 = x / box.cell,  cx1 = uint32_t(ceilDiv(x + w, box.cell));
-    const uint32_t cy0 = y / box.cell,  cy1 = uint32_t(ceilDiv(y + l, box.cell));
-
-    // (2) RESTING HEIGHT with pruning: the item lands on the tallest thing
-    // under it; any surface above zMaxRest makes this candidate unwinnable.
+    // (2) RESTING HEIGHT with pruning: the item lands on the tallest top
+    // whose footprint overlaps ours; any top above zMaxRest makes this
+    // candidate unwinnable.
     const uint32_t zCap = std::min(bt.depth, bestZTop);
     if (d > zCap) return std::nullopt;
     const uint32_t zMaxRest = zCap - d;
     uint32_t z = 0;
-    for (uint32_t i = cx0; i < cx1; i++) {
-        for (uint32_t j = cy0; j < cy1; j++) {
-            uint32_t h = box.H[box.idx(i, j)];
-            if (h > z) {
-                if (h > zMaxRest) return std::nullopt;   // prune mid-scan
-                z = h;
-            }
+    for (auto const& p : box.placements) {
+        if (p.x >= x + w || x >= p.x + p.w || p.y >= y + l || y >= p.y + p.l) continue;
+        const uint32_t top = p.z + p.d;
+        if (top > z) {
+            if (top > zMaxRest) return std::nullopt;     // prune mid-scan
+            z = top;
         }
     }
 
-    // (3) SUPPORT RATIO — a cell supports the item iff its surface is exactly
-    // at z. Integer target + early abandon when it becomes unreachable.
-    const uint32_t cells  = (cx1 - cx0) * (cy1 - cy0);
-    const uint32_t needed = uint32_t(std::ceil(opt.minSupport * double(cells) - 1e-9));
-    uint32_t supporting = 0, scanned = 0;
-    for (uint32_t i = cx0; i < cx1; i++) {
-        for (uint32_t j = cy0; j < cy1; j++) {
-            scanned++;
-            if (box.H[box.idx(i, j)] == z) supporting++;
-            else if (supporting + (cells - scanned) < needed)
-                return std::nullopt;                     // target unreachable
+    // (3) SUPPORT RATIO — footprint area whose surface is exactly at z.
+    // Two items with the same top can't overlap in plan (the later one would
+    // have rested ON the earlier one), so their overlaps simply add up.
+    const uint64_t area = uint64_t(w) * l;
+    uint64_t supported = area;                           // z == 0: the floor
+    if (z > 0) {
+        supported = 0;
+        for (auto const& p : box.placements) {
+            if (p.z + p.d != z) continue;
+            const uint32_t ox1 = std::max(x, p.x), ox2 = std::min(x + w, p.x + p.w);
+            const uint32_t oy1 = std::max(y, p.y), oy2 = std::min(y + l, p.y + p.l);
+            if (ox1 < ox2 && oy1 < oy2) supported += uint64_t(ox2 - ox1) * (oy2 - oy1);
         }
     }
-    if (supporting < needed) return std::nullopt;
+    const uint64_t needed = uint64_t(std::ceil(opt.minSupport * double(area) - 1e-9));
+    if (supported < needed) return std::nullopt;
 
-    return Candidate{ z + d, z, cells - supporting, y, x, dims };
+    return Candidate{ z + d, z, area - supported, y, x, dims };
 }
 
 // Best feasible placement of `item` in `box`, over allowed orientations and
