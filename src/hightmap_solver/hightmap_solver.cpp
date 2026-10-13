@@ -251,9 +251,9 @@ SolveResponse to_response(::Solution const& solution, ::NormalizedInput const& n
 		result.total_weight = static_cast<float>(type.boxWeight + packed.cargoWeight);
 
 		if (source.outer_width.has_value() && source.outer_length.has_value() && source.outer_depth.has_value()) {
-			result.outer_width = *source.outer_width;
-			result.outer_length = *source.outer_length;
-			result.outer_depth = *source.outer_depth;
+			result.outer_width = source.outer_width;
+			result.outer_length = source.outer_length;
+			result.outer_depth = source.outer_depth;
 		}
 
 		uint64_t used_volume = 0;
