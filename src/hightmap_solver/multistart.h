@@ -2,8 +2,8 @@
 // STEP 10 — OBJECTIVE + MULTI-START (parallel, deterministic)
 //
 // One full pipeline pass (steps 5 -> 8 -> 9) is deterministic and fast.
-// Multi-start spends the remaining time budget re-running it with perturbed
-// inputs and keeping the best solution under the agreed objective:
+// Multi-start re-runs it `restarts` times with perturbed inputs and keeps
+// the best solution under the agreed objective:
 //   1. fewest failed items          (never trade a placed item for tidiness)
 //   2. least total opened-box volume (box count that understands sizes)
 //   3. emptiest least-filled box     (the box a human would repack)
@@ -12,7 +12,13 @@
 // swaps, and (b) the box-opening policy. All perturbations are generated
 // up-front from ONE sequential RNG and results are reduced in iteration
 // order, so the parallel run is bit-identical to a sequential one — just
-// earlier on the wall clock.
+// earlier on the wall clock. The RNG is drawn with plain modulo, NOT
+// std::uniform_int_distribution, whose output differs between libstdc++,
+// libc++ and MSVC — that would give each prebuilt platform its own answer.
+//
+// The answer depends only on (input, seed, restarts): the restart COUNT is
+// the search budget. timeoutMs is a safety cap for pathological inputs;
+// when it fires the result depends on machine speed and core count.
 // ============================================================================
 #pragma once
 
@@ -24,29 +30,31 @@
 #include "packing_types.h"
 #include "item_grouping.h"
 #include "group_pack.h"
-#include "item_backfill.h"
 #include "downsize.h"
 
 // ---- one complete constructive pass (steps 5, 8, 9) ------------------------
 
-// `perturbedGroups` / `perturbedUngrouped` are the (possibly shuffled) item
-// index lists; sortLargeFirst inside steps 5/8 is STABLE, so the shuffle
-// survives as the tie-break among equal-sized items.
-inline Solution pipelineOnce(GroupPartition const& part,
+// `part` holds the item index lists in the order they are packed: large-first
+// (sortPartition) for pass 0, a lightly shuffled copy of that for restarts.
+// Returns nullopt when `deadline` passed mid-run (partial answers are invalid).
+inline std::optional<Solution> pipelineOnce(GroupPartition const& part,
                              std::vector<ItemSpec> const& items,
                              std::vector<BoxTypeSpec> const& types,
                              FitsMatrix const& fm, Options const& opt,
-                             OpenPolicy policy)
+                             OpenPolicy policy,
+                             std::optional<std::chrono::steady_clock::time_point> deadline = std::nullopt)
 {
     PackState st;
     st.openedOfType.assign(types.size(), 0);
+    st.deadline = deadline;
 
     // Step 5: each group independently (they can never share boxes).
     for (auto const& [tag, order] : part.groups)
         packGroup(tag, order, items, types, fm, opt, policy, st);
 
     // Step 8: ungrouped items backfill everything, Best Fit first.
-    backfillUngrouped(part.ungrouped, items, types, fm, opt, policy, st);
+    packGroup("", part.ungrouped, items, types, fm, opt, policy, st);
+    if (st.aborted) return std::nullopt;
 
     // Step 9: shrink any box that ended up oversized.
     downsizeSweep(items, types, fm, opt, st);
@@ -62,6 +70,14 @@ inline Solution pipelineOnce(GroupPartition const& part,
     }
     s.failed = std::move(st.failed);
     return s;
+}
+
+// Every wave sorted large-first — the baseline order restarts perturb.
+inline GroupPartition sortPartition(GroupPartition part, std::vector<ItemSpec> const& items)
+{
+    for (auto& [tag, order] : part.groups) sortLargeFirst(order, items);
+    sortLargeFirst(part.ungrouped, items);
+    return part;
 }
 
 // ---- the objective ---------------------------------------------------------
@@ -95,22 +111,29 @@ inline bool better(Solution const& a, Solution const& b,
 
 // ---- multi-start -----------------------------------------------------------
 
-inline Solution solveMultiStart(GroupPartition const& part,
+inline Solution solveMultiStart(GroupPartition const& unsorted,
                                 std::vector<ItemSpec> const& items,
                                 std::vector<BoxTypeSpec> const& types,
                                 FitsMatrix const& fm, Options const& opt)
 {
+    // Sort once; restarts swap neighbours in THIS order, so the perturbation
+    // actually reaches the packer (re-sorting later would undo it).
+    const GroupPartition part = sortPartition(unsorted, items);
+
+    // The budget covers pass 0 too. Pass 0 itself always completes (no
+    // deadline) so there is always an answer; restarts stop at the deadline.
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(opt.timeoutMs);
+
     // Pass 0: the deterministic baseline with the default policy.
-    Solution best = pipelineOnce(part, items, types, fm, opt,
-                                 OpenPolicy::ShrinkingTail);
+    Solution best = *pipelineOnce(part, items, types, fm, opt,
+                                  OpenPolicy::ShrinkingTail);
 
     // Pre-generate every restart's perturbation from one sequential RNG.
     std::mt19937_64 rng(opt.seed);
     auto shuffleABit = [&](std::vector<int> v) {     // a few adjacent swaps
         if (v.size() >= 2) {
-            std::uniform_int_distribution<size_t> pick(0, v.size() - 2);
             for (size_t s = 0; s < 1 + v.size() / 4; s++) {
-                size_t p = pick(rng);
+                size_t p = size_t(rng() % (v.size() - 1));   // portable, see header
                 std::swap(v[p], v[p + 1]);
             }
         }
@@ -130,21 +153,18 @@ inline Solution solveMultiStart(GroupPartition const& part,
 
     // Run in parallel batches; reduce IN ORDER for determinism.
     const unsigned lanes = std::max(1u, std::thread::hardware_concurrency());
-    auto t0 = std::chrono::steady_clock::now();
     for (size_t base = 0; base < variants.size(); base += lanes) {
-        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                           std::chrono::steady_clock::now() - t0).count();
-        if (elapsed >= opt.timeoutMs) break;         // budget spent
+        if (std::chrono::steady_clock::now() >= deadline) break;   // safety cap (non-reproducible)
 
-        std::vector<std::future<Solution>> batch;
+        std::vector<std::future<std::optional<Solution>>> batch;
         for (size_t k = base; k < std::min(base + lanes, variants.size()); k++)
             batch.push_back(std::async(std::launch::async, [&, k] {
                 return pipelineOnce(variants[k].part, items, types, fm, opt,
-                                    variants[k].policy);
+                                    variants[k].policy, deadline);
             }));
         for (auto& f : batch) {
-            Solution cand = f.get();
-            if (better(cand, best, types)) best = std::move(cand);
+            std::optional<Solution> cand = f.get();
+            if (cand && better(*cand, best, types)) best = std::move(*cand);
         }
     }
     return best;

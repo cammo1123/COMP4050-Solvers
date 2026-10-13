@@ -7,8 +7,6 @@
 //   * box float dims are FLOORED to whole mm  (conservative: a 150.9 mm
 //     interior becomes 150 — we can under-use a box, never overfill it)
 //   * inactive types are dropped here, so no later step ever sees them
-//   * a sensible cellSize is derived from the largest box if the caller
-//     left the default (target: grids of at most ~128 cells per axis)
 // ============================================================================
 #pragma once
 
@@ -54,19 +52,4 @@ inline NormalizedInput normalizeBoxTypes(std::vector<RawBoxType> const& raw)
         out.rawIndex.push_back(i);
     }
     return out;
-}
-
-// Pick a grid resolution when the caller kept the default. Rule of thumb from
-// the efficiency work: keep each axis at or under ~128 cells, so a 400 mm MED
-// gets 5 mm cells (80x80) and a hypothetical 1200 mm box would get 10 mm.
-// Positions snap to cell multiples ONLY for the matrix; anchors are kept in
-// real mm (see step 6), so a coarser grid costs speed-of-support-check
-// precision, not packing millimetres.
-inline uint32_t deriveCellSize(std::vector<BoxTypeSpec> const& types, Options const& opt)
-{
-    if (opt.cellSize != 0) return opt.cellSize;    // caller chose explicitly
-    uint32_t largest = 1;
-    for (auto const& t : types)                    // find the widest axis in play
-        largest = std::max({ largest, t.width, t.length });
-    return std::max(1u, largest / 128);            // ~128 cells max per axis
 }

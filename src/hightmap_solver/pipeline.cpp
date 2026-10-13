@@ -22,7 +22,6 @@
 #include "group_pack.h"
 #include "item_placement.h"
 #include "commit_placement.h"
-#include "backfill.h"
 #include "downsize.h"
 #include "multistart.h"
 #include "emit.h"
@@ -36,11 +35,9 @@ static void runPipeline(char const* title,
 {
     std::printf("\n################ %s ################\n", title);
 
-    // STEP 1 — normalise (drop inactive types, floor floats, derive cell).
+    // STEP 1 — normalise (drop inactive types, floor floats).
     NormalizedInput norm = normalizeBoxTypes(rawTypes);
-    opt.cellSize = deriveCellSize(norm.types, opt);
-    std::printf("active box types: %zu | cell size: %u mm\n",
-                norm.types.size(), opt.cellSize);
+    std::printf("active box types: %zu\n", norm.types.size());
 
     // STEP 2 — fits matrix (fit + tiling capacity per item x type).
     FitsMatrix fm = buildFitsMatrix(items, norm.types, opt);
@@ -100,7 +97,7 @@ int main()
         { "ITM-002", "Widget B",          300, 150,  75, 0.0, ""        },
         { "ITM-003", "Fragile Glassware",  80,  80, 120, 0.0, "GROUP-B" },
     };
-    Options opt;                       // defaults: rotation on, 80% support
+    Options opt;                       // defaults: rotation on, 60% support
     opt.restarts = 16;
     runPipeline("DEMO A: spec sample order", rawTypes, sample, opt);
 
