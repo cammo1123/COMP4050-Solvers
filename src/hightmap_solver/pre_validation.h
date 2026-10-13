@@ -14,25 +14,25 @@
 // ============================================================================
 #pragma once
 
-#include "packing_types.h"
 #include "fits_matrix.h"
+#include "packing_types.h"
 
 struct ValidationResult {
-    std::vector<int>        packable;   // item indices that enter the pipeline
-    std::vector<FailedItem> rejected;   // NoFit items, with their reason
+	std::vector<int> packable;		  // item indices that enter the pipeline
+	std::vector<FailedItem> rejected; // NoFit items, with their reason
 };
 
 inline ValidationResult preflight(std::vector<ItemSpec> const& items,
-                                  FitsMatrix const& fm)
+	FitsMatrix const& fm)
 {
-    ValidationResult r;
-    for (int i = 0; i < int(items.size()); i++) {
-        // smallestType == -1 means the fits row is empty: no active type
-        // admits this item in any allowed orientation.
-        if (fm.smallestType[i] < 0)
-            r.rejected.push_back({ i, FailReason::NoFit });
-        else
-            r.packable.push_back(i);
-    }
-    return r;
+	ValidationResult r;
+	for (int i = 0; i < int(items.size()); i++) {
+		// smallestType == -1 means the fits row is empty: no active type
+		// admits this item in any allowed orientation.
+		if (fm.smallestType[i] < 0)
+			r.rejected.push_back({ i, FailReason::NoFit });
+		else
+			r.packable.push_back(i);
+	}
+	return r;
 }
