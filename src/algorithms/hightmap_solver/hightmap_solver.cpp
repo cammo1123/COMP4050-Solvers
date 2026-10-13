@@ -51,21 +51,20 @@
 #include <stdexcept>
 #include <string>
 
-
 // Pipeline headers. These declare BoxTypeSpec / ItemSpec / Options / Solution
 // in the GLOBAL namespace, so everything from them is written with a leading
 // "::" below to keep it visually distinct from the fbs::domain types.
 // (Worth doing later: wrap them in `namespace heightmap { ... }`.)
-#include "packing_types.h"
-#include "data_normalization.h"
-#include "fits_matrix.h"
-#include "pre_validation.h"
-#include "item_grouping.h"
-#include "group_pack.h"
-#include "item_placement.h"
 #include "commit_placement.h"
+#include "data_normalization.h"
 #include "downsize.h"
+#include "fits_matrix.h"
+#include "group_pack.h"
+#include "item_grouping.h"
+#include "item_placement.h"
 #include "multistart.h"
+#include "packing_types.h"
+#include "pre_validation.h"
 
 #include "solve_domain_generated.h"
 #include "types_domain_generated.h"
