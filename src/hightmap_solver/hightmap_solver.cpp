@@ -64,7 +64,6 @@
 #include "group_pack.h"
 #include "item_placement.h"
 #include "commit_placement.h"
-#include "item_backfill.h"
 #include "downsize.h"
 #include "multistart.h"
 
@@ -105,10 +104,16 @@ void reject_unsupported(SolveRequest const& request)
 			}
 		}
 
-		// The pipeline's rotation switch is global, so a per-item policy can
-		// only be honoured when every item agrees on it.
 		if (item.rotation_policy.value_or(RotationPolicy::BestFit) == RotationPolicy::KeepFlat) {
 			throw std::logic_error("hightmap solver: RotationPolicy::KeepFlat is not implemented; use Never or BestFit");
+		}
+	}
+
+	// The pipeline's rotation switch is global, so a per-item policy can
+	// only be honoured when every item agrees on it.
+	for (auto const& item : request.items) {
+		if (item.rotation_policy.value_or(RotationPolicy::BestFit) != request.items.front().rotation_policy.value_or(RotationPolicy::BestFit)) {
+			throw std::logic_error("hightmap solver: mixed RotationPolicy values are not implemented; give every item the same policy");
 		}
 	}
 }
@@ -182,15 +187,8 @@ std::vector<::ItemSpec> to_pipeline_items(SolveRequest const& request, std::vect
 {
 	::Options result;
 
-	// cellSize 1 = exact millimetre placement. Benchmarks showed the old
-	// default of 5 roughly doubled the box count on small-item orders,
-	// because footprints round up to whole cells.
-	result.cellSize = 1;
-	result.minSupport = 0.60;
-	result.restarts = 24;
-	result.timeoutMs = options.timeout_ms.value_or(1000);
-	result.maxBoxes = std::numeric_limits<uint32_t>::max();
-	result.seed = 42;
+	// Defaults live in ::Options (packing_types.h); only overrides are applied here.
+	result.timeoutMs = options.timeout_ms.value_or(result.timeoutMs);
 	strict_unsupported = true;
 
 	// Rotation is a global switch here, so it is only turned off when EVERY
@@ -216,9 +214,7 @@ std::vector<::ItemSpec> to_pipeline_items(SolveRequest const& request, std::vect
 		if (algo_opts.min_support.has_value()) {
 			result.minSupport = static_cast<double>(*algo_opts.min_support);
 		}
-		if (algo_opts.cell_size.has_value() && *algo_opts.cell_size > 0) {
-			result.cellSize = *algo_opts.cell_size;
-		}
+		// cell_size is ignored: the heightmap is exact in mm (item_placement.h).
 		if (algo_opts.restarts.has_value()) {
 			result.restarts = *algo_opts.restarts;
 		}

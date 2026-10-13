@@ -68,20 +68,20 @@ struct Solution {
 };
 
 // Solver switches (maps onto SolveOptions in fbs/ plus the new fields we
-// agreed to add: min_support and cell_size).
+// agreed to add: min_support).
 struct Options {
     bool     allowRotation = true;   // false: identity orientation only
-    double   minSupport    = 0.80;   // fraction of base area that must rest on
+    double   minSupport    = 0.60;   // fraction of base area that must rest on
                                      // the surface below (stability)
-    uint32_t cellSize      = 5;      // heightmap cell side, mm (speed knob)
     uint32_t maxBoxes      = std::numeric_limits<uint32_t>::max(); // global cap
     double   derate        = 0.75;   // usable fraction of a box's volume when
                                      // ESTIMATING capacity (measured fill rate)
-    uint32_t restarts      = 32;     // multi-start iterations (0 = single pass)
-    uint32_t timeoutMs     = 500;    // wall-clock budget for multi-start
+    uint32_t restarts      = 24;     // multi-start iterations (0 = single pass)
+    uint32_t timeoutMs     = 1000;   // safety cap on multi-start; results are
+                                     // only reproducible when it doesn't fire
     uint64_t seed          = 42;     // RNG seed — reproducible runs
 };
 
 // Integer ceil-division helper used across steps: how many `b`-sized units
-// are needed to cover `a` (e.g. volume bounds, footprint cell counts).
+// are needed to cover `a` (e.g. volume bounds).
 inline uint64_t ceilDiv(uint64_t a, uint64_t b) { return (a + b - 1) / b; }
