@@ -105,7 +105,7 @@ int main()
 
 	// ---- Demo B: synthetic 36-item order (reproducible) ----
 	std::vector<ItemSpec> order;
-	std::mt19937_64 rng(3);
+	std::mt19937_64 rng(3); // NOLINT(bugprone-random-generator-seed,cert-msc32-c,cert-msc51-cpp): fixed seed keeps the demo reproducible
 	std::uniform_int_distribution<uint32_t> dim(40, 180);
 	for (int i = 0; i < 36; i++) {
 		ItemSpec it;
