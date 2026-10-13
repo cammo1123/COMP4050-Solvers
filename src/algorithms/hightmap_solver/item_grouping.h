@@ -100,10 +100,11 @@ inline uint64_t lowerBound(std::vector<int> const& itemIdx,
 			bigCount++;
 	}
 
-	uint64_t bound = 1;									// count bound
-	bound = std::max(bound, ceilDiv(totalVol, maxVol)); // volume bound
-	bound = std::max(bound, bigCount);					// big-item bound
-	if (totalW > 0 && std::isfinite(maxW) && maxW > 0)	// weight bound
+	uint64_t bound = 1; // count bound
+	if (maxVol > 0)
+		bound = std::max(bound, ceilDiv(totalVol, maxVol)); // volume bound
+	bound = std::max(bound, bigCount);						// big-item bound
+	if (totalW > 0 && std::isfinite(maxW) && maxW > 0)		// weight bound
 		bound = std::max(bound, uint64_t(std::ceil(totalW / maxW)));
 	return bound;
 }
