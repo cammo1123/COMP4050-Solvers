@@ -9,7 +9,7 @@
         "-S",
         "${workspaceFolder}",
         "-B",
-        "${workspaceFolder}/build/core",
+        "${workspaceFolder}/build",
         "-DCOMP4050_BUILD_ADDON=OFF",
         "-DCMAKE_BUILD_TYPE=Debug",
         "-G",
@@ -26,7 +26,7 @@
       "command": "cmake",
       "args": [
         "--build",
-        "${workspaceFolder}/build/core"
+        "${workspaceFolder}/build"
       ],
       "group": {
         "kind": "build",
@@ -48,7 +48,7 @@
         "-S",
         "${workspaceFolder}",
         "-B",
-        "${workspaceFolder}/build/addon",
+        "${workspaceFolder}/build",
         "-DCOMP4050_BUILD_ADDON=ON",
         "-DCMAKE_BUILD_TYPE=Debug",
         "-G",
@@ -65,7 +65,7 @@
       "command": "cmake",
       "args": [
         "--build",
-        "${workspaceFolder}/build/addon"
+        "${workspaceFolder}/build"
       ],
       "problemMatcher": [
         "$gcc"
@@ -83,7 +83,7 @@
       "args": [
         "/d",
         "/c",
-        "if not exist node\\build\\Release mkdir node\\build\\Release && copy /y build\\addon\\addon.node node\\build\\Release\\addon.node"
+        "if not exist node\\build\\Release mkdir node\\build\\Release && copy /y build\\addon.node node\\build\\Release\\addon.node"
       ],
       "group": "build",
       "problemMatcher": [],

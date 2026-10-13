@@ -106,6 +106,8 @@ function(comp4050_fetch_archive url dest)
     file(ARCHIVE_EXTRACT INPUT "${archive}" DESTINATION "${dest}")
 endfunction()
 
+find_package(Threads REQUIRED)
+
 find_program(NODE_EXECUTABLE node)
 
 # The generated bindings from fbs/*.fbs define the boundary types shared by the
@@ -122,9 +124,10 @@ if(NOT EXISTS "${flatbuffers_include}/flatbuffers/flatbuffers.h")
     )
 endif()
 
-set(GENERATED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/native/gen")
+set(GENERATED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/gen")
 file(GLOB_RECURSE SCHEMA_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/fbs/*.fbs")
 file(GLOB_RECURSE OPERATION_SCHEMA_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/fbs/operations/*.fbs")
+file(GLOB_RECURSE CODEGEN_SCRIPTS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/scripts/*")
 
 set(GENERATED_HEADERS)
 
@@ -147,31 +150,29 @@ endif()
 
 add_custom_command(
     OUTPUT ${GENERATED_HEADERS}
-    COMMAND "${NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/generate.mjs"
+    COMMAND "${NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate.mjs"
     DEPENDS
     ${SCHEMA_FILES}
-    "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/generate.mjs"
-    "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/generated.mjs"
-    "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/shared.mjs"
-    "${CMAKE_CURRENT_SOURCE_DIR}/node/scripts/translation.mjs"
+    ${CODEGEN_SCRIPTS}
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     VERBATIM
 )
 
-add_subdirectory(src/php_solver)
+add_subdirectory(src/algorithms/php_solver)
 
 add_library(solver_core OBJECT
     src/solver.cpp
-    src/algo_registry.cpp
-    src/algo_greedy.cpp
-    src/algo_extreme_point.cpp
-    src/algo_shit_stack.cpp
-    src/php_solver/php_solver.cpp
-    src/hightmap_solver/hightmap_solver.cpp
+    src/algorithms/algo_registry.cpp
+    src/algorithms/greedy/algo_greedy.cpp
+    src/algorithms/extreme_point/algo_extreme_point.cpp
+    src/algorithms/stack_based/algo_stack_based.cpp
+    src/algorithms/php_solver/php_solver.cpp
+    src/algorithms/hightmap_solver/hightmap_solver.cpp
     ${GENERATED_HEADERS}
 )
-target_include_directories(solver_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR} ${GENERATED_DIR} ${flatbuffers_include})
-target_link_libraries(solver_core PUBLIC php_solver)
+target_include_directories(solver_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR} ${GENERATED_DIR})
+target_include_directories(solver_core SYSTEM PUBLIC ${flatbuffers_include})
+target_link_libraries(solver_core PUBLIC php_solver Threads::Threads)
 
 add_executable(solver src/main.cpp)
 target_link_libraries(solver PRIVATE solver_core)
@@ -242,17 +243,18 @@ if(COMP4050_BUILD_ADDON)
         endif()
     endif()
 
-    set(napi_dir "${CMAKE_BINARY_DIR}/node-addon-api-8.9.1")
+    set(napi_dir "${CMAKE_BINARY_DIR}/node-addon-api/node-addon-api-8.9.1")
 
     if(NOT EXISTS "${napi_dir}/napi.h")
         comp4050_fetch_archive(
             "https://github.com/nodejs/node-addon-api/archive/refs/tags/v8.9.1.tar.gz"
-            "${CMAKE_BINARY_DIR}"
+            "${CMAKE_BINARY_DIR}/node-addon-api"
         )
     endif()
 
     add_library(solver_addon MODULE src/addon.cpp src/solve_worker.cpp ${GENERATED_HEADERS})
-    target_include_directories(solver_addon PRIVATE "${node_include}" "${napi_dir}" "${GENERATED_DIR}" "${flatbuffers_include}")
+    target_include_directories(solver_addon PRIVATE "${GENERATED_DIR}")
+    target_include_directories(solver_addon SYSTEM PRIVATE "${node_include}" "${napi_dir}" "${flatbuffers_include}")
 
     # Target the lowest Node-API version required by ThreadSafeFunction.
     target_compile_definitions(solver_addon PRIVATE NAPI_VERSION=4)

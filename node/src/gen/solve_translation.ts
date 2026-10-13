@@ -12,9 +12,9 @@ import {
 	ItemTypeT as ItemTypeObject,
 	PHPSolverOptionsT as PHPSolverOptionsObject,
 	PlacementConstraintT as PlacementConstraintObject,
-	ShitStackOptionsT as ShitStackOptionsObject,
 	SolveOptionsT as SolveOptionsObject,
 	SolveRequestT as SolveRequestObject,
+	StackBasedOptionsT as StackBasedOptionsObject,
 	SolveAlgorithm,
 	RotationPolicy,
 	SolveStrategyOptions,
@@ -89,7 +89,6 @@ export type ItemTypeT = {
 	quantity?: number;
 	boxGroup?: string | Uint8Array;
 	rotationPolicy?: RotationPolicy;
-	linkedGroup?: string | Uint8Array;
 	constraint?: PlacementConstraintT | null;
 };
 
@@ -114,17 +113,17 @@ export type PlacementConstraintT = {
 	maxZ?: number;
 };
 
-export type ShitStackOptionsT = {
-
-};
-
 export type SolveOptionsT = {
 	timeoutMs?: number;
 	greedyOptions?: GreedyOptionsT | null;
 	extremePointOptions?: ExtremePointOptionsT | null;
-	shitStackOptions?: ShitStackOptionsT | null;
+	stackBasedOptions?: StackBasedOptionsT | null;
 	phpSolverOptions?: PHPSolverOptionsT | null;
 	heightmapSolverOptions?: HeightmapSolverOptionsT | null;
+};
+
+export type StackBasedOptionsT = {
+
 };
 
 export type BaseOptions = {
@@ -144,10 +143,10 @@ export type SolveRequest = {
 } & (
 	| { algorithm: typeof SolveAlgorithm.Greedy; options?: BaseOptions & { greedyOptions?: GreedyOptionsT } }
 	| { algorithm: typeof SolveAlgorithm.ExtremePoint; options?: BaseOptions & { extremePointOptions?: ExtremePointOptionsT } }
-	| { algorithm: typeof SolveAlgorithm.ShitStack; options?: BaseOptions & { shitStackOptions?: ShitStackOptionsT } }
+	| { algorithm: typeof SolveAlgorithm.StackBased; options?: BaseOptions & { stackBasedOptions?: StackBasedOptionsT } }
 	| { algorithm: typeof SolveAlgorithm.PHPSolver; options?: BaseOptions & { phpSolverOptions?: PHPSolverOptionsT } }
 	| { algorithm: typeof SolveAlgorithm.HeightmapSolver; options?: BaseOptions & { heightmapSolverOptions?: HeightmapSolverOptionsT } }
-	| { algorithm?: undefined; options?: BaseOptions & { heightmapSolverOptions?: HeightmapSolverOptionsT } }
+	| { algorithm?: undefined; options?: BaseOptions & { extremePointOptions?: ExtremePointOptionsT } }
 );
 
 
@@ -160,9 +159,9 @@ function toAlgoOptionsT(options: any): { type: SolveStrategyOptions; value: any 
 		const value = options.extremePointOptions;
 		return { type: SolveStrategyOptions.ExtremePointOptions, value: new ExtremePointOptionsObject() };
 	}
-	if (options?.shitStackOptions) {
-		const value = options.shitStackOptions;
-		return { type: SolveStrategyOptions.ShitStackOptions, value: new ShitStackOptionsObject() };
+	if (options?.stackBasedOptions) {
+		const value = options.stackBasedOptions;
+		return { type: SolveStrategyOptions.StackBasedOptions, value: new StackBasedOptionsObject() };
 	}
 	if (options?.phpSolverOptions) {
 		const value = options.phpSolverOptions;
@@ -186,8 +185,8 @@ export function encodeRequest(request: SolveRequest): Uint8Array {
 
 	const message = new SolveRequestObject(
 		(request.boxes ?? []).map((item) => new BoxTypeObject(item.reference, item.width, item.length, item.depth, item.maxWeight, item.boxWeight, item.active, item.maximumBoxes, item.outerWidth, item.outerLength, item.outerDepth)),
-		(request.items ?? []).map((item) => new ItemTypeObject(item.itemCode, item.itemReference, item.width, item.length, item.depth, item.weight, item.quantity, item.boxGroup, item.rotationPolicy, item.linkedGroup, item.constraint ? new PlacementConstraintObject(item.constraint.noStacking, item.constraint.requiredVertical, item.constraint.minX, item.constraint.minY, item.constraint.minZ, item.constraint.maxX, item.constraint.maxY, item.constraint.maxZ) : null)),
-		('algorithm' in request && request.algorithm !== undefined && request.algorithm !== null) ? request.algorithm : SolveAlgorithm.PHPSolver,
+		(request.items ?? []).map((item) => new ItemTypeObject(item.itemCode, item.itemReference, item.width, item.length, item.depth, item.weight, item.quantity, item.boxGroup, item.rotationPolicy, item.constraint ? new PlacementConstraintObject(item.constraint.noStacking, item.constraint.requiredVertical, item.constraint.minX, item.constraint.minY, item.constraint.minZ, item.constraint.maxX, item.constraint.maxY, item.constraint.maxZ) : null)),
+		('algorithm' in request && request.algorithm !== undefined && request.algorithm !== null) ? request.algorithm : SolveAlgorithm.ExtremePoint,
 		optionsT
 	);
 
@@ -201,7 +200,7 @@ export function decodeResponse(bytes: Uint8Array): SolveResponse {
 	const unpacked = message.unpack();
 	return {
 		results: (unpacked.results ?? []).map((item) => ({ boxReference: item.boxReference as string, width: item.width, length: item.length, depth: item.depth, placements: (item.placements ?? []).map((item) => ({ itemCode: item.itemCode as string, itemReference: item.itemReference as string, x: item.x, y: item.y, z: item.z, width: item.width, length: item.length, depth: item.depth })), ...(item.totalWeight !== null && item.totalWeight !== undefined ? { totalWeight: item.totalWeight } : {}), ...(item.utilization !== null && item.utilization !== undefined ? { utilization: item.utilization } : {}), ...(item.outerWidth !== null && item.outerWidth !== undefined ? { outerWidth: item.outerWidth } : {}), ...(item.outerLength !== null && item.outerLength !== undefined ? { outerLength: item.outerLength } : {}), ...(item.outerDepth !== null && item.outerDepth !== undefined ? { outerDepth: item.outerDepth } : {}) })),
-		failed: (unpacked.failed ?? []).map((item) => ({ itemCode: item.itemCode as string, itemReference: item.itemReference as string, width: item.width, length: item.length, depth: item.depth, weight: item.weight, ...(item.quantity !== null && item.quantity !== undefined ? { quantity: item.quantity } : {}), ...(item.boxGroup !== null && item.boxGroup !== undefined ? { boxGroup: item.boxGroup } : {}), ...(item.rotationPolicy !== null && item.rotationPolicy !== undefined ? { rotationPolicy: item.rotationPolicy } : {}), ...(item.linkedGroup !== null && item.linkedGroup !== undefined ? { linkedGroup: item.linkedGroup } : {}), ...(item.constraint !== null && item.constraint !== undefined ? { constraint: { ...(item.constraint.noStacking !== null && item.constraint.noStacking !== undefined ? { noStacking: item.constraint.noStacking } : {}), ...(item.constraint.requiredVertical !== null && item.constraint.requiredVertical !== undefined ? { requiredVertical: item.constraint.requiredVertical } : {}), ...(item.constraint.minX !== null && item.constraint.minX !== undefined ? { minX: item.constraint.minX } : {}), ...(item.constraint.minY !== null && item.constraint.minY !== undefined ? { minY: item.constraint.minY } : {}), ...(item.constraint.minZ !== null && item.constraint.minZ !== undefined ? { minZ: item.constraint.minZ } : {}), ...(item.constraint.maxX !== null && item.constraint.maxX !== undefined ? { maxX: item.constraint.maxX } : {}), ...(item.constraint.maxY !== null && item.constraint.maxY !== undefined ? { maxY: item.constraint.maxY } : {}), ...(item.constraint.maxZ !== null && item.constraint.maxZ !== undefined ? { maxZ: item.constraint.maxZ } : {}) } } : {}) })),
+		failed: (unpacked.failed ?? []).map((item) => ({ itemCode: item.itemCode as string, itemReference: item.itemReference as string, width: item.width, length: item.length, depth: item.depth, weight: item.weight, ...(item.quantity !== null && item.quantity !== undefined ? { quantity: item.quantity } : {}), ...(item.boxGroup !== null && item.boxGroup !== undefined ? { boxGroup: item.boxGroup } : {}), ...(item.rotationPolicy !== null && item.rotationPolicy !== undefined ? { rotationPolicy: item.rotationPolicy } : {}), ...(item.constraint !== null && item.constraint !== undefined ? { constraint: { ...(item.constraint.noStacking !== null && item.constraint.noStacking !== undefined ? { noStacking: item.constraint.noStacking } : {}), ...(item.constraint.requiredVertical !== null && item.constraint.requiredVertical !== undefined ? { requiredVertical: item.constraint.requiredVertical } : {}), ...(item.constraint.minX !== null && item.constraint.minX !== undefined ? { minX: item.constraint.minX } : {}), ...(item.constraint.minY !== null && item.constraint.minY !== undefined ? { minY: item.constraint.minY } : {}), ...(item.constraint.minZ !== null && item.constraint.minZ !== undefined ? { minZ: item.constraint.minZ } : {}), ...(item.constraint.maxX !== null && item.constraint.maxX !== undefined ? { maxX: item.constraint.maxX } : {}), ...(item.constraint.maxY !== null && item.constraint.maxY !== undefined ? { maxY: item.constraint.maxY } : {}), ...(item.constraint.maxZ !== null && item.constraint.maxZ !== undefined ? { maxZ: item.constraint.maxZ } : {}) } } : {}) })),
 		...(unpacked.algorithmUs !== null && unpacked.algorithmUs !== undefined ? { algorithmUs: unpacked.algorithmUs } : {}),
 		...(unpacked.serverUs !== null && unpacked.serverUs !== undefined ? { serverUs: unpacked.serverUs } : {})
 	};

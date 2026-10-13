@@ -8,8 +8,8 @@ import { ExtremePointOptions, ExtremePointOptionsT } from '../fbs/extreme-point-
 import { GreedyOptions, GreedyOptionsT } from '../fbs/greedy-options.js';
 import { HeightmapSolverOptions, HeightmapSolverOptionsT } from '../fbs/heightmap-solver-options.js';
 import { PHPSolverOptions, PHPSolverOptionsT } from '../fbs/phpsolver-options.js';
-import { ShitStackOptions, ShitStackOptionsT } from '../fbs/shit-stack-options.js';
 import { SolveStrategyOptions, unionToSolveStrategyOptions, unionListToSolveStrategyOptions } from '../fbs/solve-strategy-options.js';
+import { StackBasedOptions, StackBasedOptionsT } from '../fbs/stack-based-options.js';
 
 
 export class SolveOptions implements flatbuffers.IUnpackableObject<SolveOptionsT> {
@@ -103,7 +103,7 @@ export class SolveOptionsT implements flatbuffers.IGeneratedObject {
 constructor(
   public timeoutMs: number|null = null,
   public algoOptionsType: SolveStrategyOptions = SolveStrategyOptions.NONE,
-  public algoOptions: ExtremePointOptionsT|GreedyOptionsT|HeightmapSolverOptionsT|PHPSolverOptionsT|ShitStackOptionsT|null = null
+  public algoOptions: ExtremePointOptionsT|GreedyOptionsT|HeightmapSolverOptionsT|PHPSolverOptionsT|StackBasedOptionsT|null = null
 ){}
 
 

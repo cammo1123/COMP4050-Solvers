@@ -46,14 +46,7 @@ int main()
 		.depth = 100,
 	});
 
-	solve.algorithm = SolveAlgorithm::PHPSolver;
-
-	fbs::domain::SolveOptions options;
-	options.php_solver_options = fbs::domain::PHPSolverOptions {
-		.balance_weight = true,
-		.best_subset = false,
-	};
-	solve.options = options;
+	solve.algorithm = SolveAlgorithm::ExtremePoint;
 
 	fbs::domain::ItemType linked_a;
 	linked_a.item_code = "LinkedA";
@@ -62,7 +55,7 @@ int main()
 	linked_a.length = 5;
 	linked_a.depth = 5;
 	linked_a.weight = 1;
-	linked_a.linked_group = "demo-pair";
+	linked_a.box_group = "demo-pair";
 	linked_a.rotation_policy = RotationPolicy::KeepFlat;
 	linked_a.constraint = fbs::domain::PlacementConstraint { };
 	linked_a.constraint->no_stacking = true;
@@ -112,7 +105,7 @@ int main()
 			return;
 
 		constexpr int barWidth = 40;
-		float progress = static_cast<float>(done) / total;
+		float progress = static_cast<float>(done) / static_cast<float>(total);
 		int filled = static_cast<int>(progress * barWidth);
 
 		std::string bar(filled, '#');
@@ -127,7 +120,7 @@ int main()
 	std::cout << "\033[?25h\n";
 
 	auto f = res.failed.size();
-	int i = 0;
+	std::size_t i = 0;
 	for (auto const& result : res.results) {
 		i += result.placements.size();
 	}

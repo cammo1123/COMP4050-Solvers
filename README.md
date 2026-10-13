@@ -7,13 +7,13 @@ standalone command-line program.
 
 ## Requirements
 
-- Node.js 22 or newer
+- Node.js 22.12 or newer
 - pnpm 11 or newer
 - CMake 3.18 or newer
 - Ninja (recommended)
 - A C++ compiler with C++23 support
 - `flatc` is optional; the build scripts download and cache FlatBuffers 25.12.19
-  under `node/.flatc/` when it is not available on `PATH`
+  under `.flatc/` when it is not available on `PATH`
 
 Install dependencies with:
 
@@ -65,9 +65,58 @@ const response = await solve({
 ```
 
 The default algorithm is `SolveAlgorithm.PHPSolver`. The available algorithms
-are `Greedy`, `ExtremePoint`, `ShitStack`, and `PHPSolver`. `ShitStack` is the
-current stacking implementation. `Greedy` and `ExtremePoint` are dispatchable
-but currently reject requests because their solvers are not implemented.
+are `Greedy`, `ExtremePoint`, `StackBased`, and `PHPSolver`. `StackBased` is the
+current stacking implementation and `ExtremePoint` is a full extreme-point
+solver. `Greedy` is dispatchable but currently rejects requests because its
+solver is not implemented.
+
+### ExtremePoint
+
+`SolveAlgorithm.ExtremePoint` is a constructive extreme-point heuristic
+(Crainic, Perboli, and Tadei, 2008). Every placement projects new candidate
+corners from the item just packed; the solver maintains that frontier
+incrementally and takes the candidate with the tightest fit, breaking ties
+towards the bottom, back, and left of the box. A fixed portfolio of three
+deterministic item orderings is evaluated and the best packing is returned.
+
+`ExtremePointOptions` is intentionally empty. Rotation is governed per item by
+`rotationPolicy` rather than by a solver-wide switch, and the only shared option
+`ExtremePoint` honours is `timeoutMs`.
+
+`timeoutMs` never causes a throw. When the deadline passes, `solve()` resolves
+with the best valid partial result found so far and reports every instance that
+was not packed in `failed`. A request is capped at 1 000 000 item instances
+after `quantity` expansion; anything larger throws `std::length_error` in the
+core, which surfaces as a rejected promise.
+
+The solver is deterministic: the same request against the same build produces
+the same response, the one exception being a request in which the timeout
+emergency stop fires, because that depends on wall-clock time.
+
+`ExtremePoint` and `PHPSolver` agree on weight, box-quantity, `boxGroup`,
+box-result, and failed-entry semantics: `maxWeight` is a content-only limit that
+excludes `boxWeight` (the rated tare), `totalWeight` reports content weight,
+`maximumBoxes: 0` means no box of that type may be used while omitting
+`maximumBoxes` means unlimited, a box holds at most one non-empty `boxGroup`,
+`BoxResult.width`, `.length`, and `.depth` are populated, and entries in
+`failed` carry every `ItemType` field except `quantity`. The remaining deliberate
+differences between `ExtremePoint` and `PHPSolver` are:
+
+1. Positional constraints are absolute bounds in the box frame in both solvers.
+   `ExtremePoint` never rotates the box itself, so it never needs to re-interpret
+   the X and Z limits. `PHPSolver` may pack a box in its 90-degree vertical
+   rotation and swaps the limits only to keep them absolute in that frame.
+2. The `intrinsically_stable` aspect-ratio tipping heuristic of `PHPSolver` is
+   not implemented.
+3. Outer box dimensions are propagated to the result when all three are
+   present, which matches `PHPSolver`.
+
+The support rule itself is identical to `PHPSolver`: an item off the floor needs
+the centre of its base covered by the top face of one already placed item.
+Layouts are not expected to match `PHPSolver` placement for placement, because
+the two engines search different candidate sets. A request that `PHPSolver`
+reports as partly failed may be packed completely by `ExtremePoint`, and the
+items in a box may appear in a different order.
 
 ## Data model
 
@@ -82,7 +131,7 @@ dimensions.
 Required item fields are `itemCode`, `itemReference`, `width`, `length`,
 `depth`, and `weight`. `quantity` expands one item definition into instances;
 omitting it represents one instance, while zero represents none. Optional
-grouping fields are `boxGroup` and `linkedGroup`.
+grouping fields are `boxGroup`.
 
 `RotationPolicy` values are:
 
@@ -120,7 +169,7 @@ pnpm build:ts          # TypeScript output only
 ```
 
 The addon is copied to `node/build/Release/addon.node`. The standalone binary
-is written to `build/core/solver` or `build/core/solver.exe` on Windows.
+is written to `build/solver` or `build/solver.exe` on Windows.
 
 To create a platform-specific package prebuild after building the addon:
 
@@ -128,7 +177,7 @@ To create a platform-specific package prebuild after building the addon:
 pnpm prebuild:binaries
 ```
 
-Generated bindings are produced from `fbs/` and written under `native/gen/` and
+Generated bindings are produced from `fbs/` and written under `src/gen/` and
 `node/src/gen/`. Do not edit generated files manually.
 
 ## Testing And Checks
@@ -147,12 +196,13 @@ local FlatBuffers compiler cache.
 
 ## Repository Layout
 
-- `src/` — C++ core, algorithms, CLI, and native addon boundary.
+- `src/` — C++ core, CLI, and native addon boundary.
+- `src/algorithms/` — algorithm registry plus isolated ExtremePoint, Greedy, StackBased, and PHPSolver implementations.
 - `fbs/` — FlatBuffers schemas shared by the core and addon.
-- `native/gen/` — generated C++ bindings.
+- `src/gen/` — generated C++ bindings.
 - `node/src/` — TypeScript API and generated TypeScript bindings.
 - `node/test/` — Vitest tests and benchmarks.
-- `node/scripts/` — generation, build, run, clean, and translation scripts.
+- `scripts/` — generation, build, run, clean, and codegen scripts.
 - `docs/` — reference schema examples and supplementary documentation.
 - `build/` — local CMake output; generated and ignored build artifacts.
 

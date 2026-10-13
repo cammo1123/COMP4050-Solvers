@@ -2,6 +2,7 @@ import { Buffer } from "node:buffer";
 import { describe, expect, it } from "vitest";
 
 import type { SolveRequest, SolveResponse } from "../src/gen/solve_translation";
+import { SolveAlgorithm } from "../src/gen/fbs/solve-algorithm";
 import { assertValidSolution } from "./solutionAssertions";
 
 const request: SolveRequest = {
@@ -10,6 +11,7 @@ const request: SolveRequest = {
 		{ itemCode: "a", itemReference: "a", width: 2, length: 2, depth: 2, weight: 2 },
 		{ itemCode: "b", itemReference: "b", width: 2, length: 2, depth: 2, weight: 3 },
 	],
+	algorithm: SolveAlgorithm.PHPSolver,
 	options: { phpSolverOptions: { allowRotation: false, maxBoxes: 1 } },
 };
 

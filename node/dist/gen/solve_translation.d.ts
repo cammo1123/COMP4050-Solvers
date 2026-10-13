@@ -55,7 +55,6 @@ export type ItemTypeT = {
     quantity?: number;
     boxGroup?: string | Uint8Array;
     rotationPolicy?: RotationPolicy;
-    linkedGroup?: string | Uint8Array;
     constraint?: PlacementConstraintT | null;
 };
 export type PHPSolverOptionsT = {
@@ -77,15 +76,15 @@ export type PlacementConstraintT = {
     maxY?: number;
     maxZ?: number;
 };
-export type ShitStackOptionsT = {};
 export type SolveOptionsT = {
     timeoutMs?: number;
     greedyOptions?: GreedyOptionsT | null;
     extremePointOptions?: ExtremePointOptionsT | null;
-    shitStackOptions?: ShitStackOptionsT | null;
+    stackBasedOptions?: StackBasedOptionsT | null;
     phpSolverOptions?: PHPSolverOptionsT | null;
     heightmapSolverOptions?: HeightmapSolverOptionsT | null;
 };
+export type StackBasedOptionsT = {};
 export type BaseOptions = {
     timeoutMs?: number;
 };
@@ -109,9 +108,9 @@ export type SolveRequest = {
         extremePointOptions?: ExtremePointOptionsT;
     };
 } | {
-    algorithm: typeof SolveAlgorithm.ShitStack;
+    algorithm: typeof SolveAlgorithm.StackBased;
     options?: BaseOptions & {
-        shitStackOptions?: ShitStackOptionsT;
+        stackBasedOptions?: StackBasedOptionsT;
     };
 } | {
     algorithm: typeof SolveAlgorithm.PHPSolver;
@@ -126,7 +125,7 @@ export type SolveRequest = {
 } | {
     algorithm?: undefined;
     options?: BaseOptions & {
-        heightmapSolverOptions?: HeightmapSolverOptionsT;
+        extremePointOptions?: ExtremePointOptionsT;
     };
 });
 export declare function encodeRequest(request: SolveRequest): Uint8Array;

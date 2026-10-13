@@ -68,18 +68,19 @@ merge, rebase stale feature branches rather than merging `dev` into them.
 
 ## Development
 
-- **IntelliSense** — CMake exports `build/*/compile_commands.json`; clangd
-  picks it up via `.clangd`.
+- **IntelliSense** — CMake exports `build/compile_commands.json`; clangd
+  picks it up via `.clangd`. Both the addon and core-only builds configure
+  into `build/`, so the compilation database is always fresh.
 - **Formatting** — `.clang-format` defines the project style (tabs, Allman
   braces). `pnpm lint:fix` applies it; `pnpm lint:check` validates it.
 - **Debugging** — **Run > Start Debugging (F5)** rebuilds the standalone binary
-  (`build:core`) and points the debugger at `build/core/solver.exe`.
+  (`build:core`) and points the debugger at `build/solver.exe`.
 - **Dependencies** — Use Node.js 22 and pnpm 11. Run `pnpm install` from the
   repository root before building or testing.
 - **Build outputs** — `pnpm build` generates bindings, builds the addon, and
   compiles the TypeScript package. The addon is copied to
   `node/build/Release/addon.node`; standalone binaries are written under
-  `build/core/` or `build/addon/`.
+  `build/`.
 
 ## Testing
 
@@ -97,7 +98,7 @@ wrapper-side TypeScript checks.
 ### CI
 
 The `test` workflow (`.github/workflows/test.yml`) installs deps, materialises
-`flatc` (cached under `node/.flatc/`), builds the addon with CMake/Ninja, and
+`flatc` (cached under `.flatc/`), builds the addon with CMake/Ninja, and
 runs `pnpm test` on every pull request into `dev` or `main` and every push to
 `dev`. The `prebuild` workflow does the same across Ubuntu/macOS/Windows and
 snapshots the built binaries.
@@ -110,11 +111,11 @@ via `add_custom_command`) whenever a schema or generator changes. Schemas under
 hardcoded.
 
 - `fbs/types.fbs` contains shared tables and produces
-  `native/gen/types_generated.h` and `native/gen/types_domain_generated.h`.
+  `src/gen/types_generated.h` and `src/gen/types_domain_generated.h`.
 - Operation schemas under `fbs/operations/` produce their own generated C++
   headers, domain headers, translation headers, and TypeScript translation
   layer.
-- `node/scripts/generate.mjs` follows schema includes and runs flatc for both
+- `scripts/generate.mjs` follows schema includes and runs flatc for both
   the shared and operation schemas.
 - The domain header defines pure-C++ structs (no FlatBuffers types) for every
   table, plus `toDomain`/`fromDomain` per type. The core and CLI only ever see

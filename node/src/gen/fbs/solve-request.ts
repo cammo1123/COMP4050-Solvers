@@ -50,7 +50,7 @@ itemsLength():number {
 
 algorithm():SolveAlgorithm {
   const offset = this.bb!.__offset(this.bb_pos, 8);
-  return offset ? this.bb!.readInt8(this.bb_pos + offset) : SolveAlgorithm.PHPSolver;
+  return offset ? this.bb!.readInt8(this.bb_pos + offset) : SolveAlgorithm.ExtremePoint;
 }
 
 options(obj?:SolveOptions):SolveOptions|null {
@@ -95,7 +95,7 @@ static startItemsVector(builder:flatbuffers.Builder, numElems:number) {
 }
 
 static addAlgorithm(builder:flatbuffers.Builder, algorithm:SolveAlgorithm) {
-  builder.addFieldInt8(2, algorithm, SolveAlgorithm.PHPSolver);
+  builder.addFieldInt8(2, algorithm, SolveAlgorithm.ExtremePoint);
 }
 
 static addOptions(builder:flatbuffers.Builder, optionsOffset:flatbuffers.Offset) {
@@ -140,7 +140,7 @@ export class SolveRequestT implements flatbuffers.IGeneratedObject {
 constructor(
   public boxes: (BoxTypeT)[] = [],
   public items: (ItemTypeT)[] = [],
-  public algorithm: SolveAlgorithm = SolveAlgorithm.PHPSolver,
+  public algorithm: SolveAlgorithm = SolveAlgorithm.ExtremePoint,
   public options: SolveOptionsT|null = null
 ){}
 

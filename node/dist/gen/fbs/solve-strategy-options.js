@@ -4,13 +4,13 @@ import { ExtremePointOptions } from '../fbs/extreme-point-options.js';
 import { GreedyOptions } from '../fbs/greedy-options.js';
 import { HeightmapSolverOptions } from '../fbs/heightmap-solver-options.js';
 import { PHPSolverOptions } from '../fbs/phpsolver-options.js';
-import { ShitStackOptions } from '../fbs/shit-stack-options.js';
+import { StackBasedOptions } from '../fbs/stack-based-options.js';
 export var SolveStrategyOptions;
 (function (SolveStrategyOptions) {
     SolveStrategyOptions[SolveStrategyOptions["NONE"] = 0] = "NONE";
     SolveStrategyOptions[SolveStrategyOptions["GreedyOptions"] = 1] = "GreedyOptions";
     SolveStrategyOptions[SolveStrategyOptions["ExtremePointOptions"] = 2] = "ExtremePointOptions";
-    SolveStrategyOptions[SolveStrategyOptions["ShitStackOptions"] = 3] = "ShitStackOptions";
+    SolveStrategyOptions[SolveStrategyOptions["StackBasedOptions"] = 3] = "StackBasedOptions";
     SolveStrategyOptions[SolveStrategyOptions["PHPSolverOptions"] = 4] = "PHPSolverOptions";
     SolveStrategyOptions[SolveStrategyOptions["HeightmapSolverOptions"] = 5] = "HeightmapSolverOptions";
 })(SolveStrategyOptions || (SolveStrategyOptions = {}));
@@ -19,7 +19,7 @@ export function unionToSolveStrategyOptions(type, accessor) {
         case 'NONE': return null;
         case 'GreedyOptions': return accessor(new GreedyOptions());
         case 'ExtremePointOptions': return accessor(new ExtremePointOptions());
-        case 'ShitStackOptions': return accessor(new ShitStackOptions());
+        case 'StackBasedOptions': return accessor(new StackBasedOptions());
         case 'PHPSolverOptions': return accessor(new PHPSolverOptions());
         case 'HeightmapSolverOptions': return accessor(new HeightmapSolverOptions());
         default: return null;
@@ -30,7 +30,7 @@ export function unionListToSolveStrategyOptions(type, accessor, index) {
         case 'NONE': return null;
         case 'GreedyOptions': return accessor(index, new GreedyOptions());
         case 'ExtremePointOptions': return accessor(index, new ExtremePointOptions());
-        case 'ShitStackOptions': return accessor(index, new ShitStackOptions());
+        case 'StackBasedOptions': return accessor(index, new StackBasedOptions());
         case 'PHPSolverOptions': return accessor(index, new PHPSolverOptions());
         case 'HeightmapSolverOptions': return accessor(index, new HeightmapSolverOptions());
         default: return null;

@@ -11,6 +11,6 @@ using ProgressCallback = std::function<void(size_t, size_t)>;
 
 fbs::domain::InfoResponse info();
 
-fbs::domain::SolveResponse solve(fbs::domain::SolveRequest const& request, ProgressCallback on_progress = nullptr);
+fbs::domain::SolveResponse solve(fbs::domain::SolveRequest const& request, ProgressCallback const& on_progress = nullptr);
 
 }

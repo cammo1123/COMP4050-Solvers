@@ -1,10 +1,4 @@
-node/prebuilds/*/addon.node binary
+# Set the default behavior to always use LF file endings
+* text=auto eol=lf
 
-native/gen/*.h        text eol=lf
-src/**                text eol=lf
-node/src/gen/*.ts     text eol=lf
-node/dist/gen/*.ts    text eol=lf
-node/dist/gen/*.js    text eol=lf
-node/dist/gen/*.d.ts  text eol=lf
-node/dist/*.js        text eol=lf
-node/dist/*.d.ts      text eol=lf
+*.node binary
