@@ -21,8 +21,9 @@ inline void commit(OpenBox& box, ItemSpec const& item, int itemIndex,
 	uint32_t const w = c.dims[0], l = c.dims[1], d = c.dims[2];
 
 	// Group partition rule: a grouped item stamps an untagged box.
-	if (!item.boxGroup.empty() && box.groupTag.empty())
+	if (!item.boxGroup.empty() && box.groupTag.empty()) {
 		box.groupTag = item.boxGroup;
+	}
 
 	box.cargoWeight += item.weight;
 	box.usedVolume += uint64_t(w) * l * d;
