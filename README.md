@@ -147,7 +147,9 @@ minimum corner of the item.
 Each response contains `results`, failed item definitions in `failed`, and
 `algorithmUs` and `serverUs` timing values. Box results include placements,
 packed dimensions, and optional `totalWeight`, `utilization`, and outer
-dimensions.
+dimensions. A placement carries `x`, `y`, and `z` plus an `item` holding the
+full item definition it was packed from, so weight, group, rotation policy, and
+constraint are reported without rejoining the request by code.
 
 ## Build
 
