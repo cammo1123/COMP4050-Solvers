@@ -76,10 +76,6 @@ describe("algorithm dispatch", () => {
 		]);
 	});
 
-	it("dispatches the greedy enum value", async () => {
-		await expect(solve({ ...request, algorithm: SolveAlgorithm.Greedy })).rejects.toThrow("greedy solver algorithm is not implemented");
-	});
-
 	it("dispatches the extreme-point enum value", async () => {
 		const result = await solve({ ...request, algorithm: SolveAlgorithm.ExtremePoint });
 

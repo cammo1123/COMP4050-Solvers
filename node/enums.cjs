@@ -3,7 +3,7 @@
 //   enum SolveAlgorithm : byte and union SolveStrategyOptions in fbs/operations/solve.fbs
 // }
 const RotationPolicy = { Never: 0, KeepFlat: 1, BestFit: 2, 0: 'Never', 1: 'KeepFlat', 2: 'BestFit' };
-const SolveAlgorithm = { Greedy: 0, ExtremePoint: 1, StackBased: 2, PHPSolver: 3, 0: 'Greedy', 1: 'ExtremePoint', 2: 'StackBased', 3: 'PHPSolver' };
-const SolveStrategyOptions = { NONE: 0, GreedyOptions: 1, ExtremePointOptions: 2, StackBasedOptions: 3, PHPSolverOptions: 4, 0: 'NONE', 1: 'GreedyOptions', 2: 'ExtremePointOptions', 3: 'StackBasedOptions', 4: 'PHPSolverOptions' };
+const SolveAlgorithm = { ExtremePoint: 0, StackBased: 1, PHPSolver: 2, 0: 'ExtremePoint', 1: 'StackBased', 2: 'PHPSolver' };
+const SolveStrategyOptions = { NONE: 0, ExtremePointOptions: 1, StackBasedOptions: 2, PHPSolverOptions: 3, 0: 'NONE', 1: 'ExtremePointOptions', 2: 'StackBasedOptions', 3: 'PHPSolverOptions' };
 
 module.exports = { RotationPolicy, SolveAlgorithm, SolveStrategyOptions };

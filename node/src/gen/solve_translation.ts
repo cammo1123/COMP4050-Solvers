@@ -6,7 +6,6 @@ import {
 	BoxResultT as BoxResultObject,
 	BoxTypeT as BoxTypeObject,
 	ExtremePointOptionsT as ExtremePointOptionsObject,
-	GreedyOptionsT as GreedyOptionsObject,
 	ItemPlacementT as ItemPlacementObject,
 	ItemTypeT as ItemTypeObject,
 	PHPSolverOptionsT as PHPSolverOptionsObject,
@@ -53,10 +52,6 @@ export type ExtremePointOptionsT = {
 
 };
 
-export type GreedyOptionsT = {
-
-};
-
 export type ItemPlacementT = {
 	x: number;
 	y: number;
@@ -100,7 +95,6 @@ export type PlacementConstraintT = {
 
 export type SolveOptionsT = {
 	timeoutMs?: number;
-	greedyOptions?: GreedyOptionsT | null;
 	extremePointOptions?: ExtremePointOptionsT | null;
 	stackBasedOptions?: StackBasedOptionsT | null;
 	phpSolverOptions?: PHPSolverOptionsT | null;
@@ -125,7 +119,6 @@ export type SolveRequest = {
 	boxes: BoxTypeT[];
 	items: ItemTypeT[];
 } & (
-	| { algorithm: typeof SolveAlgorithm.Greedy; options?: BaseOptions & { greedyOptions?: GreedyOptionsT } }
 	| { algorithm: typeof SolveAlgorithm.ExtremePoint; options?: BaseOptions & { extremePointOptions?: ExtremePointOptionsT } }
 	| { algorithm: typeof SolveAlgorithm.StackBased; options?: BaseOptions & { stackBasedOptions?: StackBasedOptionsT } }
 	| { algorithm: typeof SolveAlgorithm.PHPSolver; options?: BaseOptions & { phpSolverOptions?: PHPSolverOptionsT } }
@@ -134,10 +127,6 @@ export type SolveRequest = {
 
 
 function toAlgoOptionsT(options: any): { type: SolveStrategyOptions; value: any } {
-	if (options?.greedyOptions) {
-		const value = options.greedyOptions;
-		return { type: SolveStrategyOptions.GreedyOptions, value: new GreedyOptionsObject() };
-	}
 	if (options?.extremePointOptions) {
 		const value = options.extremePointOptions;
 		return { type: SolveStrategyOptions.ExtremePointOptions, value: new ExtremePointOptionsObject() };

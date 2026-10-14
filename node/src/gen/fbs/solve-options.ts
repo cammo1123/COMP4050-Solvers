@@ -5,7 +5,6 @@
 import * as flatbuffers from 'flatbuffers';
 
 import { ExtremePointOptions, ExtremePointOptionsT } from '../fbs/extreme-point-options.js';
-import { GreedyOptions, GreedyOptionsT } from '../fbs/greedy-options.js';
 import { PHPSolverOptions, PHPSolverOptionsT } from '../fbs/phpsolver-options.js';
 import { SolveStrategyOptions, unionToSolveStrategyOptions, unionListToSolveStrategyOptions } from '../fbs/solve-strategy-options.js';
 import { StackBasedOptions, StackBasedOptionsT } from '../fbs/stack-based-options.js';
@@ -102,7 +101,7 @@ export class SolveOptionsT implements flatbuffers.IGeneratedObject {
 constructor(
   public timeoutMs: number|null = null,
   public algoOptionsType: SolveStrategyOptions = SolveStrategyOptions.NONE,
-  public algoOptions: ExtremePointOptionsT|GreedyOptionsT|PHPSolverOptionsT|StackBasedOptionsT|null = null
+  public algoOptions: ExtremePointOptionsT|PHPSolverOptionsT|StackBasedOptionsT|null = null
 ){}
 
 

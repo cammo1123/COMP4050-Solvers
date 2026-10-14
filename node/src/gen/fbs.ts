@@ -3,7 +3,6 @@
 export { BoxResult, BoxResultT } from './fbs/box-result.js';
 export { BoxType, BoxTypeT } from './fbs/box-type.js';
 export { ExtremePointOptions, ExtremePointOptionsT } from './fbs/extreme-point-options.js';
-export { GreedyOptions, GreedyOptionsT } from './fbs/greedy-options.js';
 export { InfoRequest, InfoRequestT } from './fbs/info-request.js';
 export { InfoResponse, InfoResponseT } from './fbs/info-response.js';
 export { ItemPlacement, ItemPlacementT } from './fbs/item-placement.js';

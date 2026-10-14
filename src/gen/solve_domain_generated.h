@@ -16,16 +16,14 @@ namespace fbs {
 namespace domain {
 
 enum class SolveAlgorithm : int8_t {
-	Greedy = 0,
-	ExtremePoint = 1,
-	StackBased = 2,
-	PHPSolver = 3
+	ExtremePoint = 0,
+	StackBased = 1,
+	PHPSolver = 2
 };
 
 inline SolveAlgorithm toDomain(::fbs::SolveAlgorithm value)
 {
 	switch (value) {
-	case ::fbs::SolveAlgorithm_Greedy: return SolveAlgorithm::Greedy;
 	case ::fbs::SolveAlgorithm_ExtremePoint: return SolveAlgorithm::ExtremePoint;
 	case ::fbs::SolveAlgorithm_StackBased: return SolveAlgorithm::StackBased;
 	case ::fbs::SolveAlgorithm_PHPSolver: return SolveAlgorithm::PHPSolver;
@@ -36,17 +34,12 @@ inline SolveAlgorithm toDomain(::fbs::SolveAlgorithm value)
 inline ::fbs::SolveAlgorithm fromDomain(SolveAlgorithm value)
 {
 	switch (value) {
-	case SolveAlgorithm::Greedy: return ::fbs::SolveAlgorithm_Greedy;
 	case SolveAlgorithm::ExtremePoint: return ::fbs::SolveAlgorithm_ExtremePoint;
 	case SolveAlgorithm::StackBased: return ::fbs::SolveAlgorithm_StackBased;
 	case SolveAlgorithm::PHPSolver: return ::fbs::SolveAlgorithm_PHPSolver;
 	default: throw std::invalid_argument("invalid SolveAlgorithm value");
 	}
 }
-
-struct GreedyOptions {
-
-};
 
 struct ExtremePointOptions {
 
@@ -68,7 +61,6 @@ struct PHPSolverOptions {
 
 struct SolveOptions {
 	std::optional<uint32_t> timeout_ms = std::nullopt;
-	std::optional<GreedyOptions> greedy_options = std::nullopt;
 	std::optional<ExtremePointOptions> extreme_point_options = std::nullopt;
 	std::optional<StackBasedOptions> stack_based_options = std::nullopt;
 	std::optional<PHPSolverOptions> php_solver_options = std::nullopt;
@@ -107,20 +99,6 @@ struct SolveResponse {
 	uint32_t algorithm_us = 0;
 	uint32_t server_us = 0;
 };
-
-inline GreedyOptions toDomain([[maybe_unused]] fbs::GreedyOptionsT const& value)
-{
-	GreedyOptions out;
-
-	return out;
-}
-
-inline fbs::GreedyOptionsT fromDomain([[maybe_unused]] GreedyOptions const& value)
-{
-	fbs::GreedyOptionsT out;
-
-	return out;
-}
 
 inline ExtremePointOptions toDomain([[maybe_unused]] fbs::ExtremePointOptionsT const& value)
 {
@@ -224,10 +202,6 @@ inline SolveOptions toDomain([[maybe_unused]] fbs::SolveOptionsT const& value)
 		out.timeout_ms = *value.timeout_ms;
 	}
 
-	if (value.algo_options.type == ::fbs::SolveStrategyOptions_GreedyOptions) {
-		out.greedy_options = toDomain(*value.algo_options.AsGreedyOptions());
-	}
-
 	if (value.algo_options.type == ::fbs::SolveStrategyOptions_ExtremePointOptions) {
 		out.extreme_point_options = toDomain(*value.algo_options.AsExtremePointOptions());
 	}
@@ -249,10 +223,6 @@ inline fbs::SolveOptionsT fromDomain([[maybe_unused]] SolveOptions const& value)
 
 	if (value.timeout_ms.has_value()) {
 		out.timeout_ms = *value.timeout_ms;
-	}
-
-	if (value.greedy_options.has_value()) {
-		out.algo_options.Set(fromDomain(*value.greedy_options));
 	}
 
 	if (value.extreme_point_options.has_value()) {
