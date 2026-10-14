@@ -7,7 +7,10 @@ attribute "algorithm_specific_options";
 
 table GreedyOptions {}
 
-table ExtremePointOptions {}
+table ExtremePointOptions {
+  volume_preference: float = null;
+  weight_preference: float = null;
+}
 
 table StackBasedOptions {}
 

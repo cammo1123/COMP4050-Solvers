@@ -50,7 +50,8 @@ export type BoxTypeT = {
 };
 
 export type ExtremePointOptionsT = {
-
+	volumePreference?: number;
+	weightPreference?: number;
 };
 
 export type GreedyOptionsT = {
@@ -140,7 +141,7 @@ function toAlgoOptionsT(options: any): { type: SolveStrategyOptions; value: any 
 	}
 	if (options?.extremePointOptions) {
 		const value = options.extremePointOptions;
-		return { type: SolveStrategyOptions.ExtremePointOptions, value: new ExtremePointOptionsObject() };
+		return { type: SolveStrategyOptions.ExtremePointOptions, value: new ExtremePointOptionsObject(value.volumePreference ?? null, value.weightPreference ?? null) };
 	}
 	if (options?.stackBasedOptions) {
 		const value = options.stackBasedOptions;

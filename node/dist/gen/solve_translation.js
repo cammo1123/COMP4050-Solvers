@@ -8,7 +8,7 @@ function toAlgoOptionsT(options) {
     }
     if (options?.extremePointOptions) {
         const value = options.extremePointOptions;
-        return { type: SolveStrategyOptions.ExtremePointOptions, value: new ExtremePointOptionsObject() };
+        return { type: SolveStrategyOptions.ExtremePointOptions, value: new ExtremePointOptionsObject(value.volumePreference ?? null, value.weightPreference ?? null) };
     }
     if (options?.stackBasedOptions) {
         const value = options.stackBasedOptions;

@@ -51,7 +51,11 @@ struct ByBaseAreaDesc {
 	static auto less(Type const& type_a, Type const& type_b) noexcept -> bool { return type_a.key_base_area != type_b.key_base_area ? type_a.key_base_area > type_b.key_base_area : type_a.src < type_b.src; }
 };
 
-using Portfolio = std::tuple<ByVolumeDesc, ByMaxDimDesc, ByBaseAreaDesc>;
+struct ByWeightDesc {
+	static auto less(Type const& type_a, Type const& type_b) noexcept -> bool { return type_a.weight != type_b.weight ? type_a.weight > type_b.weight : type_a.src < type_b.src; }
+};
+
+using Portfolio = std::tuple<ByVolumeDesc, ByMaxDimDesc, ByBaseAreaDesc, ByWeightDesc>;
 constexpr auto kStrategies = std::tuple_size_v<Portfolio>;
 
 struct CentreSupport {

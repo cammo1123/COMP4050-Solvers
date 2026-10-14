@@ -279,14 +279,28 @@ inline ::flatbuffers::Offset<GreedyOptions> CreateGreedyOptions(
 
 struct ExtremePointOptionsT : public ::flatbuffers::NativeTable {
   typedef ExtremePointOptions TableType;
+  ::flatbuffers::Optional<float> volume_preference = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<float> weight_preference = ::flatbuffers::nullopt;
 };
 
 struct ExtremePointOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef ExtremePointOptionsT NativeTableType;
   typedef ExtremePointOptionsBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_VOLUME_PREFERENCE = 4,
+    VT_WEIGHT_PREFERENCE = 6
+  };
+  ::flatbuffers::Optional<float> volume_preference() const {
+    return GetOptional<float, float>(VT_VOLUME_PREFERENCE);
+  }
+  ::flatbuffers::Optional<float> weight_preference() const {
+    return GetOptional<float, float>(VT_WEIGHT_PREFERENCE);
+  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
+           VerifyField<float>(verifier, VT_VOLUME_PREFERENCE, 4) &&
+           VerifyField<float>(verifier, VT_WEIGHT_PREFERENCE, 4) &&
            verifier.EndTable();
   }
   ExtremePointOptionsT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
@@ -298,6 +312,12 @@ struct ExtremePointOptionsBuilder {
   typedef ExtremePointOptions Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
+  void add_volume_preference(float volume_preference) {
+    fbb_.AddElement<float>(ExtremePointOptions::VT_VOLUME_PREFERENCE, volume_preference);
+  }
+  void add_weight_preference(float weight_preference) {
+    fbb_.AddElement<float>(ExtremePointOptions::VT_WEIGHT_PREFERENCE, weight_preference);
+  }
   explicit ExtremePointOptionsBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -310,8 +330,12 @@ struct ExtremePointOptionsBuilder {
 };
 
 inline ::flatbuffers::Offset<ExtremePointOptions> CreateExtremePointOptions(
-    ::flatbuffers::FlatBufferBuilder &_fbb) {
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Optional<float> volume_preference = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<float> weight_preference = ::flatbuffers::nullopt) {
   ExtremePointOptionsBuilder builder_(_fbb);
+  if(weight_preference) { builder_.add_weight_preference(*weight_preference); }
+  if(volume_preference) { builder_.add_volume_preference(*volume_preference); }
   return builder_.Finish();
 }
 
@@ -1113,6 +1137,8 @@ inline ExtremePointOptionsT *ExtremePointOptions::UnPack(const ::flatbuffers::re
 inline void ExtremePointOptions::UnPackTo(ExtremePointOptionsT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
   (void)_o;
   (void)_resolver;
+  { auto _e = volume_preference(); _o->volume_preference = _e; }
+  { auto _e = weight_preference(); _o->weight_preference = _e; }
 }
 
 inline ::flatbuffers::Offset<ExtremePointOptions> CreateExtremePointOptions(::flatbuffers::FlatBufferBuilder &_fbb, const ExtremePointOptionsT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
@@ -1123,8 +1149,12 @@ inline ::flatbuffers::Offset<ExtremePointOptions> ExtremePointOptions::Pack(::fl
   (void)_rehasher;
   (void)_o;
   struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const ExtremePointOptionsT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _volume_preference = _o->volume_preference;
+  auto _weight_preference = _o->weight_preference;
   return fbs::CreateExtremePointOptions(
-      _fbb);
+      _fbb,
+      _volume_preference,
+      _weight_preference);
 }
 
 inline StackBasedOptionsT *StackBasedOptions::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {

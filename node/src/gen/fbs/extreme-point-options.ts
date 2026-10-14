@@ -24,8 +24,26 @@ static getSizePrefixedRootAsExtremePointOptions(bb:flatbuffers.ByteBuffer, obj?:
   return (obj || new ExtremePointOptions()).__init(bb.readInt32(bb.position()) + bb.position(), bb);
 }
 
+volumePreference():number|null {
+  const offset = this.bb!.__offset(this.bb_pos, 4);
+  return offset ? this.bb!.readFloat32(this.bb_pos + offset) : null;
+}
+
+weightPreference():number|null {
+  const offset = this.bb!.__offset(this.bb_pos, 6);
+  return offset ? this.bb!.readFloat32(this.bb_pos + offset) : null;
+}
+
 static startExtremePointOptions(builder:flatbuffers.Builder) {
-  builder.startObject(0);
+  builder.startObject(2);
+}
+
+static addVolumePreference(builder:flatbuffers.Builder, volumePreference:number) {
+  builder.addFieldFloat32(0, volumePreference, null);
+}
+
+static addWeightPreference(builder:flatbuffers.Builder, weightPreference:number) {
+  builder.addFieldFloat32(1, weightPreference, null);
 }
 
 static endExtremePointOptions(builder:flatbuffers.Builder):flatbuffers.Offset {
@@ -33,24 +51,40 @@ static endExtremePointOptions(builder:flatbuffers.Builder):flatbuffers.Offset {
   return offset;
 }
 
-static createExtremePointOptions(builder:flatbuffers.Builder):flatbuffers.Offset {
+static createExtremePointOptions(builder:flatbuffers.Builder, volumePreference:number|null, weightPreference:number|null):flatbuffers.Offset {
   ExtremePointOptions.startExtremePointOptions(builder);
+  if (volumePreference !== null)
+    ExtremePointOptions.addVolumePreference(builder, volumePreference);
+  if (weightPreference !== null)
+    ExtremePointOptions.addWeightPreference(builder, weightPreference);
   return ExtremePointOptions.endExtremePointOptions(builder);
 }
 
 unpack(): ExtremePointOptionsT {
-  return new ExtremePointOptionsT();
+  return new ExtremePointOptionsT(
+    this.volumePreference(),
+    this.weightPreference()
+  );
 }
 
 
-unpackTo(_o: ExtremePointOptionsT): void {}
+unpackTo(_o: ExtremePointOptionsT): void {
+  _o.volumePreference = this.volumePreference();
+  _o.weightPreference = this.weightPreference();
+}
 }
 
 export class ExtremePointOptionsT implements flatbuffers.IGeneratedObject {
-constructor(){}
+constructor(
+  public volumePreference: number|null = null,
+  public weightPreference: number|null = null
+){}
 
 
 pack(builder:flatbuffers.Builder): flatbuffers.Offset {
-  return ExtremePointOptions.createExtremePointOptions(builder);
+  return ExtremePointOptions.createExtremePointOptions(builder,
+    this.volumePreference,
+    this.weightPreference
+  );
 }
 }

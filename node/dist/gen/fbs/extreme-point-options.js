@@ -16,26 +16,52 @@ export class ExtremePointOptions {
         bb.setPosition(bb.position() + flatbuffers.SIZE_PREFIX_LENGTH);
         return (obj || new ExtremePointOptions()).__init(bb.readInt32(bb.position()) + bb.position(), bb);
     }
+    volumePreference() {
+        const offset = this.bb.__offset(this.bb_pos, 4);
+        return offset ? this.bb.readFloat32(this.bb_pos + offset) : null;
+    }
+    weightPreference() {
+        const offset = this.bb.__offset(this.bb_pos, 6);
+        return offset ? this.bb.readFloat32(this.bb_pos + offset) : null;
+    }
     static startExtremePointOptions(builder) {
-        builder.startObject(0);
+        builder.startObject(2);
+    }
+    static addVolumePreference(builder, volumePreference) {
+        builder.addFieldFloat32(0, volumePreference, null);
+    }
+    static addWeightPreference(builder, weightPreference) {
+        builder.addFieldFloat32(1, weightPreference, null);
     }
     static endExtremePointOptions(builder) {
         const offset = builder.endObject();
         return offset;
     }
-    static createExtremePointOptions(builder) {
+    static createExtremePointOptions(builder, volumePreference, weightPreference) {
         ExtremePointOptions.startExtremePointOptions(builder);
+        if (volumePreference !== null)
+            ExtremePointOptions.addVolumePreference(builder, volumePreference);
+        if (weightPreference !== null)
+            ExtremePointOptions.addWeightPreference(builder, weightPreference);
         return ExtremePointOptions.endExtremePointOptions(builder);
     }
     unpack() {
-        return new ExtremePointOptionsT();
+        return new ExtremePointOptionsT(this.volumePreference(), this.weightPreference());
     }
-    unpackTo(_o) { }
+    unpackTo(_o) {
+        _o.volumePreference = this.volumePreference();
+        _o.weightPreference = this.weightPreference();
+    }
 }
 export class ExtremePointOptionsT {
-    constructor() { }
+    volumePreference;
+    weightPreference;
+    constructor(volumePreference = null, weightPreference = null) {
+        this.volumePreference = volumePreference;
+        this.weightPreference = weightPreference;
+    }
     pack(builder) {
-        return ExtremePointOptions.createExtremePointOptions(builder);
+        return ExtremePointOptions.createExtremePointOptions(builder, this.volumePreference, this.weightPreference);
     }
 }
 //# sourceMappingURL=extreme-point-options.js.map

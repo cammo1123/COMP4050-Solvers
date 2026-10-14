@@ -24,7 +24,10 @@ export type BoxTypeT = {
     outerLength?: number;
     outerDepth?: number;
 };
-export type ExtremePointOptionsT = {};
+export type ExtremePointOptionsT = {
+    volumePreference?: number;
+    weightPreference?: number;
+};
 export type GreedyOptionsT = {};
 export type ItemPlacementT = {
     x: number;

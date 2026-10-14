@@ -49,7 +49,8 @@ struct GreedyOptions {
 };
 
 struct ExtremePointOptions {
-
+	std::optional<float> volume_preference = std::nullopt;
+	std::optional<float> weight_preference = std::nullopt;
 };
 
 struct StackBasedOptions {
@@ -126,12 +127,28 @@ inline ExtremePointOptions toDomain([[maybe_unused]] fbs::ExtremePointOptionsT c
 {
 	ExtremePointOptions out;
 
+	if (value.volume_preference.has_value()) {
+		out.volume_preference = *value.volume_preference;
+	}
+
+	if (value.weight_preference.has_value()) {
+		out.weight_preference = *value.weight_preference;
+	}
+
 	return out;
 }
 
 inline fbs::ExtremePointOptionsT fromDomain([[maybe_unused]] ExtremePointOptions const& value)
 {
 	fbs::ExtremePointOptionsT out;
+
+	if (value.volume_preference.has_value()) {
+		out.volume_preference = *value.volume_preference;
+	}
+
+	if (value.weight_preference.has_value()) {
+		out.weight_preference = *value.weight_preference;
+	}
 
 	return out;
 }

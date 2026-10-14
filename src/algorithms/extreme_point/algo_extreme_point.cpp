@@ -44,6 +44,9 @@ constexpr auto kSweepStride = u32 { 8 };
 constexpr auto kDeadlineStride = u32 { 64 };
 constexpr auto kPrefixMin = std::size_t { 32 };
 constexpr auto kPrefixMax = std::size_t { 512 };
+constexpr auto kPrefixFiller = std::size_t { 32 }; // smallest items appended to the trial prefix so box choice sees top-up potential
+constexpr auto kUtilTradeN = std::size_t { 1 };	   // a trial may give up at most this many items
+constexpr auto kUtilMargin = 0.10;				   // ...when it is this much fuller
 constexpr auto kEvalsPerInstance = u64 { 4096 };
 constexpr auto kEvalFloor = u64 { 1 } << 20;
 constexpr auto kEvalCeiling = u64 { 1 } << 34;
@@ -109,6 +112,12 @@ struct Outcome {
 
 constexpr auto by_yzx = [](Point const& a, Point const& b) noexcept { return std::tie(a.y, a.z, a.x) < std::tie(b.y, b.z, b.x); };
 
+// caller-tuned box scoring: volume vs weight capacity preference
+struct Prefs {
+	double volume = 0, weight = 0;
+	bool scored = false;
+};
+
 // engine
 
 template<OrderPolicy Order, SupportPolicy Support, GroupPolicy Grouping, extreme_point::SearchPolicy Search>
@@ -120,12 +129,13 @@ struct Engine {
 	Progress* progress; // non-null for strategy 0 only, always the entering thread
 
 	// standard constructor over aggregate init so gcc stops whining about missing fields
-	Engine(World const& source, Clock::time_point limit, bool limited, u64 budget, Progress* sink)
+	Engine(World const& source, Clock::time_point limit, bool limited, u64 budget, Progress* sink, Prefs box_prefs)
 		: world(source)
 		, deadline(limit)
 		, timed(limited)
 		, evals(budget)
 		, progress(sink)
+		, prefs(box_prefs)
 	{
 	}
 
@@ -142,6 +152,7 @@ struct Engine {
 	u32 gen = 0;
 	Fill fill, snap;
 	std::size_t base = 0; // instances committed in already-closed boxes
+	Prefs prefs;
 	Outcome out;
 
 	auto expired() const noexcept -> bool { return timed && Clock::now() >= deadline; }
@@ -510,17 +521,220 @@ struct Engine {
 			--bins[idx].budget;
 	}
 
+	struct Perm {
+		u32 a, b, c;
+	};
+
+	// when a box is weight-saturated but geometrically underused, check whether the whole
+	// arrangement fits a smaller box type as a rigid group (all 6 axis orientations):
+	// overlap and geometry are preserved by the rotation, constraints and centre-support are re-verified
+	auto downsize(std::size_t idx) -> std::size_t
+	{
+		static constexpr auto perms = std::array { Perm { 0, 1, 2 }, Perm { 0, 2, 1 }, Perm { 1, 0, 2 }, Perm { 2, 1, 0 }, Perm { 1, 2, 0 }, Perm { 2, 0, 1 } };
+		if (fill.placed.empty())
+			return idx;
+		auto bbox = std::array { u32 { 0 }, u32 { 0 }, u32 { 0 } };
+		for (auto const& p : fill.placed) {
+			bbox[0] = std::max(bbox[0], p.x + p.width);
+			bbox[1] = std::max(bbox[1], p.y + p.depth);
+			bbox[2] = std::max(bbox[2], p.z + p.length);
+		}
+		auto verify = [&](Bin const& bin, Perm const& perm) -> bool {
+			auto tx = std::vector<Placed> { };
+			tx.reserve(fill.placed.size());
+			for (auto const& p : fill.placed) {
+				auto const m = std::array { p.x, p.y, p.z }, d = std::array { p.width, p.depth, p.length };
+				auto const t = Placed { m[perm.a], m[perm.b], m[perm.c], d[perm.a], d[perm.b], d[perm.c], p.instance };
+				auto const& item_type = type_of(p.instance);
+				if (!allowed(item_type, t.x, t.y, t.z) || !in_bounds(bin, t.x, t.y, t.z, Shape { t.width, t.depth, t.length }))
+					return false;
+				tx.push_back(t);
+			}
+			for (auto const& a : tx) {
+				if (a.y == 0)
+					continue;
+				auto supported = false;
+				for (auto const& b : tx)
+					if (b.y + b.depth == a.y && Support::carries(b, a.x, a.z, Shape { a.width, a.depth, a.length }))
+						supported = true;
+				if (!supported)
+					return false;
+			}
+			return true;
+		};
+		auto chosen = idx;
+		for (auto j = std::size_t { 0 }; j < bins.size(); ++j) {
+			if (j == chosen || bins[j].budget == 0 || bins[j].volume >= bins[chosen].volume)
+				continue;
+			if (bins[j].max_weight > 0 && fill.weight > bins[j].max_weight)
+				continue;
+			for (auto const perm : perms) {
+				auto const dims = std::array { bbox[perm.a], bbox[perm.b], bbox[perm.c] };
+				if (dims[0] > bins[j].width || dims[1] > bins[j].depth || dims[2] > bins[j].length)
+					continue;
+				if (!verify(bins[j], perm))
+					continue;
+				chosen = j;
+				auto tx = std::vector<Placed> { };
+				tx.reserve(fill.placed.size());
+				for (auto const& p : fill.placed) {
+					auto const m = std::array { p.x, p.y, p.z }, d = std::array { p.width, p.depth, p.length };
+					tx.push_back({ m[perm.a], m[perm.b], m[perm.c], d[perm.a], d[perm.b], d[perm.c], p.instance });
+				}
+				fill.placed = std::move(tx);
+				goto downsized;
+			}
+		}
+	downsized:;
+		return chosen;
+	}
+
+	// replay closed boxes and try to empty the worst-filled ones into the others;
+	// rolls every touched box back when even one item cannot move, so the result stays valid
+	void consolidate()
+	{
+		if (out.bins.size() < 2 || expired())
+			return;
+		auto const orig_bins = out.bins;
+		auto fills = std::vector<Fill>(orig_bins.size());
+		for (auto i = std::size_t { 0 }; i < orig_bins.size(); ++i) {
+			auto const& bo = orig_bins[i];
+			auto const& bin = bins[bo.bin];
+			fills[i].open(bin);
+			std::swap(fill, fills[i]);
+			for (auto k = bo.first; k < bo.first + bo.count; ++k) {
+				auto const& p = out.placements[k];
+				auto const& item_type = type_of(p.instance);
+				commit(bin, p.instance, p.x, p.y, p.z, Shape { p.width, p.depth, p.length });
+				fill.weight += static_cast<double>(item_type.weight);
+				fill.volume = sat_add(fill.volume, item_type.volume);
+				if (item_type.group >= 0)
+					fill.group = item_type.group;
+			}
+			std::swap(fill, fills[i]);
+		}
+		auto src_order = std::vector<std::size_t>(orig_bins.size());
+		for (auto i = std::size_t { 0 }; i < src_order.size(); ++i)
+			src_order[i] = i;
+		std::ranges::sort(src_order, [&](std::size_t a, std::size_t b) {
+			return cmp_products(fills[a].volume, bins[orig_bins[b].bin].volume, fills[b].volume, bins[orig_bins[a].bin].volume) < 0;
+		});
+		for (auto const src : src_order) {
+			if (expired() || evals < Search::base_evaluations)
+				break;
+			if (fills[src].placed.empty())
+				continue;
+			// cheap aggregate reject: skip when no other box has the total room
+			auto free_volume = u64 { 0 };
+			auto free_weight = 0.0;
+			auto unlimited_weight = false;
+			for (auto t = std::size_t { 0 }; t < fills.size(); ++t) {
+				if (t == src)
+					continue;
+				auto const& bin = bins[orig_bins[t].bin];
+				free_volume += bin.volume > fills[t].volume ? bin.volume - fills[t].volume : u64 { 0 };
+				if (bin.max_weight > 0)
+					free_weight += bin.max_weight - fills[t].weight;
+				else
+					unlimited_weight = true;
+			}
+			if (free_volume < fills[src].volume || (!unlimited_weight && free_weight < fills[src].weight))
+				continue;
+			// only touched target boxes are checkpointed, and only until first modified
+			auto checkpoints = std::vector<std::pair<std::size_t, Fill>> { };
+			auto success = true;
+			for (auto idx = std::size_t { 0 }; idx < fills[src].placed.size() && success; ++idx) {
+				auto const& p = fills[src].placed[idx];
+				auto const& item_type = type_of(p.instance);
+				if (item_type.link >= 0) { // linked groups must stay together, moving one piece breaks atomicity
+					success = false;
+					break;
+				}
+				auto moved = false;
+				for (auto t = std::size_t { 0 }; t < fills.size() && !moved; ++t) {
+					if (t == src || fills[t].placed.empty())
+						continue;
+					auto const& bin = bins[orig_bins[t].bin];
+					if (fills[t].volume >= bin.volume)
+						continue;
+					if (!Grouping::allows(fills[t].group, item_type.group))
+						continue;
+					if (bin.max_weight > 0 && fills[t].weight + static_cast<double>(item_type.weight) > bin.max_weight)
+						continue;
+					auto const touched = std::ranges::find_if(checkpoints, [&](auto const& c) { return c.first == t; }) != checkpoints.end();
+					if (!touched)
+						checkpoints.emplace_back(t, fills[t]);
+					std::swap(fill, fills[t]);
+					auto const best = search(bin, item_type);
+					if (best.found) {
+						commit(bin, p.instance, best.x, best.y, best.z, best.shape);
+						fill.weight += static_cast<double>(item_type.weight);
+						fill.volume = sat_add(fill.volume, item_type.volume);
+						if (item_type.group >= 0)
+							fill.group = item_type.group;
+						moved = true;
+					}
+					std::swap(fill, fills[t]);
+				}
+				if (!moved)
+					success = false;
+			}
+			if (success) {
+				fills[src] = Fill { };
+			} else {
+				for (auto const& [t, snap] : checkpoints)
+					fills[t] = snap;
+			}
+		}
+		out.placements.clear();
+		out.bins.clear();
+		out.volume = 0;
+		out.placed = 0;
+		for (auto i = std::size_t { 0 }; i < fills.size(); ++i) {
+			if (fills[i].placed.empty())
+				continue;
+			out.bins.push_back({ orig_bins[i].bin, static_cast<u32>(out.placements.size()), static_cast<u32>(fills[i].placed.size()), fills[i].weight, fills[i].volume });
+			for (auto const& p : fills[i].placed)
+				out.placements.push_back(p);
+			out.volume = sat_add(out.volume, fills[i].volume);
+			out.placed += fills[i].placed.size();
+		}
+	}
+
 	struct Trial {
 		std::size_t n = 0;
 		u64 volume = 0, capacity = 1;
+		double weight = 0, max_weight = 0;
 		bool unsaturated = false; // the trial ran out of candidates, not of room
 	};
 
-	// most items first, then utilization via exact cross product
-	static auto better_trial(Trial const& trial_a, Trial const& trial_b, bool truncated) noexcept -> bool
+	// weighted blend of volume utilization and weight utilization, each in [0, 1]
+	static auto trial_score(Trial const& trial, Prefs const& prefs) noexcept -> double
 	{
-		if (trial_a.n != trial_b.n)
+		auto const volume_util = static_cast<double>(trial.volume) / static_cast<double>(trial.capacity);
+		auto const weight_util = trial.max_weight > 0.0 ? std::min(trial.weight / trial.max_weight, 1.0) : 0.0;
+		return prefs.volume * volume_util + prefs.weight * weight_util;
+	}
+
+	// most items first, unless giving one up buys a big utilization gain
+	static auto better_trial(Trial const& trial_a, Trial const& trial_b, bool truncated, Prefs const& prefs) noexcept -> bool
+	{
+		if (trial_a.n != trial_b.n) {
+			if (prefs.scored) {
+				auto const& more = trial_a.n > trial_b.n ? trial_a : trial_b;
+				auto const& fewer = trial_a.n > trial_b.n ? trial_b : trial_a;
+				if (more.n - fewer.n <= kUtilTradeN) {
+					auto score = [&](Trial const& t) { return trial_score(t, prefs); };
+					if (score(fewer) - score(more) >= kUtilMargin)
+						return trial_a.n < trial_b.n; // fewer items but meaningfully fuller box wins
+				}
+			}
 			return trial_a.n > trial_b.n;
+		}
+		if (prefs.scored) {
+			auto const score_a = trial_score(trial_a, prefs), score_b = trial_score(trial_b, prefs);
+			return score_a != score_b ? score_a > score_b : trial_a.capacity < trial_b.capacity;
+		}
 		if (truncated && trial_a.unsaturated && trial_b.unsaturated)
 			return trial_a.capacity > trial_b.capacity; // neither box was measured to its limit, so take the roomier one
 		auto const order = cmp_products(trial_a.volume, trial_b.capacity, trial_b.volume, trial_a.capacity);
@@ -538,8 +752,8 @@ struct Engine {
 			auto const n = run_fill(bins[idx], candidates, false);
 			if (n == 0)
 				continue;
-			auto const trial = Trial { n, fill.volume, std::max<u64>(bins[idx].volume, 1), n == candidates.size() };
-			if (chosen == bins.size() || better_trial(trial, best, truncated)) {
+			auto const trial = Trial { n, fill.volume, std::max<u64>(bins[idx].volume, 1), fill.weight, bins[idx].max_weight, n == candidates.size() };
+			if (chosen == bins.size() || better_trial(trial, best, truncated, prefs)) {
 				chosen = idx;
 				best = trial;
 			}
@@ -562,16 +776,24 @@ struct Engine {
 		}
 		m = std::clamp(m, std::min(kPrefixMin, full.size()), std::min(kPrefixMax, full.size()));
 		prefix.assign(full.begin(), full.begin() + static_cast<std::ptrdiff_t>(m));
-		if (world.links == 0)
-			return;
-		// extend to group closure
-		std::ranges::fill(link_seen, std::uint8_t { 0 });
-		for (auto instance_idx : prefix)
-			if (auto const link = type_of(instance_idx).link; link >= 0)
-				link_seen[static_cast<std::size_t>(link)] = 1;
-		for (auto j = m; j < full.size(); ++j)
-			if (auto const link = type_of(full[j]).link; link >= 0 && link_seen[static_cast<std::size_t>(link)] != 0)
-				prefix.push_back(full[j]);
+		if (world.links != 0) {
+			// extend to group closure
+			std::ranges::fill(link_seen, std::uint8_t { 0 });
+			for (auto instance_idx : prefix)
+				if (auto const link = type_of(instance_idx).link; link >= 0)
+					link_seen[static_cast<std::size_t>(link)] = 1;
+			for (auto j = m; j < full.size(); ++j)
+				if (auto const link = type_of(full[j]).link; link >= 0 && link_seen[static_cast<std::size_t>(link)] != 0)
+					prefix.push_back(full[j]);
+		}
+		// append the smallest remaining items so box choice accounts for top-up potential;
+		// duplicates of group-closure entries are harmless because run_fill dedups via taken_gen.
+		// gated on a caller-trained scored run; the default mode keeps exact item-count semantics.
+		if (prefs.scored) {
+			auto const filler_start = full.size() > kPrefixFiller ? full.size() - kPrefixFiller : std::size_t { 0 };
+			for (auto idx = std::max(filler_start, m); idx < full.size(); ++idx)
+				prefix.push_back(full[idx]);
+		}
 	}
 
 	auto run() -> Outcome
@@ -633,9 +855,11 @@ struct Engine {
 				if (placed == 0)
 					break;
 			}
-			close(chosen);
+			close(downsize(chosen));
 			remaining -= placed;
 		}
+
+		consolidate();
 
 		out.failed.reserve(world.total - out.placed);
 		for (auto idx = std::size_t { 0 }; idx < world.total; ++idx)
@@ -781,9 +1005,9 @@ auto build_world(SolveRequest const& request) -> World
 }
 
 template<std::size_t I>
-auto run_strategy(World const& world, Clock::time_point deadline, bool timed, u64 evals, Progress* progress) -> Outcome
+auto run_strategy(World const& world, Clock::time_point deadline, bool timed, u64 evals, Prefs const& prefs, Progress* progress) -> Outcome
 {
-	auto engine = Engine<std::tuple_element_t<I, Portfolio>, CentreSupport, SingleGroupPerBox, extreme_point::BaselineSearchPolicy> { world, deadline, timed, evals, progress };
+	auto engine = Engine<std::tuple_element_t<I, Portfolio>, CentreSupport, SingleGroupPerBox, extreme_point::BaselineSearchPolicy> { world, deadline, timed, evals, progress, prefs };
 	return engine.run();
 }
 
@@ -812,6 +1036,17 @@ auto solve_extreme_point(SolveRequest const& request, SolveOptions const& option
 	// deterministic budget instead of wall clock
 	auto const evals = std::clamp(sat_mul(kEvalsPerInstance, world.total), kEvalFloor, kEvalCeiling);
 
+	// volume vs weight capacity preference; unset fields count as zero, all-unset keeps the legacy comparison
+	auto prefs = Prefs { };
+	if (options.extreme_point_options.has_value()) {
+		auto const& ep = *options.extreme_point_options;
+		if (ep.volume_preference.has_value() || ep.weight_preference.has_value()) {
+			prefs.scored = true;
+			prefs.volume = static_cast<double>(ep.volume_preference.value_or(0.0f));
+			prefs.weight = static_cast<double>(ep.weight_preference.value_or(0.0f));
+		}
+	}
+
 	auto outcomes = std::array<Outcome, kStrategies> { };
 	auto errors = std::array<std::exception_ptr, kStrategies> { };
 	auto const serial = std::thread::hardware_concurrency() == 1;
@@ -820,9 +1055,9 @@ auto solve_extreme_point(SolveRequest const& request, SolveOptions const& option
 		workers.reserve(kStrategies - 1);
 		// only main thread emits progress
 		auto fan_out = [&]<std::size_t I>(std::integral_constant<std::size_t, I>) {
-			auto body = [&outcomes, &errors, &world, deadline, timed, evals] {
+			auto body = [&outcomes, &errors, &world, deadline, timed, evals, prefs] {
 				try { // don't let exceptions escape jthread
-					outcomes[I] = run_strategy<I>(world, deadline, timed, evals, nullptr);
+					outcomes[I] = run_strategy<I>(world, deadline, timed, evals, prefs, nullptr);
 				} catch (...) {
 					errors[I] = std::current_exception();
 				}
@@ -838,7 +1073,7 @@ auto solve_extreme_point(SolveRequest const& request, SolveOptions const& option
 		[&]<std::size_t... I>(std::index_sequence<I...>) { (fan_out(std::integral_constant<std::size_t, I + 1> { }), ...); }(std::make_index_sequence<kStrategies - 1> { });
 
 		try {
-			outcomes[0] = run_strategy<0>(world, deadline, timed, evals, &progress);
+			outcomes[0] = run_strategy<0>(world, deadline, timed, evals, prefs, &progress);
 		} catch (...) {
 			errors[0] = std::current_exception();
 		}

@@ -266,6 +266,34 @@ describe("extreme-point algorithm correctness", () => {
 		expect(byWeight.results.map((box) => box.totalWeight)).toEqual([4, 4]);
 	});
 
+	it("scores boxes by volume and weight preferences", async () => {
+		// Two identical boxes, one with a weight rating: both pack the same five
+		// cubes, so the box choice is decided purely by the preference weights.
+		const boxes = [
+			{ reference: "roomy", width: 10, length: 10, depth: 10 },
+			{ reference: "sturdy", width: 10, length: 10, depth: 10, maxWeight: 10 },
+		];
+		const items = [{ itemCode: "cube", itemReference: "cube", width: 1, length: 1, depth: 1, weight: 1, quantity: 5, rotationPolicy: RotationPolicy.Never }];
+
+		const byVolume = await solve({
+			boxes,
+			items,
+			algorithm: SolveAlgorithm.ExtremePoint,
+			options: { extremePointOptions: { volumePreference: 1 } },
+		});
+		expect(byVolume.results).toHaveLength(1);
+		expect(byVolume.results[0].boxReference).toBe("roomy");
+
+		const byWeight = await solve({
+			boxes,
+			items,
+			algorithm: SolveAlgorithm.ExtremePoint,
+			options: { extremePointOptions: { weightPreference: 1 } },
+		});
+		expect(byWeight.results).toHaveLength(1);
+		expect(byWeight.results[0].boxReference).toBe("sturdy");
+	});
+
 	it("defines BoxGroup, support, and boxWeight semantics once confirmed", async () => {
 		// boxGroup: at most one non-empty group per box, so two differently
 		// grouped items need two boxes even though one box would hold both.
