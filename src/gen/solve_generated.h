@@ -695,35 +695,25 @@ inline ::flatbuffers::Offset<SolveOptions> CreateSolveOptions(
 
 struct ItemPlacementT : public ::flatbuffers::NativeTable {
   typedef ItemPlacement TableType;
-  std::string item_code{};
-  std::string item_reference{};
   uint32_t x = 0;
   uint32_t y = 0;
   uint32_t z = 0;
-  uint32_t width = 0;
-  uint32_t length = 0;
-  uint32_t depth = 0;
+  std::unique_ptr<fbs::ItemTypeT> item{};
+  ItemPlacementT() = default;
+  ItemPlacementT(const ItemPlacementT &o);
+  ItemPlacementT(ItemPlacementT&&) FLATBUFFERS_NOEXCEPT = default;
+  ItemPlacementT &operator=(ItemPlacementT o) FLATBUFFERS_NOEXCEPT;
 };
 
 struct ItemPlacement FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef ItemPlacementT NativeTableType;
   typedef ItemPlacementBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_ITEM_CODE = 4,
-    VT_ITEM_REFERENCE = 6,
-    VT_X = 8,
-    VT_Y = 10,
-    VT_Z = 12,
-    VT_WIDTH = 14,
-    VT_LENGTH = 16,
-    VT_DEPTH = 18
+    VT_X = 4,
+    VT_Y = 6,
+    VT_Z = 8,
+    VT_ITEM = 10
   };
-  const ::flatbuffers::String *item_code() const {
-    return GetPointer<const ::flatbuffers::String *>(VT_ITEM_CODE);
-  }
-  const ::flatbuffers::String *item_reference() const {
-    return GetPointer<const ::flatbuffers::String *>(VT_ITEM_REFERENCE);
-  }
   uint32_t x() const {
     return GetField<uint32_t>(VT_X, 0);
   }
@@ -733,28 +723,17 @@ struct ItemPlacement FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   uint32_t z() const {
     return GetField<uint32_t>(VT_Z, 0);
   }
-  uint32_t width() const {
-    return GetField<uint32_t>(VT_WIDTH, 0);
-  }
-  uint32_t length() const {
-    return GetField<uint32_t>(VT_LENGTH, 0);
-  }
-  uint32_t depth() const {
-    return GetField<uint32_t>(VT_DEPTH, 0);
+  const fbs::ItemType *item() const {
+    return GetPointer<const fbs::ItemType *>(VT_ITEM);
   }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyOffset(verifier, VT_ITEM_CODE) &&
-           verifier.VerifyString(item_code()) &&
-           VerifyOffset(verifier, VT_ITEM_REFERENCE) &&
-           verifier.VerifyString(item_reference()) &&
            VerifyField<uint32_t>(verifier, VT_X, 4) &&
            VerifyField<uint32_t>(verifier, VT_Y, 4) &&
            VerifyField<uint32_t>(verifier, VT_Z, 4) &&
-           VerifyField<uint32_t>(verifier, VT_WIDTH, 4) &&
-           VerifyField<uint32_t>(verifier, VT_LENGTH, 4) &&
-           VerifyField<uint32_t>(verifier, VT_DEPTH, 4) &&
+           VerifyOffset(verifier, VT_ITEM) &&
+           verifier.VerifyTable(item()) &&
            verifier.EndTable();
   }
   ItemPlacementT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
@@ -766,12 +745,6 @@ struct ItemPlacementBuilder {
   typedef ItemPlacement Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  void add_item_code(::flatbuffers::Offset<::flatbuffers::String> item_code) {
-    fbb_.AddOffset(ItemPlacement::VT_ITEM_CODE, item_code);
-  }
-  void add_item_reference(::flatbuffers::Offset<::flatbuffers::String> item_reference) {
-    fbb_.AddOffset(ItemPlacement::VT_ITEM_REFERENCE, item_reference);
-  }
   void add_x(uint32_t x) {
     fbb_.AddElement<uint32_t>(ItemPlacement::VT_X, x, 0);
   }
@@ -781,14 +754,8 @@ struct ItemPlacementBuilder {
   void add_z(uint32_t z) {
     fbb_.AddElement<uint32_t>(ItemPlacement::VT_Z, z, 0);
   }
-  void add_width(uint32_t width) {
-    fbb_.AddElement<uint32_t>(ItemPlacement::VT_WIDTH, width, 0);
-  }
-  void add_length(uint32_t length) {
-    fbb_.AddElement<uint32_t>(ItemPlacement::VT_LENGTH, length, 0);
-  }
-  void add_depth(uint32_t depth) {
-    fbb_.AddElement<uint32_t>(ItemPlacement::VT_DEPTH, depth, 0);
+  void add_item(::flatbuffers::Offset<fbs::ItemType> item) {
+    fbb_.AddOffset(ItemPlacement::VT_ITEM, item);
   }
   explicit ItemPlacementBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -803,48 +770,16 @@ struct ItemPlacementBuilder {
 
 inline ::flatbuffers::Offset<ItemPlacement> CreateItemPlacement(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Offset<::flatbuffers::String> item_code = 0,
-    ::flatbuffers::Offset<::flatbuffers::String> item_reference = 0,
     uint32_t x = 0,
     uint32_t y = 0,
     uint32_t z = 0,
-    uint32_t width = 0,
-    uint32_t length = 0,
-    uint32_t depth = 0) {
+    ::flatbuffers::Offset<fbs::ItemType> item = 0) {
   ItemPlacementBuilder builder_(_fbb);
-  builder_.add_depth(depth);
-  builder_.add_length(length);
-  builder_.add_width(width);
+  builder_.add_item(item);
   builder_.add_z(z);
   builder_.add_y(y);
   builder_.add_x(x);
-  builder_.add_item_reference(item_reference);
-  builder_.add_item_code(item_code);
   return builder_.Finish();
-}
-
-inline ::flatbuffers::Offset<ItemPlacement> CreateItemPlacementDirect(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    const char *item_code = nullptr,
-    const char *item_reference = nullptr,
-    uint32_t x = 0,
-    uint32_t y = 0,
-    uint32_t z = 0,
-    uint32_t width = 0,
-    uint32_t length = 0,
-    uint32_t depth = 0) {
-  auto item_code__ = item_code ? _fbb.CreateString(item_code) : 0;
-  auto item_reference__ = item_reference ? _fbb.CreateString(item_reference) : 0;
-  return fbs::CreateItemPlacement(
-      _fbb,
-      item_code__,
-      item_reference__,
-      x,
-      y,
-      z,
-      width,
-      length,
-      depth);
 }
 
 ::flatbuffers::Offset<ItemPlacement> CreateItemPlacement(::flatbuffers::FlatBufferBuilder &_fbb, const ItemPlacementT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
@@ -1343,6 +1278,21 @@ inline ::flatbuffers::Offset<SolveOptions> SolveOptions::Pack(::flatbuffers::Fla
       _algo_options);
 }
 
+inline ItemPlacementT::ItemPlacementT(const ItemPlacementT &o)
+      : x(o.x),
+        y(o.y),
+        z(o.z),
+        item((o.item) ? new fbs::ItemTypeT(*o.item) : nullptr) {
+}
+
+inline ItemPlacementT &ItemPlacementT::operator=(ItemPlacementT o) FLATBUFFERS_NOEXCEPT {
+  std::swap(x, o.x);
+  std::swap(y, o.y);
+  std::swap(z, o.z);
+  std::swap(item, o.item);
+  return *this;
+}
+
 inline ItemPlacementT *ItemPlacement::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
   auto _o = std::unique_ptr<ItemPlacementT>(new ItemPlacementT());
   UnPackTo(_o.get(), _resolver);
@@ -1352,14 +1302,10 @@ inline ItemPlacementT *ItemPlacement::UnPack(const ::flatbuffers::resolver_funct
 inline void ItemPlacement::UnPackTo(ItemPlacementT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
   (void)_o;
   (void)_resolver;
-  { auto _e = item_code(); if (_e) _o->item_code = _e->str(); }
-  { auto _e = item_reference(); if (_e) _o->item_reference = _e->str(); }
   { auto _e = x(); _o->x = _e; }
   { auto _e = y(); _o->y = _e; }
   { auto _e = z(); _o->z = _e; }
-  { auto _e = width(); _o->width = _e; }
-  { auto _e = length(); _o->length = _e; }
-  { auto _e = depth(); _o->depth = _e; }
+  { auto _e = item(); if (_e) { if(_o->item) { _e->UnPackTo(_o->item.get(), _resolver); } else { _o->item = std::unique_ptr<fbs::ItemTypeT>(_e->UnPack(_resolver)); } } else if (_o->item) { _o->item.reset(); } }
 }
 
 inline ::flatbuffers::Offset<ItemPlacement> CreateItemPlacement(::flatbuffers::FlatBufferBuilder &_fbb, const ItemPlacementT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
@@ -1370,24 +1316,16 @@ inline ::flatbuffers::Offset<ItemPlacement> ItemPlacement::Pack(::flatbuffers::F
   (void)_rehasher;
   (void)_o;
   struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const ItemPlacementT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
-  auto _item_code = _o->item_code.empty() ? 0 : _fbb.CreateString(_o->item_code);
-  auto _item_reference = _o->item_reference.empty() ? 0 : _fbb.CreateString(_o->item_reference);
   auto _x = _o->x;
   auto _y = _o->y;
   auto _z = _o->z;
-  auto _width = _o->width;
-  auto _length = _o->length;
-  auto _depth = _o->depth;
+  auto _item = _o->item ? CreateItemType(_fbb, _o->item.get(), _rehasher) : 0;
   return fbs::CreateItemPlacement(
       _fbb,
-      _item_code,
-      _item_reference,
       _x,
       _y,
       _z,
-      _width,
-      _length,
-      _depth);
+      _item);
 }
 
 inline BoxResultT::BoxResultT(const BoxResultT &o)

@@ -82,14 +82,10 @@ struct SolveRequest {
 };
 
 struct ItemPlacement {
-	std::string item_code{};
-	std::string item_reference{};
 	uint32_t x = 0;
 	uint32_t y = 0;
 	uint32_t z = 0;
-	uint32_t width = 0;
-	uint32_t length = 0;
-	uint32_t depth = 0;
+	ItemType item{};
 };
 
 struct BoxResult {
@@ -324,21 +320,15 @@ inline ItemPlacement toDomain([[maybe_unused]] fbs::ItemPlacementT const& value)
 {
 	ItemPlacement out;
 
-	out.item_code = value.item_code;
-
-	out.item_reference = value.item_reference;
-
 	out.x = value.x;
 
 	out.y = value.y;
 
 	out.z = value.z;
 
-	out.width = value.width;
-
-	out.length = value.length;
-
-	out.depth = value.depth;
+	if (value.item) {
+		out.item = toDomain(*value.item);
+	}
 
 	return out;
 }
@@ -347,21 +337,13 @@ inline fbs::ItemPlacementT fromDomain([[maybe_unused]] ItemPlacement const& valu
 {
 	fbs::ItemPlacementT out;
 
-	out.item_code = value.item_code;
-
-	out.item_reference = value.item_reference;
-
 	out.x = value.x;
 
 	out.y = value.y;
 
 	out.z = value.z;
 
-	out.width = value.width;
-
-	out.length = value.length;
-
-	out.depth = value.depth;
+	out.item = std::make_unique<fbs::ItemTypeT>(fromDomain(value.item));
 
 	return out;
 }

@@ -13,7 +13,7 @@ type Placement = SolveResult["results"][number]["placements"][number];
 // Axis convention: width is the X extent, depth is the vertical Y extent, and
 // length is the Z extent.
 function overlaps(a: Placement, b: Placement): boolean {
-	return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.depth && b.y < a.y + a.depth && a.z < b.z + b.length && b.z < a.z + a.length;
+	return a.x < b.x + b.item.width && b.x < a.x + a.item.width && a.y < b.y + b.item.depth && b.y < a.y + a.item.depth && a.z < b.z + b.item.length && b.z < a.z + a.item.length;
 }
 
 function assertNoOverlaps(result: SolveResult): void {
@@ -30,16 +30,16 @@ function assertCentreSupported(result: SolveResult): void {
 	for (const box of result.results)
 		for (const placement of box.placements) {
 			if (placement.y === 0) continue;
-			const centreX = placement.x * 2 + placement.width;
-			const centreZ = placement.z * 2 + placement.length;
+			const centreX = placement.x * 2 + placement.item.width;
+			const centreZ = placement.z * 2 + placement.item.length;
 			const carried = box.placements.some(
 				(other) =>
 					other !== placement &&
-					other.y + other.depth === placement.y &&
+					other.y + other.item.depth === placement.y &&
 					other.x * 2 <= centreX &&
-					centreX <= (other.x + other.width) * 2 &&
+					centreX <= (other.x + other.item.width) * 2 &&
 					other.z * 2 <= centreZ &&
-					centreZ <= (other.z + other.length) * 2,
+					centreZ <= (other.z + other.item.length) * 2,
 			);
 			expect(carried).toBe(true);
 		}
@@ -61,10 +61,10 @@ describe("algorithm dispatch", () => {
 			results: [
 				{
 					boxReference: "box",
-					placements: [
-						{ itemCode: "item", itemReference: "item", x: 0, y: 0, z: 0, width: 1, length: 1, depth: 1 },
-						{ itemCode: "second", itemReference: "second", x: 0, y: 1, z: 0, width: 1, length: 1, depth: 1 },
-					],
+				placements: [
+					{ x: 0, y: 0, z: 0, item: { itemCode: "item", itemReference: "item", width: 1, length: 1, depth: 1 } },
+					{ x: 0, y: 1, z: 0, item: { itemCode: "second", itemReference: "second", width: 1, length: 1, depth: 1 } },
+				],
 				},
 			],
 			failed: [],
@@ -87,7 +87,7 @@ describe("algorithm dispatch", () => {
 		expect(result.results).toHaveLength(1);
 		expect(result.results[0].boxReference).toBe("box");
 		expect(result.results[0].placements).toHaveLength(1);
-		expect(result.results[0].placements[0]).toMatchObject({ itemCode: "item", itemReference: "item", x: 0, y: 0, z: 0, width: 1, length: 1, depth: 1 });
+		expect(result.results[0].placements[0]).toMatchObject({ x: 0, y: 0, z: 0, item: { itemCode: "item", itemReference: "item", width: 1, length: 1, depth: 1 } });
 	});
 
 	it("rejects unsupported algorithm values", async () => {
@@ -127,7 +127,7 @@ describe("extreme-point algorithm correctness", () => {
 		expect(result.failed).toEqual([]);
 		expect(result.results).toHaveLength(1);
 		expect(result.results[0].placements).toHaveLength(1);
-		expect(result.results[0].placements[0]).toMatchObject({ itemCode: "exact", x: 0, y: 0, z: 0, width: 10, length: 10, depth: 10 });
+		expect(result.results[0].placements[0]).toMatchObject({ x: 0, y: 0, z: 0, item: { itemCode: "exact", width: 10, length: 10, depth: 10 } });
 		expect(result.results[0].utilization).toBe(1);
 		// The BoxResult reports the dimensions of the box type it was cut from.
 		expect(result.results[0]).toMatchObject({ boxReference: "box", width: 10, length: 10, depth: 10 });
@@ -150,7 +150,7 @@ describe("extreme-point algorithm correctness", () => {
 		const cells = result.results[0].placements.map((placement) => `${placement.x},${placement.y},${placement.z}`);
 		expect(new Set(cells).size).toBe(8);
 		for (const placement of result.results[0].placements) {
-			expect(placement).toMatchObject({ width: 1, length: 1, depth: 1 });
+			expect(placement).toMatchObject({ item: { width: 1, length: 1, depth: 1 } });
 			expect([0, 1]).toContain(placement.x);
 			expect([0, 1]).toContain(placement.y);
 			expect([0, 1]).toContain(placement.z);
@@ -192,7 +192,7 @@ describe("extreme-point algorithm correctness", () => {
 			algorithm: SolveAlgorithm.ExtremePoint,
 		});
 		expect(bestFit.failed).toEqual([]);
-		expect(bestFit.results[0].placements[0]).toMatchObject({ width: 5, length: 4, depth: 3 });
+		expect(bestFit.results[0].placements[0]).toMatchObject({ item: { width: 5, length: 4, depth: 3 } });
 
 		// KeepFlat may swap width and length but must preserve the vertical
 		// extent, so the placement keeps depth 5.
@@ -202,7 +202,7 @@ describe("extreme-point algorithm correctness", () => {
 			algorithm: SolveAlgorithm.ExtremePoint,
 		});
 		expect(keepFlat.failed).toEqual([]);
-		expect(keepFlat.results[0].placements[0]).toMatchObject({ width: 10, length: 20, depth: 5 });
+		expect(keepFlat.results[0].placements[0]).toMatchObject({ item: { width: 10, length: 20, depth: 5 } });
 	});
 
 	it("respects maxBoxes, maximumBoxes, and inactive box types", async () => {
@@ -292,7 +292,7 @@ describe("extreme-point algorithm correctness", () => {
 		});
 		expect(ungroupedJoins.failed).toEqual([]);
 		expect(ungroupedJoins.results).toHaveLength(1);
-		expect(ungroupedJoins.results[0].placements.map((item) => item.itemCode).sort()).toEqual(["alpha", "loose"]);
+		expect(ungroupedJoins.results[0].placements.map((item) => item.item.itemCode).sort()).toEqual(["alpha", "loose"]);
 
 		// support: partial support is accepted while the base centre is carried,
 		// matching the PHP-compatible case.
@@ -306,7 +306,7 @@ describe("extreme-point algorithm correctness", () => {
 		});
 		expect(partialSupport.failed).toEqual([]);
 		expect(partialSupport.results).toHaveLength(1);
-		expect(partialSupport.results[0].placements.find((item) => item.itemCode === "overhang")).toMatchObject({ x: 5, y: 10 });
+		expect(partialSupport.results[0].placements.find((item) => item.item.itemCode === "overhang")).toMatchObject({ x: 5, y: 10 });
 		assertCentreSupported(partialSupport);
 
 		// Pinning the overhang to the left wall leaves its centre unsupported at
@@ -319,7 +319,7 @@ describe("extreme-point algorithm correctness", () => {
 			],
 			algorithm: SolveAlgorithm.ExtremePoint,
 		});
-		const stacked = unstable.results.flatMap((box) => box.placements).find((item) => item.itemCode === "overhang" && item.y === 10);
+		const stacked = unstable.results.flatMap((box) => box.placements).find((item) => item.item.itemCode === "overhang" && item.y === 10);
 		expect(stacked).toBeUndefined();
 		assertCentreSupported(unstable);
 
@@ -332,7 +332,7 @@ describe("extreme-point algorithm correctness", () => {
 		});
 		expect(tare.failed).toEqual([]);
 		expect(tare.results).toHaveLength(1);
-		expect(tare.results[0].placements.map((item) => item.itemCode)).toEqual(["heavy"]);
+		expect(tare.results[0].placements.map((item) => item.item.itemCode)).toEqual(["heavy"]);
 		expect(tare.results[0].totalWeight).toBe(5);
 	});
 });
