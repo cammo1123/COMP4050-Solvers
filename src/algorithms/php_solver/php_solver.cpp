@@ -96,7 +96,8 @@ auto solve_php_solver(SolveRequest const& request, SolveOptions const& options, 
 		}
 
 		for (auto const& item : source.items) {
-			result.placements.push_back({ item.item.code, item.item.reference, item.x, item.y, item.z, item.dimensions.width, item.dimensions.length, item.dimensions.depth });
+			auto const& placed = request.items[item.item.src];
+			result.placements.push_back({ item.x, item.y, item.z, { placed.item_code, placed.item_reference, item.dimensions.width, item.dimensions.length, item.dimensions.depth, placed.weight, std::nullopt, placed.box_group, placed.rotation_policy, placed.constraint } });
 		}
 
 		response.results.push_back(std::move(result));

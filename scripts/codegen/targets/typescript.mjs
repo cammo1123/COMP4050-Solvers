@@ -80,14 +80,20 @@ function tsPlainObject(prefix, field, schema) {
 			if (field.kind === "string") return `${name}: ${access} as string`;
 			return `${name}: ${access}`;
 		case "table": {
+			if (field.optional) {
+				const sub = tables[field.table]
+					.map((raw) =>
+						tsPlainObject(access, resolveField(raw, tables, unions), schema),
+					)
+					.join(", ");
+				return `...(${access} !== null && ${access} !== undefined ? { ${name}: { ${sub} } } : {})`;
+			}
 			const sub = tables[field.table]
 				.map((raw) =>
-					tsPlainObject(access, resolveField(raw, tables, unions), schema),
+					tsPlainObject(`${access}!`, resolveField(raw, tables, unions), schema),
 				)
 				.join(", ");
-			if (field.optional)
-				return `...(${access} !== null && ${access} !== undefined ? { ${name}: { ${sub} } } : {})`;
-			return `${name}: ${access} ? { ${sub} } : null`;
+			return `${name}: { ${sub} }`;
 		}
 		case "vector-table": {
 			const sub = tables[field.table]
@@ -132,7 +138,7 @@ function tsFieldType(field) {
 		case "vector-string":
 			return "string[]";
 		case "table":
-			return `${field.table}T | null`;
+			return field.optional ? `${field.table}T | null` : `${field.table}T`;
 		case "vector-table":
 			return `${field.table}T[]`;
 	}

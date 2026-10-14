@@ -21,10 +21,10 @@ const request: SolveRequest = {
 			width: 5,
 			length: 2,
 			depth: 2,
-		placements: [
-			{ itemCode: "a", itemReference: "a", x: 0, y: 0, z: 0, width: 2, length: 2, depth: 2 },
-			{ itemCode: "b", itemReference: "b", x: 3, y: 0, z: 0, width: 2, length: 2, depth: 2 },
-		],
+	placements: [
+		{ x: 0, y: 0, z: 0, item: { itemCode: "a", itemReference: "a", width: 2, length: 2, depth: 2, weight: 2 } },
+		{ x: 3, y: 0, z: 0, item: { itemCode: "b", itemReference: "b", width: 2, length: 2, depth: 2, weight: 3 } },
+	],
 	}],
 	failed: [],
 };
@@ -66,7 +66,7 @@ describe("assertValidSolution", () => {
 		const rotatedRequest = structuredClone(request);
 		rotatedRequest.items[0] = { ...rotatedRequest.items[0], width: 1, length: 2, depth: 2 };
 		const response = cloneResponse();
-		response.results[0].placements[0] = { ...response.results[0].placements[0], width: 2, length: 1, depth: 2 };
+		response.results[0].placements[0] = { ...response.results[0].placements[0], item: { ...response.results[0].placements[0].item, width: 2, length: 1, depth: 2 } };
 		expect(() => assertValidSolution(rotatedRequest, response)).toThrow();
 	});
 
@@ -79,7 +79,7 @@ describe("assertValidSolution", () => {
 		};
 		rotatedRequest.items[0] = { ...rotatedRequest.items[0], width: 1, length: 2, depth: 2 };
 		const response = cloneResponse();
-		response.results[0].placements[0] = { ...response.results[0].placements[0], width: 2, length: 1, depth: 2 };
+		response.results[0].placements[0] = { ...response.results[0].placements[0], item: { ...response.results[0].placements[0].item, width: 2, length: 1, depth: 2 } };
 		expect(() => assertValidSolution(rotatedRequest, response)).not.toThrow();
 	});
 
@@ -93,8 +93,7 @@ describe("assertValidSolution", () => {
 		const response = cloneResponse();
 		response.results[0].placements[1] = {
 			...response.results[0].placements[1],
-			itemCode: "a",
-			itemReference: "a",
+			item: { ...response.results[0].placements[1].item, itemCode: "a", itemReference: "a" },
 		};
 		expect(() => assertValidSolution(request, response)).toThrow();
 	});

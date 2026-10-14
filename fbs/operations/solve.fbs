@@ -48,14 +48,10 @@ table SolveOptions {
 }
 
 table ItemPlacement {
-  item_code: string;
-  item_reference: string;
   x: uint;
   y: uint;
   z: uint;
-  width: uint;
-  length: uint;
-  depth: uint;
+  item: ItemType;
 }
 
 table BoxResult {
