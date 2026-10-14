@@ -27,14 +27,10 @@ export type BoxTypeT = {
 export type ExtremePointOptionsT = {};
 export type GreedyOptionsT = {};
 export type ItemPlacementT = {
-    itemCode: string;
-    itemReference: string;
     x: number;
     y: number;
     z: number;
-    width: number;
-    length: number;
-    depth: number;
+    item: ItemTypeT;
 };
 export type ItemTypeT = {
     itemCode: string;

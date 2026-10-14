@@ -863,7 +863,7 @@ auto solve_extreme_point(SolveRequest const& request, SolveOptions const& option
 		for (auto idx = bin.first; idx < bin.first + bin.count; ++idx) {
 			auto const& point = best.placements[idx];
 			auto const& item = request.items[world.types[world.inst_type[point.instance]].src];
-			result.placements.push_back({ item.item_code, item.item_reference, point.x, point.y, point.z, point.width, point.length, point.depth });
+			result.placements.push_back({ point.x, point.y, point.z, { item.item_code, item.item_reference, point.width, point.length, point.depth, item.weight, std::nullopt, item.box_group, item.rotation_policy, item.constraint } });
 		}
 		result.total_weight = static_cast<float>(bin.weight); // content only, matching StackBased
 		auto const volume = world.bins[bin.bin].volume;

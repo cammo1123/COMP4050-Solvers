@@ -60,7 +60,7 @@ type Placement = BoxResult["placements"][number];
 const CLOSE = 1e-4;
 
 function overlaps(a: Placement, b: Placement): boolean {
-	return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.depth && b.y < a.y + a.depth && a.z < b.z + b.length && b.z < a.z + a.length;
+	return a.x < b.x + b.item.width && b.x < a.x + a.item.width && a.y < b.y + b.item.depth && b.y < a.y + a.item.depth && a.z < b.z + b.item.length && b.z < a.z + a.item.length;
 }
 
 function indexBy<T extends { [k: string]: any }>(rows: T[], key: string): Map<string, T> {
@@ -89,9 +89,9 @@ function assertValidLayout(result: SolveResult, requestBoxes: any[]) {
 		for (let i = 0; i < box.placements.length; ++i) {
 			const p = box.placements[i];
 			// Check bounds
-			expect(p.x + p.width).toBeLessThanOrEqual(reqBox.width);
-			expect(p.y + p.depth).toBeLessThanOrEqual(reqBox.depth);
-			expect(p.z + p.length).toBeLessThanOrEqual(reqBox.length);
+			expect(p.x + p.item.width).toBeLessThanOrEqual(reqBox.width);
+			expect(p.y + p.item.depth).toBeLessThanOrEqual(reqBox.depth);
+			expect(p.z + p.item.length).toBeLessThanOrEqual(reqBox.length);
 
 			// Check overlaps
 			for (let j = i + 1; j < box.placements.length; ++j) {
@@ -107,10 +107,10 @@ function assertSupported(result: SolveResult) {
 	for (const box of result.results) {
 		for (const p of box.placements) {
 			if (p.y === 0) continue;
-			const centreX = p.x * 2 + p.width;
-			const centreZ = p.z * 2 + p.length;
-			const carried = box.placements.some((q) => q !== p && q.y + q.depth === p.y && q.x * 2 <= centreX && centreX <= (q.x + q.width) * 2 && q.z * 2 <= centreZ && centreZ <= (q.z + q.length) * 2);
-			expect(carried, `${p.itemCode} floats at y=${p.y} in ${box.boxReference}`).toBe(true);
+			const centreX = p.x * 2 + p.item.width;
+			const centreZ = p.z * 2 + p.item.length;
+			const carried = box.placements.some((q) => q !== p && q.y + q.item.depth === p.y && q.x * 2 <= centreX && centreX <= (q.x + q.item.width) * 2 && q.z * 2 <= centreZ && centreZ <= (q.z + q.item.length) * 2);
+			expect(carried, `${p.item.itemCode} floats at y=${p.y} in ${box.boxReference}`).toBe(true);
 		}
 	}
 }
@@ -138,7 +138,7 @@ function assertAccounting(result: SolveResult, items: any[]) {
 	const actual = new Map<string, number>();
 	for (const box of result.results) {
 		for (const p of box.placements) {
-			actual.set(p.itemCode, (actual.get(p.itemCode) ?? 0) + 1);
+			actual.set(p.item.itemCode, (actual.get(p.item.itemCode) ?? 0) + 1);
 		}
 	}
 	for (const f of result.failed) {
@@ -163,13 +163,13 @@ function assertConstraints(result: SolveResult, items: any[], boxes: any[]) {
 		const groups = new Set<string>();
 
 		for (const p of box.placements) {
-			const reqItem = byCode.get(p.itemCode);
+			const reqItem = byCode.get(p.item.itemCode);
 			contentWeight += reqItem.weight;
-			contentVolume += p.width * p.length * p.depth;
+			contentVolume += p.item.width * p.item.length * p.item.depth;
 			if (reqItem.boxGroup) groups.add(reqItem.boxGroup);
 
 			// the placement has to be some rotation of the item we asked for
-			expect([p.width, p.length, p.depth].slice().sort((a, b) => a - b)).toEqual([reqItem.width, reqItem.length, reqItem.depth].slice().sort((a, b) => a - b));
+			expect([p.item.width, p.item.length, p.item.depth].slice().sort((a, b) => a - b)).toEqual([reqItem.width, reqItem.length, reqItem.depth].slice().sort((a, b) => a - b));
 		}
 
 		// Weight constraint (excludes boxWeight)
@@ -193,7 +193,7 @@ function objective(result: SolveResult) {
 	return {
 		placements: result.results.reduce((total, box) => total + box.placements.length, 0),
 		boxes: result.results.length,
-		volume: result.results.reduce((total, box) => total + box.placements.reduce((used, placement) => used + placement.width * placement.length * placement.depth, 0), 0),
+		volume: result.results.reduce((total, box) => total + box.placements.reduce((used, placement) => used + placement.item.width * placement.item.length * placement.item.depth, 0), 0),
 	};
 }
 
