@@ -23,8 +23,6 @@ export declare class InfoResponse implements flatbuffers.IUnpackableObject<InfoR
     arch(optionalEncoding: flatbuffers.Encoding): string | Uint8Array | null;
     compiler(): string | null;
     compiler(optionalEncoding: flatbuffers.Encoding): string | Uint8Array | null;
-    nodeVersion(): string | null;
-    nodeVersion(optionalEncoding: flatbuffers.Encoding): string | Uint8Array | null;
     static startInfoResponse(builder: flatbuffers.Builder): void;
     static addProjectName(builder: flatbuffers.Builder, projectNameOffset: flatbuffers.Offset): void;
     static addProjectVersion(builder: flatbuffers.Builder, projectVersionOffset: flatbuffers.Offset): void;
@@ -35,9 +33,8 @@ export declare class InfoResponse implements flatbuffers.IUnpackableObject<InfoR
     static addPlatform(builder: flatbuffers.Builder, platformOffset: flatbuffers.Offset): void;
     static addArch(builder: flatbuffers.Builder, archOffset: flatbuffers.Offset): void;
     static addCompiler(builder: flatbuffers.Builder, compilerOffset: flatbuffers.Offset): void;
-    static addNodeVersion(builder: flatbuffers.Builder, nodeVersionOffset: flatbuffers.Offset): void;
     static endInfoResponse(builder: flatbuffers.Builder): flatbuffers.Offset;
-    static createInfoResponse(builder: flatbuffers.Builder, projectNameOffset: flatbuffers.Offset, projectVersionOffset: flatbuffers.Offset, buildTypeOffset: flatbuffers.Offset, gitHashOffset: flatbuffers.Offset, gitBranchOffset: flatbuffers.Offset, buildTimeOffset: flatbuffers.Offset, platformOffset: flatbuffers.Offset, archOffset: flatbuffers.Offset, compilerOffset: flatbuffers.Offset, nodeVersionOffset: flatbuffers.Offset): flatbuffers.Offset;
+    static createInfoResponse(builder: flatbuffers.Builder, projectNameOffset: flatbuffers.Offset, projectVersionOffset: flatbuffers.Offset, buildTypeOffset: flatbuffers.Offset, gitHashOffset: flatbuffers.Offset, gitBranchOffset: flatbuffers.Offset, buildTimeOffset: flatbuffers.Offset, platformOffset: flatbuffers.Offset, archOffset: flatbuffers.Offset, compilerOffset: flatbuffers.Offset): flatbuffers.Offset;
     unpack(): InfoResponseT;
     unpackTo(_o: InfoResponseT): void;
 }
@@ -51,8 +48,7 @@ export declare class InfoResponseT implements flatbuffers.IGeneratedObject {
     platform: string | Uint8Array | null;
     arch: string | Uint8Array | null;
     compiler: string | Uint8Array | null;
-    nodeVersion: string | Uint8Array | null;
-    constructor(projectName?: string | Uint8Array | null, projectVersion?: string | Uint8Array | null, buildType?: string | Uint8Array | null, gitHash?: string | Uint8Array | null, gitBranch?: string | Uint8Array | null, buildTime?: string | Uint8Array | null, platform?: string | Uint8Array | null, arch?: string | Uint8Array | null, compiler?: string | Uint8Array | null, nodeVersion?: string | Uint8Array | null);
+    constructor(projectName?: string | Uint8Array | null, projectVersion?: string | Uint8Array | null, buildType?: string | Uint8Array | null, gitHash?: string | Uint8Array | null, gitBranch?: string | Uint8Array | null, buildTime?: string | Uint8Array | null, platform?: string | Uint8Array | null, arch?: string | Uint8Array | null, compiler?: string | Uint8Array | null);
     pack(builder: flatbuffers.Builder): flatbuffers.Offset;
 }
 //# sourceMappingURL=info-response.d.ts.map

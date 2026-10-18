@@ -9,7 +9,6 @@ export type InfoResponse = {
     platform: string;
     arch: string;
     compiler: string;
-    nodeVersion: string;
 };
 export declare function encodeRequest(request: InfoRequest): Uint8Array;
 export declare function decodeResponse(bytes: Uint8Array): InfoResponse;
