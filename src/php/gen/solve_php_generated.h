@@ -30,6 +30,7 @@ inline char const* solveAlgorithmName(fbs::domain::SolveAlgorithm value)
 	case fbs::domain::SolveAlgorithm::ExtremePoint: return "ExtremePoint";
 	case fbs::domain::SolveAlgorithm::StackBased: return "StackBased";
 	case fbs::domain::SolveAlgorithm::PHPSolver: return "PHPSolver";
+	case fbs::domain::SolveAlgorithm::HeightmapSolver: return "HeightmapSolver";
 	default: return "ExtremePoint";
 	}
 }
@@ -47,7 +48,9 @@ inline fbs::domain::SolveAlgorithm readSolveAlgorithm(zval* value, std::string c
 			return fbs::domain::SolveAlgorithm::StackBased;
 		if (std::strcmp(text, "PHPSolver") == 0)
 			return fbs::domain::SolveAlgorithm::PHPSolver;
-		fail(path + " must be one of ExtremePoint, StackBased, PHPSolver");
+		if (std::strcmp(text, "HeightmapSolver") == 0)
+			return fbs::domain::SolveAlgorithm::HeightmapSolver;
+		fail(path + " must be one of ExtremePoint, StackBased, PHPSolver, HeightmapSolver");
 	}
 
 	if (Z_TYPE_P(value) != IS_LONG)
@@ -57,6 +60,7 @@ inline fbs::domain::SolveAlgorithm readSolveAlgorithm(zval* value, std::string c
 	case 0: return fbs::domain::SolveAlgorithm::ExtremePoint;
 	case 1: return fbs::domain::SolveAlgorithm::StackBased;
 	case 2: return fbs::domain::SolveAlgorithm::PHPSolver;
+	case 3: return fbs::domain::SolveAlgorithm::HeightmapSolver;
 	default: fail(path + " is not a valid SolveAlgorithm");
 	}
 }
@@ -67,6 +71,7 @@ inline std::vector<SolveAlgorithmConstant> solveAlgorithmConstants()
 		{ "EXTREME_POINT", sizeof("EXTREME_POINT") - 1, 0 },
 		{ "STACK_BASED", sizeof("STACK_BASED") - 1, 1 },
 		{ "PHP_SOLVER", sizeof("PHP_SOLVER") - 1, 2 },
+		{ "HEIGHTMAP_SOLVER", sizeof("HEIGHTMAP_SOLVER") - 1, 3 },
 	};
 }
 
@@ -88,6 +93,58 @@ inline void writeStackBasedOptions(zval* out, fbs::domain::StackBasedOptions con
 inline fbs::domain::StackBasedOptions readStackBasedOptions(HashTable* table, std::string const& path)
 {
 	fbs::domain::StackBasedOptions out;
+
+	return out;
+}
+
+inline void writeHeightmapSolverOptions(zval* out, fbs::domain::HeightmapSolverOptions const& value)
+{
+	if (value.max_boxes)
+		put_int(out, "maxBoxes", *value.max_boxes);
+	put_bool(out, "allowRotation", value.allow_rotation);
+	if (value.min_support)
+		put_double(out, "minSupport", *value.min_support);
+	if (value.cell_size)
+		put_int(out, "cellSize", *value.cell_size);
+	if (value.restarts)
+		put_int(out, "restarts", *value.restarts);
+	if (value.seed)
+		put_int(out, "seed", *value.seed);
+	if (value.strict_unsupported)
+		put_bool(out, "strictUnsupported", *value.strict_unsupported);
+}
+
+inline fbs::domain::HeightmapSolverOptions readHeightmapSolverOptions(HashTable* table, std::string const& path)
+{
+	fbs::domain::HeightmapSolverOptions out;
+	if (auto _value = optional_int(find_key(table, "maxBoxes"), path + ".maxBoxes"))
+	{
+		if (*_value < 0 || *_value > 4294967295)
+			fail(path + ".maxBoxes" + " is out of uint32 range");
+		out.max_boxes = *_value;
+	}
+	if (auto* _value = find_key(table, "allowRotation"))
+		out.allow_rotation = required_bool(_value, path + ".allowRotation");
+	out.min_support = optional_double(find_key(table, "minSupport"), path + ".minSupport");
+	if (auto _value = optional_int(find_key(table, "cellSize"), path + ".cellSize"))
+	{
+		if (*_value < 0 || *_value > 4294967295)
+			fail(path + ".cellSize" + " is out of uint32 range");
+		out.cell_size = *_value;
+	}
+	if (auto _value = optional_int(find_key(table, "restarts"), path + ".restarts"))
+	{
+		if (*_value < 0 || *_value > 4294967295)
+			fail(path + ".restarts" + " is out of uint32 range");
+		out.restarts = *_value;
+	}
+	if (auto _value = optional_int(find_key(table, "seed"), path + ".seed"))
+	{
+		if (*_value < 0 || *_value > 4294967295)
+			fail(path + ".seed" + " is out of uint32 range");
+		out.seed = *_value;
+	}
+	out.strict_unsupported = optional_bool(find_key(table, "strictUnsupported"), path + ".strictUnsupported");
 
 	return out;
 }
@@ -154,6 +211,13 @@ inline void writeSolveOptions(zval* out, fbs::domain::SolveOptions const& value)
 	writePHPSolverOptions(&nested, *value.php_solver_options);
 	attach(out, "phpSolverOptions", &nested);
 	}
+	if (value.heightmap_solver_options)
+		{
+	zval nested;
+	array_init(&nested);
+	writeHeightmapSolverOptions(&nested, *value.heightmap_solver_options);
+	attach(out, "heightmapSolverOptions", &nested);
+	}
 }
 
 inline fbs::domain::SolveOptions readSolveOptions(HashTable* table, std::string const& path)
@@ -171,6 +235,8 @@ inline fbs::domain::SolveOptions readSolveOptions(HashTable* table, std::string 
 		out.stack_based_options = readStackBasedOptions(nested, path + ".stackBasedOptions");
 	if (HashTable* nested = optional_array(table, "phpSolverOptions", path))
 		out.php_solver_options = readPHPSolverOptions(nested, path + ".phpSolverOptions");
+	if (HashTable* nested = optional_array(table, "heightmapSolverOptions", path))
+		out.heightmap_solver_options = readHeightmapSolverOptions(nested, path + ".heightmapSolverOptions");
 
 	return out;
 }
