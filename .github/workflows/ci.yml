@@ -49,4 +49,7 @@ jobs:
 
       - name: Run clang-tidy
         shell: bash
-        run: clang-tidy -p build -quiet -warnings-as-errors=* $(git ls-files '*.cpp' '*.cc' '*.cxx')
+        # The regular CI build intentionally does not configure the PHP target,
+        # so its compile database has no PHP include paths. PHP is checked by
+        # the PHP workflow after the matching development headers are installed.
+        run: clang-tidy -p build -quiet -warnings-as-errors=* $(git ls-files '*.cpp' '*.cc' '*.cxx' ':!src/php/**')
