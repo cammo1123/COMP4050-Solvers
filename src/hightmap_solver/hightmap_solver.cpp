@@ -1,10 +1,10 @@
 // ============================================================================
-// hightmap_solver.cpp — FlatBuffers adapter + registry entry for the
+// heightmap_solver.cpp — FlatBuffers adapter + registry entry for the
 // heightmap / layer-matrix packing pipeline.
 //
 // Mirrors src/php_solver/php_solver.cpp: it converts a SolveRequest into the
 // pipeline's own structs, runs steps 1-10, and converts the Solution back
-// into a SolveResponse. All packing logic stays in the hightmap_solver/*.h
+// into a SolveResponse. All packing logic stays in the heightmap_solver/*.h
 // headers — this file is pure translation, so the pipeline never learns
 // anything about FlatBuffers.
 //
@@ -99,12 +99,12 @@ void reject_unsupported(SolveRequest const& request)
 				|| c.max_y.value_or(UINT32_MAX) != UINT32_MAX
 				|| c.max_z.value_or(UINT32_MAX) != UINT32_MAX;
 			if (used) {
-				throw std::logic_error("hightmap solver: PlacementConstraint is not implemented; use PHPSolver or clear the field");
+				throw std::logic_error("heightmap solver: PlacementConstraint is not implemented; use PHPSolver or clear the field");
 			}
 		}
 
 		if (item.rotation_policy.value_or(RotationPolicy::BestFit) == RotationPolicy::KeepFlat) {
-			throw std::logic_error("hightmap solver: RotationPolicy::KeepFlat is not implemented; use Never or BestFit");
+			throw std::logic_error("heightmap solver: RotationPolicy::KeepFlat is not implemented; use Never or BestFit");
 		}
 	}
 
@@ -112,7 +112,7 @@ void reject_unsupported(SolveRequest const& request)
 	// only be honoured when every item agrees on it.
 	for (auto const& item : request.items) {
 		if (item.rotation_policy.value_or(RotationPolicy::BestFit) != request.items.front().rotation_policy.value_or(RotationPolicy::BestFit)) {
-			throw std::logic_error("hightmap solver: mixed RotationPolicy values are not implemented; give every item the same policy");
+			throw std::logic_error("heightmap solver: mixed RotationPolicy values are not implemented; give every item the same policy");
 		}
 	}
 }
@@ -300,7 +300,7 @@ SolveResponse to_response(::Solution const& solution, ::NormalizedInput const& n
 // --------------------------------------------------------------------------
 // Entry point: runs pipeline steps 1-11 for one solve call.
 // --------------------------------------------------------------------------
-auto solve_hightmap_solver(SolveRequest const& request, SolveOptions const& options, solver::ProgressCallback const& on_progress) -> SolveResponse
+auto solve_heightmap_solver(SolveRequest const& request, SolveOptions const& options, solver::ProgressCallback const& on_progress) -> SolveResponse
 {
 	auto const started = std::chrono::steady_clock::now();
 
@@ -352,8 +352,8 @@ auto solve_hightmap_solver(SolveRequest const& request, SolveOptions const& opti
 	return response;
 }
 
-static struct HightmapSolverRegistrar {
-	HightmapSolverRegistrar() { register_algo(fbs::domain::SolveAlgorithm::HeightmapSolver, { solve_hightmap_solver }); }
+static struct HeightmapSolverRegistrar {
+	HeightmapSolverRegistrar() { register_algo(fbs::domain::SolveAlgorithm::HeightmapSolver, { solve_heightmap_solver }); }
 } registrar;
 
 }
