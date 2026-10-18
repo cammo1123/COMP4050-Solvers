@@ -34,6 +34,8 @@
 		"build:debug": "node scripts/generate.mjs && node scripts/build.mjs --debug && npm run build:ts",
 		"build:core": "node scripts/build.mjs core",
 		"build:core:debug": "node scripts/build.mjs core --debug",
+		"build:php": "node scripts/build.mjs php --optimize",
+		"test:php": "node scripts/test-php.mjs",
 		"build:ts": "tsc -p node/tsconfig.build.json",
 		"bench": "node scripts/build.mjs --optimize && npm run build:ts && vitest bench --run --root node",
 		"clean": "node scripts/clean.mjs",

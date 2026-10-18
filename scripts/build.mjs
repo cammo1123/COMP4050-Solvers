@@ -6,7 +6,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { fail, findOnPath, log, repoRoot, warn } from './shared.mjs'
 
-const TARGETS = ['addon', 'core']
+const TARGETS = ['addon', 'core', 'php']
 const BUILD_TYPES = ['Debug', 'Release', 'RelWithDebInfo']
 
 const args = process.argv.slice(2)
@@ -70,6 +70,20 @@ function prebuildAddonPath () {
 	return path.join(repoRoot, 'node', 'prebuilds', `${os.platform()}-${os.arch()}`, 'addon.node')
 }
 
+// The PHP extension is keyed by PHP version, TS/NTS and arch rather than by
+// platform alone, so it is not versioned like the Node prebuilds.
+function phpExtensionName () {
+	return isWin ? 'bionic_solver.dll' : 'bionic_solver.so'
+}
+
+function builtPhpExtensionPath (buildDir) {
+	return path.join(repoRoot, buildDir, phpExtensionName())
+}
+
+function phpExtensionPath () {
+	return path.join(repoRoot, 'php', phpExtensionName())
+}
+
 function copyAddon (dest) {
 	fs.mkdirSync(path.dirname(dest), { recursive: true })
 	fs.copyFileSync(builtAddonPath('build'), dest)
@@ -87,7 +101,7 @@ function format (check) {
 	if (!clangFormat) fail("build", 'clang-format not found on PATH')
 	const srcDir = path.join(repoRoot, 'src')
 	const files = fs.readdirSync(srcDir, { recursive: true })
-		.filter(f => !f.startsWith(`gen${path.sep}`) && (f.endsWith('.cpp') || f.endsWith('.h')))
+		.filter(f => !f.split(path.sep).includes('gen') && (f.endsWith('.cpp') || f.endsWith('.h')))
 		.map(f => path.join('src', f))
 	const flags = check ? ['--dry-run', '--Werror'] : ['-i']
 	for (const file of files) {
@@ -116,6 +130,7 @@ const doPrebuild = args.includes('--prebuild')
 const optimize = args.includes('--optimize')
 const buildDir = 'build'
 const buildsAddon = target === 'addon'
+const buildsPhp = target === 'php'
 
 if (doPrebuild && first === undefined) {
 	if (!fs.existsSync(builtAddonPath(buildDir))) {
@@ -147,6 +162,17 @@ if (ninja) {
 
 const configure = ['-S', repoRoot, '-B', buildDir]
 if (target === 'core') configure.push('-DCOMP4050_BUILD_ADDON=OFF')
+if (buildsPhp) {
+	configure.push('-DCOMP4050_BUILD_ADDON=OFF', '-DCOMP4050_BUILD_PHP=ON')
+	// php-config resolves itself on unix; on Windows the development package has
+	// to be unpacked and pointed at explicitly.
+	const includeDir = process.env.PHP_INCLUDE_DIR
+	if (isWin && !includeDir) {
+		fail('build', 'PHP_INCLUDE_DIR must point at the directory containing php.h')
+	}
+	if (includeDir) configure.push(`-DCOMP4050_PHP_INCLUDE_DIR=${includeDir}`)
+	if (process.env.PHP_ZTS === '1') configure.push('-DCOMP4050_PHP_ZTS=ON')
+}
 configure.push(`-DCMAKE_BUILD_TYPE=${buildType}`)
 configure.push('-DCMAKE_EXPORT_COMPILE_COMMANDS=ON')
 if (optimize) configure.push('-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON')
@@ -154,16 +180,25 @@ if (ninja) configure.push('-G', 'Ninja', `-DCMAKE_MAKE_PROGRAM=${ninja}`)
 if (findClangCl()) configure.push('-DCMAKE_CXX_COMPILER=clang-cl')
 
 run(cmake, configure, { env })
-run(cmake, ['--build', buildDir], { env })
+run(cmake, buildsPhp ? ['--build', buildDir, '--target', 'bionic_solver'] : ['--build', buildDir], { env })
 
 const binary = path.join(repoRoot, buildDir, isWin ? 'solver.exe' : 'solver')
-log("build", `wrote ${binary}`)
+if (!buildsPhp) log("build", `wrote ${binary}`)
 
 if (buildsAddon) {
 	if (!fs.existsSync(builtAddonPath(buildDir))) {
 		fail("build", `addon.node was not produced by the "${target}" target.`)
 	}
 	copyAddon(releaseAddonPath())
+}
+
+if (buildsPhp) {
+	if (!fs.existsSync(builtPhpExtensionPath(buildDir))) {
+		fail("build", 'bionic_solver was not produced by the "php" target.')
+	}
+	fs.mkdirSync(path.dirname(phpExtensionPath()), { recursive: true })
+	fs.copyFileSync(builtPhpExtensionPath(buildDir), phpExtensionPath())
+	log("build", `wrote ${phpExtensionPath()}`)
 }
 
 if (doPrebuild) {

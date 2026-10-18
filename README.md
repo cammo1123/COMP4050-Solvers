@@ -39,7 +39,7 @@ import solver, {
 ```ts
 const metadata = info();
 // projectName, projectVersion, buildType, gitHash, gitBranch,
-// buildTime, platform, arch, compiler, nodeVersion
+// buildTime, platform, arch, compiler
 ```
 
 `solve()` is asynchronous and accepts `boxes`, `items`, an optional algorithm,
@@ -117,6 +117,53 @@ the two engines search different candidate sets. A request that `PHPSolver`
 reports as partly failed may be packed completely by `ExtremePoint`, and the
 items in a box may appear in a different order.
 
+## PHP
+
+The same C++ core is exposed to PHP through a native extension. The PHP build
+is independent of the Node toolchain: it compiles against the committed
+generated headers and never invokes the code generator.
+
+```php
+use Bionic\Solver\Algorithm;
+use function Bionic\Solver\info;
+use function Bionic\Solver\solve;
+
+$response = solve([
+    "boxes" => [
+        ["reference" => "BOX-1", "width" => 1200, "length" => 800, "depth" => 1000],
+    ],
+    "items" => [
+        ["itemCode" => "A", "itemReference" => "REF-A", "width" => 400, "length" => 300, "depth" => 200, "weight" => 5.5],
+        ["itemCode" => "B", "itemReference" => "REF-B", "width" => 400, "length" => 300, "depth" => 200, "weight" => 5.5, "quantity" => 3],
+    ],
+    "algorithm" => Algorithm::EXTREME_POINT,
+    "options" => ["timeoutMs" => 5000],
+], function (int $done, int $total): void {
+    // runs synchronously on the calling thread
+});
+
+echo count($response["results"]), " box(es), ", count($response["failed"]), " failed\n";
+```
+
+`solve()` is **blocking**: it runs on the request thread and returns the
+result. It is intended for CLI, queue workers and batch jobs. Under php-fpm or
+mod_php it blocks the worker for the duration of the solve, which is why the
+core's `timeoutMs` is worth setting — it bounds the work rather than relying on
+`max_execution_time`.
+
+The array shape is identical to the JavaScript package. Enums accept either the
+schema name (`"ExtremePoint"`) or the ordinal, and are reported back as schema
+names. `Bionic\Solver\Algorithm` and `Bionic\Solver\RotationPolicy` expose the
+ordinals as class constants.
+
+Invalid input raises a `ValueError` whose message carries the offending path,
+for example `request.boxes[0].reference is required`. Exceptions raised by the
+C++ core surface as `Bionic\Solver\Exception` and never take the process down.
+
+`onProgress` is optional. Because the call is synchronous it is invoked directly
+from the solving thread, and an exception thrown by the callback aborts the
+solve and propagates.
+
 ## Data model
 
 All dimensions use millimetres and weights use kilograms. Box dimensions are the
@@ -166,11 +213,32 @@ pnpm build:debug       # Debug addon build
 pnpm build:optimized   # Release build with LTO
 pnpm build:core        # Standalone CLI, RelWithDebInfo
 pnpm build:core:debug  # Standalone CLI, Debug
+pnpm build:php         # PHP extension, Release with LTO
 pnpm build:ts          # TypeScript output only
 ```
 
 The addon is copied to `node/build/Release/addon.node`. The standalone binary
-is written to `build/solver` or `build/solver.exe` on Windows.
+is written to `build/solver` or `build/solver.exe` on Windows. The PHP extension
+is written to `php/bionic_solver.dll` or `php/bionic_solver.so`.
+
+Building the PHP extension needs the PHP development headers. On unix,
+`php-config` is discovered automatically. On Windows there is no `php-config`,
+so unpack the matching development package from
+[php.net/windows](https://www.php.net/downloads.php?os=windows) and point
+`PHP_INCLUDE_DIR` at its `include` directory:
+
+```sh
+PHP_INCLUDE_DIR=/c/php-devel/include pnpm build:php
+```
+
+The PHP build compiles against the committed generated headers and never runs
+the code generator, so a schema change needs `pnpm build` (or
+`node scripts/generate.mjs`) first. The CMake target itself is node-free, which
+is what lets the `php` workflow build the extension without the Node toolchain.
+Set `PHP_ZTS=1` to build against a thread-safe PHP. Because the extension is
+keyed
+to a PHP version, thread-safety and architecture rather than to a platform
+alone, its binary matrix is larger than the Node one.
 
 To create a platform-specific package prebuild after building the addon:
 
@@ -178,19 +246,24 @@ To create a platform-specific package prebuild after building the addon:
 pnpm prebuild:binaries
 ```
 
-Generated bindings are produced from `fbs/` and written under `src/gen/` and
-`node/src/gen/`. Do not edit generated files manually.
+Generated bindings are produced from `fbs/` and written under `src/gen/`,
+`node/src/gen/`, and `src/php/gen/`. Do not edit generated files manually.
 
 ## Testing And Checks
 
 ```sh
 pnpm test          # Build and run the Vitest suite once
 pnpm test:watch    # Build and run Vitest in watch mode
+pnpm test:php      # Run the .phpt suite against the built extension
 pnpm typecheck     # TypeScript type checking
 pnpm lint:check    # clang-format validation for src/
 pnpm lint:fix      # Apply clang-format to src/
 pnpm bench         # Optimized benchmark suite
 ```
+
+`pnpm test:php` needs `run-tests.php`, which ships with the PHP source tree and
+the Windows SDK rather than with a PHP install, so pass its path or set
+`PHP_RUN_TESTS`. Set `PHP_BINARY` to choose a specific `php`.
 
 `pnpm clean` removes generated bindings, build outputs, prebuilds, and the
 local FlatBuffers compiler cache.
@@ -201,9 +274,13 @@ local FlatBuffers compiler cache.
 - `src/algorithms/` — algorithm registry plus isolated ExtremePoint, StackBased, and PHPSolver implementations.
 - `fbs/` — FlatBuffers schemas shared by the core and addon.
 - `src/gen/` — generated C++ bindings.
+- `src/php/` — PHP extension sources.
+- `src/php/gen/` — generated PHP marshalling; only the runtime header and the module wiring are hand-written.
+- `php/` — Composer metadata, the built extension, and the `.phpt` suite.
 - `node/src/` — TypeScript API and generated TypeScript bindings.
 - `node/test/` — Vitest tests and benchmarks.
 - `scripts/` — generation, build, run, clean, and codegen scripts.
+- `scripts/codegen/targets/` — one module per output language.
 - `docs/` — reference schema examples and supplementary documentation.
 - `build/` — local CMake output; generated and ignored build artifacts.
 
@@ -213,6 +290,11 @@ The `test` workflow builds and tests on Ubuntu, Windows, and macOS for pull
 requests targeting `dev` or `main`, and pushes to `dev`. The `prebuild` workflow
 builds platform prebuilds, runs the tests and standalone smoke test, and commits
 generated distribution files and prebuilds on branch pushes.
+
+The `php` workflow builds the PHP extension and runs the `.phpt` suite across
+PHP 8.3, 8.4, and 8.5 on all three operating systems. It builds with CMake
+against the committed generated headers and does not depend on the Node
+toolchain, so a failure there is independent of the Node one.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for branch rules and development
 workflow.
