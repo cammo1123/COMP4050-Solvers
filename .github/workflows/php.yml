@@ -86,6 +86,16 @@ jobs:
         shell: bash
         run: cmake --build build --target bionic_solver
 
+      # The PHP translation unit is checked here, after the exact PHP headers
+      # have been installed and the PHP target has populated compile_commands.
+      - name: Run clang-tidy on PHP sources
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y clang-tidy
+          clang-tidy -p build -quiet -warnings-as-errors=* src/php/bionic_solver.cpp
+
       # One mechanism on every platform: point an ini scan dir at the freshly
       # built module rather than touching extension_dir. github.workspace is a
       # native path everywhere; $PWD would be an MSYS path on Windows that the
