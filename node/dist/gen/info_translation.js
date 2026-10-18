@@ -19,8 +19,7 @@ export function decodeResponse(bytes) {
         buildTime: unpacked.buildTime,
         platform: unpacked.platform,
         arch: unpacked.arch,
-        compiler: unpacked.compiler,
-        nodeVersion: unpacked.nodeVersion
+        compiler: unpacked.compiler
     };
 }
 //# sourceMappingURL=info_translation.js.map
