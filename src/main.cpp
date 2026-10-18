@@ -16,7 +16,6 @@ int main()
 	std::cout << "  built: " << build_info.build_time << "\n";
 	std::cout << "  platform: " << build_info.platform << " " << build_info.arch << "\n";
 	std::cout << "  compiler: " << build_info.compiler << "\n";
-	std::cout << "  node: " << build_info.node_version << '\n';
 
 	SolveRequest solve = { };
 

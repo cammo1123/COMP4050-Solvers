@@ -76,7 +76,6 @@ struct InfoResponseT : public ::flatbuffers::NativeTable {
   std::string platform{};
   std::string arch{};
   std::string compiler{};
-  std::string node_version{};
 };
 
 struct InfoResponse FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
@@ -91,8 +90,7 @@ struct InfoResponse FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_BUILD_TIME = 14,
     VT_PLATFORM = 16,
     VT_ARCH = 18,
-    VT_COMPILER = 20,
-    VT_NODE_VERSION = 22
+    VT_COMPILER = 20
   };
   const ::flatbuffers::String *project_name() const {
     return GetPointer<const ::flatbuffers::String *>(VT_PROJECT_NAME);
@@ -121,9 +119,6 @@ struct InfoResponse FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const ::flatbuffers::String *compiler() const {
     return GetPointer<const ::flatbuffers::String *>(VT_COMPILER);
   }
-  const ::flatbuffers::String *node_version() const {
-    return GetPointer<const ::flatbuffers::String *>(VT_NODE_VERSION);
-  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -145,8 +140,6 @@ struct InfoResponse FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyString(arch()) &&
            VerifyOffsetRequired(verifier, VT_COMPILER) &&
            verifier.VerifyString(compiler()) &&
-           VerifyOffsetRequired(verifier, VT_NODE_VERSION) &&
-           verifier.VerifyString(node_version()) &&
            verifier.EndTable();
   }
   InfoResponseT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
@@ -185,9 +178,6 @@ struct InfoResponseBuilder {
   void add_compiler(::flatbuffers::Offset<::flatbuffers::String> compiler) {
     fbb_.AddOffset(InfoResponse::VT_COMPILER, compiler);
   }
-  void add_node_version(::flatbuffers::Offset<::flatbuffers::String> node_version) {
-    fbb_.AddOffset(InfoResponse::VT_NODE_VERSION, node_version);
-  }
   explicit InfoResponseBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -204,7 +194,6 @@ struct InfoResponseBuilder {
     fbb_.Required(o, InfoResponse::VT_PLATFORM);
     fbb_.Required(o, InfoResponse::VT_ARCH);
     fbb_.Required(o, InfoResponse::VT_COMPILER);
-    fbb_.Required(o, InfoResponse::VT_NODE_VERSION);
     return o;
   }
 };
@@ -219,10 +208,8 @@ inline ::flatbuffers::Offset<InfoResponse> CreateInfoResponse(
     ::flatbuffers::Offset<::flatbuffers::String> build_time = 0,
     ::flatbuffers::Offset<::flatbuffers::String> platform = 0,
     ::flatbuffers::Offset<::flatbuffers::String> arch = 0,
-    ::flatbuffers::Offset<::flatbuffers::String> compiler = 0,
-    ::flatbuffers::Offset<::flatbuffers::String> node_version = 0) {
+    ::flatbuffers::Offset<::flatbuffers::String> compiler = 0) {
   InfoResponseBuilder builder_(_fbb);
-  builder_.add_node_version(node_version);
   builder_.add_compiler(compiler);
   builder_.add_arch(arch);
   builder_.add_platform(platform);
@@ -245,8 +232,7 @@ inline ::flatbuffers::Offset<InfoResponse> CreateInfoResponseDirect(
     const char *build_time = nullptr,
     const char *platform = nullptr,
     const char *arch = nullptr,
-    const char *compiler = nullptr,
-    const char *node_version = nullptr) {
+    const char *compiler = nullptr) {
   auto project_name__ = project_name ? _fbb.CreateString(project_name) : 0;
   auto project_version__ = project_version ? _fbb.CreateString(project_version) : 0;
   auto build_type__ = build_type ? _fbb.CreateString(build_type) : 0;
@@ -256,7 +242,6 @@ inline ::flatbuffers::Offset<InfoResponse> CreateInfoResponseDirect(
   auto platform__ = platform ? _fbb.CreateString(platform) : 0;
   auto arch__ = arch ? _fbb.CreateString(arch) : 0;
   auto compiler__ = compiler ? _fbb.CreateString(compiler) : 0;
-  auto node_version__ = node_version ? _fbb.CreateString(node_version) : 0;
   return fbs::CreateInfoResponse(
       _fbb,
       project_name__,
@@ -267,8 +252,7 @@ inline ::flatbuffers::Offset<InfoResponse> CreateInfoResponseDirect(
       build_time__,
       platform__,
       arch__,
-      compiler__,
-      node_version__);
+      compiler__);
 }
 
 ::flatbuffers::Offset<InfoResponse> CreateInfoResponse(::flatbuffers::FlatBufferBuilder &_fbb, const InfoResponseT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
@@ -314,7 +298,6 @@ inline void InfoResponse::UnPackTo(InfoResponseT *_o, const ::flatbuffers::resol
   { auto _e = platform(); if (_e) _o->platform = _e->str(); }
   { auto _e = arch(); if (_e) _o->arch = _e->str(); }
   { auto _e = compiler(); if (_e) _o->compiler = _e->str(); }
-  { auto _e = node_version(); if (_e) _o->node_version = _e->str(); }
 }
 
 inline ::flatbuffers::Offset<InfoResponse> CreateInfoResponse(::flatbuffers::FlatBufferBuilder &_fbb, const InfoResponseT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
@@ -334,7 +317,6 @@ inline ::flatbuffers::Offset<InfoResponse> InfoResponse::Pack(::flatbuffers::Fla
   auto _platform = _fbb.CreateString(_o->platform);
   auto _arch = _fbb.CreateString(_o->arch);
   auto _compiler = _fbb.CreateString(_o->compiler);
-  auto _node_version = _fbb.CreateString(_o->node_version);
   return fbs::CreateInfoResponse(
       _fbb,
       _project_name,
@@ -345,8 +327,7 @@ inline ::flatbuffers::Offset<InfoResponse> InfoResponse::Pack(::flatbuffers::Fla
       _build_time,
       _platform,
       _arch,
-      _compiler,
-      _node_version);
+      _compiler);
 }
 
 inline const fbs::InfoRequest *GetInfoRequest(const void *buf) {
