@@ -1,0 +1,16 @@
+{
+	"name": "bionic/solver",
+	"description": "3D bin packing engine for PHP, backed by the bionic-solver C++ core",
+	"type": "library",
+	"license": "ISC",
+	"keywords": ["packing", "3d", "bin-packing", "palletizing", "logistics"],
+	"require": {
+		"php": ">=8.3"
+	},
+	"suggest": {
+		"ext-bionic_solver": "Provides Bionic\\Solver\\solve() and Bionic\\Solver\\info(). Build it from this repository with `pnpm build:php`."
+	},
+	"config": {
+		"sort-packages": true
+	}
+}

@@ -87,6 +87,7 @@ merge, rebase stale feature branches rather than merging `dev` into them.
 ```sh
 pnpm test          # run the suite once (builds the addon on demand)
 pnpm test:watch    # watch mode
+pnpm test:php      # run the .phpt suite
 pnpm typecheck     # TypeScript checker over src/ and tests
 ```
 
@@ -95,6 +96,9 @@ dispatch, progress callbacks, and the `solve()` binary boundary. It also tests
 FlatBuffers marshalling, malformed-payload errors at the native layer, and
 wrapper-side TypeScript checks.
 
+The PHP suite is `php/tests/*.phpt`, run by `run-tests.php`. See the README for
+how to point `pnpm test:php` at a `php` binary and a `run-tests.php`.
+
 ### CI
 
 The `test` workflow (`.github/workflows/test.yml`) installs deps, materialises
@@ -102,7 +106,8 @@ The `test` workflow (`.github/workflows/test.yml`) installs deps, materialises
 runs `pnpm test` on every pull request into `dev` or `main` and every push to
 `dev`. The `prebuild` workflow snapshots the built binaries; the Linux prebuild
 is built in the `manylinux_2_28` container so that it stays loadable on older
-hosts.
+hosts. The `php` workflow builds the extension and runs the `.phpt` suite across
+PHP versions without going through node.
 
 ## Generated code
 
@@ -116,8 +121,8 @@ hardcoded.
 - Operation schemas under `fbs/operations/` produce their own generated C++
   headers, domain headers, translation headers, and TypeScript translation
   layer.
-- `scripts/generate.mjs` follows schema includes and runs flatc for both
-  the shared and operation schemas.
+- `scripts/generate.mjs` follows schema includes and runs flatc for both the
+  shared and operation schemas.
 - The domain header defines pure-C++ structs (no FlatBuffers types) for every
   table, plus `toDomain`/`fromDomain` per type. The core and CLI only ever see
   domain types; FlatBuffers stays at the addon boundary (`decodeRequest`,
@@ -125,6 +130,32 @@ hardcoded.
 - The hand-written code (`node/src/addon.ts`, `src/addon.cpp`) only validates
   input and applies the domain transform; marshalling is entirely generated, so
   the schema cannot drift from the code.
+
+### Adding a language
+
+`scripts/codegen/targets/` holds one module per output language. A target is
+`{ id, flatcArgs, outputDir, emit(schema, context), emitBarrel? }`; a target
+that consumes the parsed IR instead of flatc output sets `flatcArgs` to `null`.
+Register it with one line in `targets/index.mjs`. The parser, schema analysis,
+and CLI need no changes.
+
+`php.mjs` emits `src/php/gen/*_php_generated.h`: zval readers and writers for
+every table and enum, bridging PHP arrays directly onto the C++ domain structs.
+That is why the PHP extension needs no FlatBuffers at runtime and why
+`src/php/bionic_solver.cpp` contains only module wiring.
+
+Note that a field which is `optional` but not `nullable` — for example
+`algorithm: SolveAlgorithm = ExtremePoint` — has a default rather than an
+optional domain representation. The generated reader must treat its key as
+absent-able and leave the domain default alone, rather than clearing it.
+
+### Node independence
+
+The generated headers under `src/gen/` and `src/php/gen/` are committed, so the
+CLI and the PHP extension build without node. CMake drops the code-generation
+step when node is not on `PATH`, and fails only if a generated header is
+actually missing. Pass `-DCOMP4050_CODEGEN=OFF` to build from the committed
+headers explicitly.
 
 ## Pull Request Checklist
 

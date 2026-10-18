@@ -1,0 +1,121 @@
+name: php
+
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev]
+
+jobs:
+  test:
+    name: php ${{ matrix.php }} ${{ matrix.ts }} ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        php: ['8.3', '8.4', '8.5']
+        ts: [nts]
+        exclude:
+          # PHP 8.3 on Windows ships a VS2019 (vc16) development package; the
+          # Windows runners only carry VS2022, so that combination is skipped
+          # until the 8.3 toolset is installed on the image.
+          - { os: windows-latest, php: '8.3' }
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The runner images carry exactly one preinstalled PHP; installing the
+      # matrix version here is what makes the version axis real. It also
+      # provides php-config, which header discovery on unix relies on.
+      - name: Install PHP ${{ matrix.php }} (${{ matrix.ts }})
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+
+      # The development package (headers + import library) is not part of a
+      # normal PHP install, so it is fetched separately for the exact
+      # installed patch version. All patch releases of a minor share one API
+      # number, so a devel pack from the release archives works once the live
+      # directory has moved on.
+      - name: Locate PHP headers (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $version = php -r 'echo PHP_VERSION;'
+          # NTS archives carry a -nts- marker; TS archives carry none. The
+          # Windows toolchain switched from vs16 to vs17 with PHP 8.4.
+          $flavour = php -r 'echo PHP_ZTS ? "" : "-nts-";'
+          $toolset = if ([version]$version -ge [version]'8.4.0') { 'vs17' } else { 'vs16' }
+          $archive = Join-Path $env:RUNNER_TEMP "php-devel-pack-$version.zip"
+          $bases = @(
+            'https://windows.php.net/downloads/releases',
+            'https://windows.php.net/downloads/releases/archives'
+          )
+          foreach ($base in $bases) {
+            try {
+              Invoke-WebRequest "$base/php-devel-pack-$version$flavour-Win32-$toolset-x64.zip" -OutFile $archive
+              break
+            } catch { }
+          }
+          if (-not (Test-Path $archive)) {
+            Write-Error "php-devel-pack $version$flavour-$toolset not found"
+          }
+          Expand-Archive -LiteralPath $archive -DestinationPath $env:RUNNER_TEMP -Force
+          $pack = Get-ChildItem -Path $env:RUNNER_TEMP -Filter php.h -Recurse |
+            Where-Object { $_.Directory.Name -eq 'main' } |
+            Select-Object -First 1
+          "PHP_INCLUDE_DIR=$($pack.Directory.Parent.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      # ${{ env.… }} is substituted by Actions before the shell runs, so the
+      # same command works under bash on every OS ($env:… is PowerShell and
+      # would expand to nothing here). clang-cl is pinned on Windows because
+      # that is the toolchain the extension's php_compat.h shim targets.
+      - name: Configure
+        shell: bash
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          -DCOMP4050_BUILD_ADDON=OFF
+          -DCOMP4050_BUILD_PHP=ON
+          -DCOMP4050_CODEGEN=OFF
+          ${{ runner.os == 'Windows' && '-DCMAKE_CXX_COMPILER=clang-cl' || '' }}
+          "-DCOMP4050_PHP_INCLUDE_DIR=${{ env.PHP_INCLUDE_DIR }}"
+
+      - name: Build the extension
+        shell: bash
+        run: cmake --build build --target bionic_solver
+
+      # One mechanism on every platform: point an ini scan dir at the freshly
+      # built module rather than touching extension_dir. github.workspace is a
+      # native path everywhere; $PWD would be an MSYS path on Windows that the
+      # PHP binary cannot load.
+      - name: Load the extension and locate run-tests.php
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/bionic-ini"
+          EXT="${{ github.workspace }}/build/bionic_solver.${{ runner.os == 'Windows' && 'dll' || 'so' }}"
+          echo "extension=$EXT" > "$RUNNER_TEMP/bionic-ini/20-bionic.ini"
+          echo "BIONIC_INI=$RUNNER_TEMP/bionic-ini" >> "$GITHUB_ENV"
+          curl -fsSL -o run-tests.php \
+            "https://raw.githubusercontent.com/php/php-src/PHP-${{ matrix.php }}/run-tests.php"
+
+      - name: Run the .phpt suite
+        shell: bash
+        env:
+          PHP_INI_SCAN_DIR: ${{ env.BIONIC_INI }}
+        run: php run-tests.php -q --show-diff php/tests
+
+      # A separate step so a module that fails to load is a hard failure: with
+      # a broken extension every .phpt skips and run-tests.php still exits 0.
+      - name: Report extension metadata
+        shell: bash
+        env:
+          PHP_INI_SCAN_DIR: ${{ env.BIONIC_INI }}
+        run: php -r 'print_r(Bionic\Solver\info());'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bionic-solver-php-${{ matrix.os }}-${{ matrix.php }}-${{ matrix.ts }}
+          path: build/bionic_solver.*
+          if-no-files-found: error
