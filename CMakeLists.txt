@@ -183,38 +183,69 @@ if(NOT EXISTS "${flatbuffers_include}/flatbuffers/flatbuffers.h")
 endif()
 
 set(GENERATED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/gen")
+set(PHP_GENERATED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/php/gen")
 file(GLOB_RECURSE SCHEMA_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/fbs/*.fbs")
 file(GLOB_RECURSE OPERATION_SCHEMA_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/fbs/operations/*.fbs")
 file(GLOB_RECURSE CODEGEN_SCRIPTS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/scripts/*")
 
 set(GENERATED_HEADERS)
+set(PHP_GENERATED_HEADERS)
 
 foreach(schema IN LISTS SCHEMA_FILES)
     get_filename_component(schema_name "${schema}" NAME_WE)
     list(APPEND GENERATED_HEADERS
         "${GENERATED_DIR}/${schema_name}_generated.h"
         "${GENERATED_DIR}/${schema_name}_domain_generated.h")
+    list(APPEND PHP_GENERATED_HEADERS
+        "${PHP_GENERATED_DIR}/${schema_name}_php_generated.h")
 endforeach()
 
 foreach(schema IN LISTS OPERATION_SCHEMA_FILES)
     get_filename_component(schema_name "${schema}" NAME_WE)
     list(APPEND GENERATED_HEADERS
         "${GENERATED_DIR}/${schema_name}_translation_generated.h")
+    list(APPEND PHP_GENERATED_HEADERS
+        "${PHP_GENERATED_DIR}/${schema_name}_php_generated.h")
 endforeach()
 
+# SCHEMA_FILES globs recursively and therefore already covers the operation
+# schemas, so both loops can name the same output.
+list(REMOVE_DUPLICATES GENERATED_HEADERS)
+list(REMOVE_DUPLICATES PHP_GENERATED_HEADERS)
+
 if(NOT NODE_EXECUTABLE)
-    message(FATAL_ERROR "node not found on PATH; required to generate FlatBuffers bindings")
+    set(COMP4050_CODEGEN OFF)
 endif()
 
-add_custom_command(
-    OUTPUT ${GENERATED_HEADERS}
-    COMMAND "${NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate.mjs"
-    DEPENDS
-    ${SCHEMA_FILES}
-    ${CODEGEN_SCRIPTS}
-    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-    VERBATIM
-)
+option(COMP4050_CODEGEN "Regenerate the FlatBuffers bindings from fbs/ (requires node on PATH)" ON)
+
+set(CODEGEN_OUTPUTS ${GENERATED_HEADERS} ${PHP_GENERATED_HEADERS})
+
+if(COMP4050_CODEGEN)
+    if(NOT NODE_EXECUTABLE)
+        message(FATAL_ERROR "node not found on PATH; required to generate FlatBuffers bindings")
+    endif()
+
+    add_custom_command(
+        OUTPUT ${CODEGEN_OUTPUTS}
+        COMMAND "${NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate.mjs"
+        DEPENDS
+        ${SCHEMA_FILES}
+        ${CODEGEN_SCRIPTS}
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        VERBATIM
+    )
+else()
+    # The generated headers are committed, so a build without node only needs
+    # them to be present and current. This is what keeps the PHP target
+    # independent of the node toolchain.
+    foreach(header IN LISTS CODEGEN_OUTPUTS)
+        if(NOT EXISTS "${header}")
+            message(FATAL_ERROR
+                "${header} is missing and codegen is off; install node on PATH to regenerate the bindings")
+        endif()
+    endforeach()
+endif()
 
 add_subdirectory(src/algorithms/php_solver)
 
@@ -359,6 +390,171 @@ if(COMP4050_BUILD_ADDON)
         target_compile_options(solver_addon PRIVATE /W4)
     else()
         target_compile_options(solver_addon PRIVATE -Wall -Wextra)
+    endif()
+endif()
+
+# ---- PHP extension ----
+option(COMP4050_BUILD_PHP "Build the PHP extension" OFF)
+option(COMP4050_PHP_ZTS "Build the PHP extension against a thread-safe PHP" OFF)
+set(COMP4050_PHP_INCLUDE_DIR "" CACHE PATH "Directory containing php.h")
+set(COMP4050_PHP_LIB "" CACHE FILEPATH "PHP import library (php8.lib or php8ts.lib)")
+
+if(COMP4050_BUILD_PHP)
+    set(php_include_dirs)
+
+    if(COMP4050_PHP_INCLUDE_DIR)
+        set(php_include_roots "${COMP4050_PHP_INCLUDE_DIR}")
+    else()
+        # php-config is the only portable way to locate the headers, and it does
+        # not exist on Windows, where the development package must be unpacked
+        # and COMP4050_PHP_INCLUDE_DIR pointed at its include directory.
+        find_program(PHP_CONFIG_EXECUTABLE php-config)
+
+        if(PHP_CONFIG_EXECUTABLE)
+            execute_process(
+                COMMAND "${PHP_CONFIG_EXECUTABLE}" --includes
+                OUTPUT_VARIABLE php_config_includes
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                RESULT_VARIABLE php_config_result
+            )
+
+            if(php_config_result EQUAL 0)
+                string(REGEX MATCHALL "-I[^ ]+" php_config_flags "${php_config_includes}")
+
+                foreach(flag IN LISTS php_config_flags)
+                    string(SUBSTRING "${flag}" 2 -1 flag_dir)
+                    list(APPEND php_include_roots "${flag_dir}")
+                endforeach()
+            endif()
+        endif()
+    endif()
+
+    # php.h sits directly in the include root on unix, but under include/main in
+    # the Windows development package, which has no php_config.h at all and uses
+    # config.w32.h instead. Probing both keeps the two layouts interchangeable.
+    foreach(root IN LISTS php_include_roots)
+        if(EXISTS "${root}/php.h")
+            list(APPEND php_include_dirs "${root}")
+        endif()
+
+        if(EXISTS "${root}/main/php.h")
+            list(APPEND php_include_dirs "${root}" "${root}/main")
+
+            # These four are the BASE_INCLUDES PHP's own Windows build uses. The
+            # list is not extensible: include/win32 shadows the CRT's time.h and
+            # breaks <ctime> for every translation unit.
+            foreach(subdir IN ITEMS Zend TSRM ext)
+                if(EXISTS "${root}/${subdir}")
+                    list(APPEND php_include_dirs "${root}/${subdir}")
+                endif()
+            endforeach()
+        endif()
+    endforeach()
+
+    list(REMOVE_DUPLICATES php_include_dirs)
+
+    if(php_include_roots AND NOT php_include_dirs)
+        message(FATAL_ERROR "no php.h under ${php_include_roots}")
+    endif()
+
+    if(NOT php_include_dirs)
+        message(FATAL_ERROR
+            "PHP headers not found. Put php-config on PATH, or pass "
+            "-DCOMP4050_PHP_INCLUDE_DIR=<directory containing php.h, or its parent on Windows>.")
+    endif()
+
+    # The Windows headers mark every zend_* symbol __declspec(dllimport), so the
+    # extension must link the import library from the development package. The
+    # package keeps it next to include/, as lib/php8.lib for non-thread-safe and
+    # lib/php8ts.lib for thread-safe.
+    if(WIN32)
+        set(php_lib "${COMP4050_PHP_LIB}")
+
+        if(NOT php_lib)
+            foreach(candidate IN ITEMS "php8ts.lib" "php8.lib")
+                foreach(root IN LISTS php_include_roots)
+                    if(EXISTS "${root}/../lib/${candidate}")
+                        set(php_lib "${root}/../lib/${candidate}")
+                        break()
+                    endif()
+                endforeach()
+
+                if(php_lib)
+                    break()
+                endif()
+            endforeach()
+        endif()
+
+        if(NOT php_lib)
+            message(FATAL_ERROR
+                "PHP import library not found. Pass -DCOMP4050_PHP_LIB=<path to php8.lib>.")
+        endif()
+    endif()
+
+    add_library(bionic_solver MODULE src/php/bionic_solver.cpp ${PHP_GENERATED_HEADERS})
+
+    if(WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        set(php_compat_header "${CMAKE_CURRENT_BINARY_DIR}/php_compat.h")
+        file(WRITE "${php_compat_header}" "#pragma once\n#include <stdint.h>\n#include <limits.h>\n#define LongLongAdd BionicLongLongAdd\n#define LongLongSub BionicLongLongSub\nstatic inline long BionicLongLongAdd(long long a, long long b, long long* out) { if ((b > 0 && a > LLONG_MAX - b) || (b < 0 && a < LLONG_MIN - b)) return -1; *out = a + b; return 0; }\nstatic inline long BionicLongLongSub(long long a, long long b, long long* out) { if ((b < 0 && a > LLONG_MAX + b) || (b > 0 && a < LLONG_MIN + b)) return -1; *out = a - b; return 0; }\n")
+
+        if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+            target_compile_options(bionic_solver PRIVATE "-include" "${php_compat_header}")
+        else()
+            target_compile_options(bionic_solver PRIVATE "/FI${php_compat_header}")
+        endif()
+    endif()
+
+    target_include_directories(bionic_solver PRIVATE "${PHP_GENERATED_DIR}")
+    target_include_directories(bionic_solver SYSTEM PRIVATE ${php_include_dirs})
+    target_link_libraries(bionic_solver PRIVATE solver_core)
+
+    if(WIN32)
+        target_link_libraries(bionic_solver PRIVATE "${php_lib}")
+    endif()
+
+    target_compile_definitions(bionic_solver PRIVATE
+        ZEND_COMPILE_DL_EXT=1
+        COMPILE_DL_BIONIC_SOLVER=1
+        BIONIC_SOLVER_EXPORTS=1
+    )
+
+    if(WIN32)
+        # The Windows development package ships no php_config.h; PHP's own build
+        # supplies these from the command line, so every extension must as well.
+        # Without ZEND_WIN32 the headers reach for a zend_config.h that is absent.
+        target_compile_definitions(bionic_solver PRIVATE
+            ZEND_WIN32=1
+            PHP_WIN32=1
+            WIN32
+            _MBCS
+        )
+    endif()
+
+    if(COMP4050_PHP_ZTS)
+        target_compile_definitions(bionic_solver PRIVATE ZTS=1)
+    endif()
+
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        target_compile_definitions(bionic_solver PRIVATE ZEND_DEBUG=1)
+    else()
+        target_compile_definitions(bionic_solver PRIVATE ZEND_DEBUG=0)
+    endif()
+
+    # The extension resolves every zend_* symbol from the hosting PHP binary; on
+    # Windows that arrives through the import library linked above, and on unix
+    # through the host executable at load time.
+    set_target_properties(bionic_solver PROPERTIES PREFIX "" OUTPUT_NAME "bionic_solver")
+
+    if(APPLE)
+        target_link_options(bionic_solver PRIVATE "-undefined" "dynamic_lookup")
+    endif()
+
+    # php.h expands macros that trip -Wextra, so this target stays quieter than
+    # the core. The headers themselves are SYSTEM includes and already silent.
+    if(MSVC)
+        target_compile_options(bionic_solver PRIVATE /W3)
+    else()
+        target_compile_options(bionic_solver PRIVATE -Wall)
     endif()
 endif()
 
