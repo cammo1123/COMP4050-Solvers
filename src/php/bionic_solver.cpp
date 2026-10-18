@@ -15,6 +15,7 @@
 #include "solver.h"
 
 #include <chrono>
+#include <cstdint>
 #include <exception>
 #include <string>
 #include <utility>
@@ -88,7 +89,7 @@ private:
 	bool _active = false;
 };
 
-enum class Failure {
+enum class Failure : std::uint8_t {
 	None,
 	Value,
 	Runtime,
@@ -99,7 +100,7 @@ struct Outcome {
 	Failure failure = Failure::None;
 	bool bailed = false;
 	std::string message;
-	zval value;
+	zval value { };
 };
 
 void discard(Outcome& outcome)
