@@ -52,12 +52,8 @@ export class InfoResponse {
         const offset = this.bb.__offset(this.bb_pos, 20);
         return offset ? this.bb.__string(this.bb_pos + offset, optionalEncoding) : null;
     }
-    nodeVersion(optionalEncoding) {
-        const offset = this.bb.__offset(this.bb_pos, 22);
-        return offset ? this.bb.__string(this.bb_pos + offset, optionalEncoding) : null;
-    }
     static startInfoResponse(builder) {
-        builder.startObject(10);
+        builder.startObject(9);
     }
     static addProjectName(builder, projectNameOffset) {
         builder.addFieldOffset(0, projectNameOffset, 0);
@@ -86,9 +82,6 @@ export class InfoResponse {
     static addCompiler(builder, compilerOffset) {
         builder.addFieldOffset(8, compilerOffset, 0);
     }
-    static addNodeVersion(builder, nodeVersionOffset) {
-        builder.addFieldOffset(9, nodeVersionOffset, 0);
-    }
     static endInfoResponse(builder) {
         const offset = builder.endObject();
         builder.requiredField(offset, 4); // project_name
@@ -100,10 +93,9 @@ export class InfoResponse {
         builder.requiredField(offset, 16); // platform
         builder.requiredField(offset, 18); // arch
         builder.requiredField(offset, 20); // compiler
-        builder.requiredField(offset, 22); // node_version
         return offset;
     }
-    static createInfoResponse(builder, projectNameOffset, projectVersionOffset, buildTypeOffset, gitHashOffset, gitBranchOffset, buildTimeOffset, platformOffset, archOffset, compilerOffset, nodeVersionOffset) {
+    static createInfoResponse(builder, projectNameOffset, projectVersionOffset, buildTypeOffset, gitHashOffset, gitBranchOffset, buildTimeOffset, platformOffset, archOffset, compilerOffset) {
         InfoResponse.startInfoResponse(builder);
         InfoResponse.addProjectName(builder, projectNameOffset);
         InfoResponse.addProjectVersion(builder, projectVersionOffset);
@@ -114,11 +106,10 @@ export class InfoResponse {
         InfoResponse.addPlatform(builder, platformOffset);
         InfoResponse.addArch(builder, archOffset);
         InfoResponse.addCompiler(builder, compilerOffset);
-        InfoResponse.addNodeVersion(builder, nodeVersionOffset);
         return InfoResponse.endInfoResponse(builder);
     }
     unpack() {
-        return new InfoResponseT(this.projectName(), this.projectVersion(), this.buildType(), this.gitHash(), this.gitBranch(), this.buildTime(), this.platform(), this.arch(), this.compiler(), this.nodeVersion());
+        return new InfoResponseT(this.projectName(), this.projectVersion(), this.buildType(), this.gitHash(), this.gitBranch(), this.buildTime(), this.platform(), this.arch(), this.compiler());
     }
     unpackTo(_o) {
         _o.projectName = this.projectName();
@@ -130,7 +121,6 @@ export class InfoResponse {
         _o.platform = this.platform();
         _o.arch = this.arch();
         _o.compiler = this.compiler();
-        _o.nodeVersion = this.nodeVersion();
     }
 }
 export class InfoResponseT {
@@ -143,8 +133,7 @@ export class InfoResponseT {
     platform;
     arch;
     compiler;
-    nodeVersion;
-    constructor(projectName = null, projectVersion = null, buildType = null, gitHash = null, gitBranch = null, buildTime = null, platform = null, arch = null, compiler = null, nodeVersion = null) {
+    constructor(projectName = null, projectVersion = null, buildType = null, gitHash = null, gitBranch = null, buildTime = null, platform = null, arch = null, compiler = null) {
         this.projectName = projectName;
         this.projectVersion = projectVersion;
         this.buildType = buildType;
@@ -154,7 +143,6 @@ export class InfoResponseT {
         this.platform = platform;
         this.arch = arch;
         this.compiler = compiler;
-        this.nodeVersion = nodeVersion;
     }
     pack(builder) {
         const projectName = (this.projectName !== null ? builder.createString(this.projectName) : 0);
@@ -166,8 +154,7 @@ export class InfoResponseT {
         const platform = (this.platform !== null ? builder.createString(this.platform) : 0);
         const arch = (this.arch !== null ? builder.createString(this.arch) : 0);
         const compiler = (this.compiler !== null ? builder.createString(this.compiler) : 0);
-        const nodeVersion = (this.nodeVersion !== null ? builder.createString(this.nodeVersion) : 0);
-        return InfoResponse.createInfoResponse(builder, projectName, projectVersion, buildType, gitHash, gitBranch, buildTime, platform, arch, compiler, nodeVersion);
+        return InfoResponse.createInfoResponse(builder, projectName, projectVersion, buildType, gitHash, gitBranch, buildTime, platform, arch, compiler);
     }
 }
 //# sourceMappingURL=info-response.js.map

@@ -32,7 +32,7 @@
 // UNSUPPORTED SCHEMA FEATURES
 // The pipeline currently implements box_group (keep-APART partitioning),
 // rotation, weight caps, MaximumBoxes and Active. It does NOT implement
-// linked_group (keep-TOGETHER), PlacementConstraint, or per-item
+// PlacementConstraint, or per-item
 // rotation_policy. Silently ignoring those would produce a plausible but
 // WRONG answer, so by default the adapter rejects such requests instead
 // (set strict_unsupported = false to pack anyway and ignore them).
@@ -87,10 +87,6 @@ struct UnitOrigin {
 void reject_unsupported(SolveRequest const& request)
 {
 	for (auto const& item : request.items) {
-		if (item.linked_group.has_value() && !item.linked_group->empty()) {
-			throw std::logic_error("hightmap solver: linked_group (keep-together) is not implemented; use PHPSolver or clear the field");
-		}
-
 		if (item.constraint.has_value()) {
 			auto const& c = *item.constraint;
 			bool const used = c.no_stacking.value_or(false) || c.required_vertical.value_or(false)
@@ -264,14 +260,18 @@ SolveResponse to_response(::Solution const& solution, ::NormalizedInput const& n
 			used_volume += static_cast<uint64_t>(placement.w) * placement.l * placement.d;
 
 			result.placements.push_back(ItemPlacement {
-				.item_code = unit.code,
-				.item_reference = unit.reference,
 				.x = placement.x, // width axis
 				.y = placement.z, // VERTICAL axis (pipeline z)
 				.z = placement.y, // length axis (pipeline y)
-				.width = placement.w,
-				.length = placement.l,
-				.depth = placement.d,
+				.item = ItemType {
+					.item_code = unit.code,
+					.item_reference = unit.reference,
+					.width = placement.w,
+					.length = placement.l,
+					.depth = placement.d,
+					.weight = static_cast<float>(unit.weight),
+					.box_group = unit.boxGroup.empty() ? std::nullopt : std::optional<std::string>(unit.boxGroup),
+				},
 			});
 		}
 
