@@ -23,7 +23,6 @@ InfoResponse info()
 		.platform = BUILDINFO_PLATFORM,
 		.arch = BUILDINFO_ARCH,
 		.compiler = BUILDINFO_COMPILER,
-		.node_version = BUILDINFO_NODE_VERSION,
 	};
 }
 

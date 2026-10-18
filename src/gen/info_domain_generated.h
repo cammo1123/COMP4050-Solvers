@@ -33,7 +33,6 @@ struct InfoResponse {
 	std::string platform{};
 	std::string arch{};
 	std::string compiler{};
-	std::string node_version{};
 };
 
 inline InfoRequest toDomain([[maybe_unused]] fbs::InfoRequestT const& value)
@@ -72,8 +71,6 @@ inline InfoResponse toDomain([[maybe_unused]] fbs::InfoResponseT const& value)
 
 	out.compiler = value.compiler;
 
-	out.node_version = value.node_version;
-
 	return out;
 }
 
@@ -98,8 +95,6 @@ inline fbs::InfoResponseT fromDomain([[maybe_unused]] InfoResponse const& value)
 	out.arch = value.arch;
 
 	out.compiler = value.compiler;
-
-	out.node_version = value.node_version;
 
 	return out;
 }

@@ -87,15 +87,8 @@ compiler(optionalEncoding?:any):string|Uint8Array|null {
   return offset ? this.bb!.__string(this.bb_pos + offset, optionalEncoding) : null;
 }
 
-nodeVersion():string|null
-nodeVersion(optionalEncoding:flatbuffers.Encoding):string|Uint8Array|null
-nodeVersion(optionalEncoding?:any):string|Uint8Array|null {
-  const offset = this.bb!.__offset(this.bb_pos, 22);
-  return offset ? this.bb!.__string(this.bb_pos + offset, optionalEncoding) : null;
-}
-
 static startInfoResponse(builder:flatbuffers.Builder) {
-  builder.startObject(10);
+  builder.startObject(9);
 }
 
 static addProjectName(builder:flatbuffers.Builder, projectNameOffset:flatbuffers.Offset) {
@@ -134,10 +127,6 @@ static addCompiler(builder:flatbuffers.Builder, compilerOffset:flatbuffers.Offse
   builder.addFieldOffset(8, compilerOffset, 0);
 }
 
-static addNodeVersion(builder:flatbuffers.Builder, nodeVersionOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(9, nodeVersionOffset, 0);
-}
-
 static endInfoResponse(builder:flatbuffers.Builder):flatbuffers.Offset {
   const offset = builder.endObject();
   builder.requiredField(offset, 4) // project_name
@@ -149,11 +138,10 @@ static endInfoResponse(builder:flatbuffers.Builder):flatbuffers.Offset {
   builder.requiredField(offset, 16) // platform
   builder.requiredField(offset, 18) // arch
   builder.requiredField(offset, 20) // compiler
-  builder.requiredField(offset, 22) // node_version
   return offset;
 }
 
-static createInfoResponse(builder:flatbuffers.Builder, projectNameOffset:flatbuffers.Offset, projectVersionOffset:flatbuffers.Offset, buildTypeOffset:flatbuffers.Offset, gitHashOffset:flatbuffers.Offset, gitBranchOffset:flatbuffers.Offset, buildTimeOffset:flatbuffers.Offset, platformOffset:flatbuffers.Offset, archOffset:flatbuffers.Offset, compilerOffset:flatbuffers.Offset, nodeVersionOffset:flatbuffers.Offset):flatbuffers.Offset {
+static createInfoResponse(builder:flatbuffers.Builder, projectNameOffset:flatbuffers.Offset, projectVersionOffset:flatbuffers.Offset, buildTypeOffset:flatbuffers.Offset, gitHashOffset:flatbuffers.Offset, gitBranchOffset:flatbuffers.Offset, buildTimeOffset:flatbuffers.Offset, platformOffset:flatbuffers.Offset, archOffset:flatbuffers.Offset, compilerOffset:flatbuffers.Offset):flatbuffers.Offset {
   InfoResponse.startInfoResponse(builder);
   InfoResponse.addProjectName(builder, projectNameOffset);
   InfoResponse.addProjectVersion(builder, projectVersionOffset);
@@ -164,7 +152,6 @@ static createInfoResponse(builder:flatbuffers.Builder, projectNameOffset:flatbuf
   InfoResponse.addPlatform(builder, platformOffset);
   InfoResponse.addArch(builder, archOffset);
   InfoResponse.addCompiler(builder, compilerOffset);
-  InfoResponse.addNodeVersion(builder, nodeVersionOffset);
   return InfoResponse.endInfoResponse(builder);
 }
 
@@ -178,8 +165,7 @@ unpack(): InfoResponseT {
     this.buildTime(),
     this.platform(),
     this.arch(),
-    this.compiler(),
-    this.nodeVersion()
+    this.compiler()
   );
 }
 
@@ -194,7 +180,6 @@ unpackTo(_o: InfoResponseT): void {
   _o.platform = this.platform();
   _o.arch = this.arch();
   _o.compiler = this.compiler();
-  _o.nodeVersion = this.nodeVersion();
 }
 }
 
@@ -208,8 +193,7 @@ constructor(
   public buildTime: string|Uint8Array|null = null,
   public platform: string|Uint8Array|null = null,
   public arch: string|Uint8Array|null = null,
-  public compiler: string|Uint8Array|null = null,
-  public nodeVersion: string|Uint8Array|null = null
+  public compiler: string|Uint8Array|null = null
 ){}
 
 
@@ -223,7 +207,6 @@ pack(builder:flatbuffers.Builder): flatbuffers.Offset {
   const platform = (this.platform !== null ? builder.createString(this.platform!) : 0);
   const arch = (this.arch !== null ? builder.createString(this.arch!) : 0);
   const compiler = (this.compiler !== null ? builder.createString(this.compiler!) : 0);
-  const nodeVersion = (this.nodeVersion !== null ? builder.createString(this.nodeVersion!) : 0);
 
   return InfoResponse.createInfoResponse(builder,
     projectName,
@@ -234,8 +217,7 @@ pack(builder:flatbuffers.Builder): flatbuffers.Offset {
     buildTime,
     platform,
     arch,
-    compiler,
-    nodeVersion
+    compiler
   );
 }
 }
