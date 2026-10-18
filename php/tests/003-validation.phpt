@@ -24,6 +24,6 @@ foreach ($cases as $label => $request) {
 --EXPECT--
 missing boxes: request.boxes is required
 boxes not array: request.boxes must be an array, string given
-unknown algo: request.algorithm must be one of ExtremePoint, StackBased, PHPSolver
+unknown algo: request.algorithm must be one of ExtremePoint, StackBased, PHPSolver, HeightmapSolver
 nested field: request.boxes[0].reference is required
 item not array: request.items[0] must be an array, string given
