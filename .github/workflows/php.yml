@@ -43,9 +43,9 @@ jobs:
         shell: pwsh
         run: |
           $version = php -r 'echo PHP_VERSION;'
-          # NTS archives carry a -nts- marker; TS archives carry none. The
+          # NTS archives carry a -nts marker; TS archives carry none. The
           # Windows toolchain switched from vs16 to vs17 with PHP 8.4.
-          $flavour = php -r 'echo PHP_ZTS ? "" : "-nts-";'
+          $flavour = php -r 'echo PHP_ZTS ? "" : "-nts";'
           $toolset = if ([version]$version -ge [version]'8.4.0') { 'vs17' } else { 'vs16' }
           $archive = Join-Path $env:RUNNER_TEMP "php-devel-pack-$version.zip"
           $bases = @(
