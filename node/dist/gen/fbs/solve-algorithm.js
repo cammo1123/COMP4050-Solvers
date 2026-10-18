@@ -2,10 +2,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
 export var SolveAlgorithm;
 (function (SolveAlgorithm) {
-    SolveAlgorithm[SolveAlgorithm["Greedy"] = 0] = "Greedy";
-    SolveAlgorithm[SolveAlgorithm["ExtremePoint"] = 1] = "ExtremePoint";
-    SolveAlgorithm[SolveAlgorithm["StackBased"] = 2] = "StackBased";
-    SolveAlgorithm[SolveAlgorithm["PHPSolver"] = 3] = "PHPSolver";
-    SolveAlgorithm[SolveAlgorithm["HeightmapSolver"] = 4] = "HeightmapSolver";
+    SolveAlgorithm[SolveAlgorithm["ExtremePoint"] = 0] = "ExtremePoint";
+    SolveAlgorithm[SolveAlgorithm["StackBased"] = 1] = "StackBased";
+    SolveAlgorithm[SolveAlgorithm["PHPSolver"] = 2] = "PHPSolver";
+    SolveAlgorithm[SolveAlgorithm["HeightmapSolver"] = 3] = "HeightmapSolver";
 })(SolveAlgorithm || (SolveAlgorithm = {}));
 //# sourceMappingURL=solve-algorithm.js.map

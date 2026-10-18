@@ -24,7 +24,6 @@ export type InfoResponse = {
 	platform: string;
 	arch: string;
 	compiler: string;
-	nodeVersion: string;
 };
 
 export function encodeRequest(request: InfoRequest): Uint8Array {
@@ -50,7 +49,6 @@ export function decodeResponse(bytes: Uint8Array): InfoResponse {
 		buildTime: unpacked.buildTime as string,
 		platform: unpacked.platform as string,
 		arch: unpacked.arch as string,
-		compiler: unpacked.compiler as string,
-		nodeVersion: unpacked.nodeVersion as string
+		compiler: unpacked.compiler as string
 	};
 }

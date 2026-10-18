@@ -47,18 +47,18 @@ function assertLegalPlacements(result: Awaited<ReturnType<typeof solve>>) {
 	for (const packed of result.results) {
 		const placements = packed.placements;
 		for (const item of placements) {
-			expect(item.width).toBeGreaterThan(0);
-			expect(item.depth).toBeGreaterThan(0);
-			expect(item.length).toBeGreaterThan(0);
-			expect(item.x + item.width).toBeLessThanOrEqual(20);
-			expect(item.y + item.depth).toBeLessThanOrEqual(20);
-			expect(item.z + item.length).toBeLessThanOrEqual(20);
+			expect(item.item.width).toBeGreaterThan(0);
+			expect(item.item.depth).toBeGreaterThan(0);
+			expect(item.item.length).toBeGreaterThan(0);
+			expect(item.x + item.item.width).toBeLessThanOrEqual(20);
+			expect(item.y + item.item.depth).toBeLessThanOrEqual(20);
+			expect(item.z + item.item.length).toBeLessThanOrEqual(20);
 		}
 		for (let i = 0; i < placements.length; ++i)
 			for (let j = i + 1; j < placements.length; ++j) {
 				const a = placements[i];
 				const b = placements[j];
-				expect(a.x >= b.x + b.width || b.x >= a.x + a.width || a.y >= b.y + b.depth || b.y >= a.y + a.depth || a.z >= b.z + b.length || b.z >= a.z + a.length).toBe(true);
+				expect(a.x >= b.x + b.item.width || b.x >= a.x + a.item.width || a.y >= b.y + b.item.depth || b.y >= a.y + a.item.depth || a.z >= b.z + b.item.length || b.z >= a.z + a.item.length).toBe(true);
 			}
 	}
 }
@@ -118,7 +118,7 @@ describe("packing invariants", () => {
 		});
 		expect(result.failed).toHaveLength(0);
 		expect(result.results[0].placements).toHaveLength(2);
-		expect(result.results[0].placements.map((item) => item.itemCode)).toEqual(["one", "two"]);
+		expect(result.results[0].placements.map((item) => item.item.itemCode)).toEqual(["one", "two"]);
 		expect(result.results[0].placements[1].x).toBe(10);
 	});
 
@@ -133,7 +133,7 @@ describe("packing invariants", () => {
 		});
 		expect(result.failed).toHaveLength(0);
 		expect(result.results[0].placements).toHaveLength(3);
-		expect(result.results[0].placements.find((item) => item.itemCode === "top")).toMatchObject({ y: 5 });
+		expect(result.results[0].placements.find((item) => item.item.itemCode === "top")).toMatchObject({ y: 5 });
 	});
 
 	it("fills an internal pocket between packed items", async () => {
@@ -162,7 +162,7 @@ describe("packing invariants", () => {
 			options: { phpSolverOptions: { maxBoxes: 1 } },
 		});
 		expect(result.failed).toHaveLength(0);
-		expect(result.results[0].placements.find((item) => item.itemCode === "overhang")).toMatchObject({ x: 5, y: 10 });
+		expect(result.results[0].placements.find((item) => item.item.itemCode === "overhang")).toMatchObject({ x: 5, y: 10 });
 	});
 
 	it("rejects an unstable edge overhang", async () => {
@@ -194,7 +194,7 @@ describe("packing invariants", () => {
 			items: [{ itemCode: "flat", itemReference: "flat", width: 20, length: 10, depth: 5, weight: 1, rotationPolicy: 1 }],
 		});
 		expect(result.failed).toHaveLength(0);
-		expect(result.results[0].placements[0]).toMatchObject({ width: 10, depth: 5, length: 20 });
+		expect(result.results[0].placements[0]).toMatchObject({ item: { width: 10, depth: 5, length: 20 } });
 	});
 
 	it("uses best-fit rotation when the original axes do not fit", async () => {
@@ -203,7 +203,7 @@ describe("packing invariants", () => {
 			items: [{ itemCode: "rotated", itemReference: "rotated", width: 4, length: 3, depth: 5, weight: 1, rotationPolicy: RotationPolicy.BestFit }],
 		});
 		expect(result.failed).toHaveLength(0);
-		expect(result.results[0].placements[0]).toMatchObject({ width: 5, depth: 3, length: 4 });
+		expect(result.results[0].placements[0]).toMatchObject({ item: { width: 5, depth: 3, length: 4 } });
 	});
 
 	it("normalizes placements after rotating an asymmetric box", async () => {
@@ -213,11 +213,11 @@ describe("packing invariants", () => {
 		});
 
 		expect(result.failed).toHaveLength(0);
-		expect(result.results[0].placements[0]).toMatchObject({ width: 3, depth: 2, length: 7 });
+		expect(result.results[0].placements[0]).toMatchObject({ item: { width: 3, depth: 2, length: 7 } });
 		const placement = result.results[0].placements[0];
-		expect(placement.x + placement.width).toBeLessThanOrEqual(4);
-		expect(placement.y + placement.depth).toBeLessThanOrEqual(6);
-		expect(placement.z + placement.length).toBeLessThanOrEqual(8);
+		expect(placement.x + placement.item.width).toBeLessThanOrEqual(4);
+		expect(placement.y + placement.item.depth).toBeLessThanOrEqual(6);
+		expect(placement.z + placement.item.length).toBeLessThanOrEqual(8);
 	});
 
 	it("transforms declarative constraints with a rotated box", async () => {
@@ -312,7 +312,7 @@ describe("packing invariants", () => {
 			items: [{ itemCode: "repeat", itemReference: "repeat", width: 10, length: 10, depth: 10, weight: 1, quantity: 2, rotationPolicy: 0 }],
 		});
 		expect(result.results[0].placements).toHaveLength(1);
-		expect(result.results[0].placements[0]).toMatchObject({ itemCode: "repeat", itemReference: "repeat" });
+		expect(result.results[0].placements[0]).toMatchObject({ item: { itemCode: "repeat", itemReference: "repeat" } });
 		expect(result.failed).toHaveLength(1);
 		expect(result.failed[0]).toMatchObject({ itemCode: "repeat", itemReference: "repeat" });
 	});
@@ -336,7 +336,7 @@ describe("packing invariants", () => {
 			options: { phpSolverOptions: { strictItemOrder: true } },
 		});
 		expect(result.failed).toHaveLength(0);
-		expect(result.results[0].placements.map((item) => item.itemCode)).toEqual(["small", "large"]);
+		expect(result.results[0].placements.map((item) => item.item.itemCode)).toEqual(["small", "large"]);
 		expect(result.results[0].placements.map((item) => item.x)).toEqual([0, 5]);
 	});
 
@@ -350,7 +350,7 @@ describe("packing invariants", () => {
 		});
 
 		expect(result.failed).toHaveLength(0);
-		expect(result.results[0].placements.map((item) => item.itemCode)).toEqual(["light", "heavy"]);
+		expect(result.results[0].placements.map((item) => item.item.itemCode)).toEqual(["light", "heavy"]);
 	});
 
 	it("selects a denser best subset when requested", async () => {
@@ -364,7 +364,7 @@ describe("packing invariants", () => {
 			options: { phpSolverOptions: { bestSubset: true } },
 		});
 		expect(result.results[0].placements).toHaveLength(8);
-		expect(result.results[0].placements.every((item) => item.itemCode === "small")).toBe(true);
+		expect(result.results[0].placements.every((item) => item.item.itemCode === "small")).toBe(true);
 		expect(result.failed).toHaveLength(1);
 		expect(result.failed[0].itemCode).toBe("large");
 	});
@@ -434,7 +434,7 @@ describe("packing invariants", () => {
 			],
 		});
 		expect(result.failed).toHaveLength(0);
-		expect(result.results.map((box) => box.placements.map((item) => item.itemCode))).toEqual([["linked-a"], ["linked-b"]]);
+		expect(result.results.map((box) => box.placements.map((item) => item.item.itemCode))).toEqual([["linked-a"], ["linked-b"]]);
 	});
 
 	it("removes partial linked groups and repacks newly eligible items", async () => {
@@ -449,7 +449,7 @@ describe("packing invariants", () => {
 			options: { phpSolverOptions: { bestSubset: true } },
 		});
 
-		expect(result.results[0].placements.map((item) => item.itemCode)).toEqual(["regular", "group-small"]);
+		expect(result.results[0].placements.map((item) => item.item.itemCode)).toEqual(["regular", "group-small"]);
 		expect(result.failed.map((item) => item.itemCode).sort()).toEqual(["group-large"]);
 	});
 
@@ -459,7 +459,7 @@ describe("packing invariants", () => {
 			items: [{ itemCode: "repeat", itemReference: "source-1", width: 10, length: 10, depth: 10, weight: 1, quantity: 3, rotationPolicy: RotationPolicy.Never }],
 		});
 
-		const all = [...result.results.flatMap((box) => box.placements), ...result.failed];
+		const all = [...result.results.flatMap((box) => box.placements.map((placement) => placement.item)), ...result.failed];
 		expect(all).toHaveLength(3);
 		expect(all.every((item) => item.itemCode === "repeat" && item.itemReference === "source-1")).toBe(true);
 	});
@@ -483,7 +483,7 @@ describe("packing invariants", () => {
 			["a1", "a2"],
 			["b1", "b2"],
 		]) {
-			const boxIndexes = new Set(result.results.flatMap((box, index) => (box.placements.some((item) => group.includes(item.itemCode)) ? [index] : [])));
+			const boxIndexes = new Set(result.results.flatMap((box, index) => (box.placements.some((item) => group.includes(item.item.itemCode)) ? [index] : [])));
 			expect(boxIndexes.size).toBe(1);
 		}
 	});
@@ -496,7 +496,7 @@ describe("packing invariants", () => {
 				{ itemCode: "blocked", itemReference: "blocked", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: 0, constraint: { minX: 11, maxX: 11, noStacking: true } },
 			],
 		});
-		expect(result.results[0].placements[0]).toMatchObject({ itemCode: "floor", x: 10, y: 0 });
+		expect(result.results[0].placements[0]).toMatchObject({ item: { itemCode: "floor" }, x: 10, y: 0 });
 		expect(result.failed.map((item) => item.itemCode)).toEqual(["blocked"]);
 	});
 
@@ -574,7 +574,7 @@ describe("packing invariants", () => {
 		});
 
 		expect(result.results[0].placements).toHaveLength(1);
-		expect(result.results[0].placements[0].width).toBe(10);
+		expect(result.results[0].placements[0].item.width).toBe(10);
 		expect(result.failed).toHaveLength(1);
 		expect(result.failed[0].width).toBe(11);
 	});

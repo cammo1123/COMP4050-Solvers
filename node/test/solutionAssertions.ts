@@ -21,7 +21,7 @@ function sameBoxGroup(left: ItemTypeT["boxGroup"], right: ItemTypeT["boxGroup"])
 
 function sameDimensions(item: ItemTypeT, placement: ItemPlacementT, allowRotation: boolean): boolean {
 	const itemDimensions = [item.width, item.length, item.depth];
-	const placementDimensions = [placement.width, placement.length, placement.depth];
+	const placementDimensions = [placement.item.width, placement.item.length, placement.item.depth];
 	if (allowRotation) {
 		itemDimensions.sort((left, right) => left - right);
 		placementDimensions.sort((left, right) => left - right);
@@ -40,37 +40,37 @@ function sameItem(left: ItemTypeT, right: ItemTypeT): boolean {
 }
 
 function overlaps(left: ItemPlacementT, right: ItemPlacementT): boolean {
-	return left.x < right.x + right.width
-		&& right.x < left.x + left.width
-		&& left.y < right.y + right.depth
-		&& right.y < left.y + left.depth
-		&& left.z < right.z + right.length
-		&& right.z < left.z + left.length;
+	return left.x < right.x + right.item.width
+		&& right.x < left.x + left.item.width
+		&& left.y < right.y + right.item.depth
+		&& right.y < left.y + left.item.depth
+		&& left.z < right.z + right.item.length
+		&& right.z < left.z + left.item.length;
 }
 
 function matchPlacement(remaining: ItemTypeT[], placement: ItemPlacementT, allowRotation: boolean): ItemTypeT {
-	const index = remaining.findIndex((item) => item.itemCode === placement.itemCode
-		&& item.itemReference === placement.itemReference
+	const index = remaining.findIndex((item) => item.itemCode === placement.item.itemCode
+		&& item.itemReference === placement.item.itemReference
 		&& sameDimensions(item, placement, allowRotation));
-	expect(index, `placement ${placement.itemCode} does not match an unplaced input item`).toBeGreaterThanOrEqual(0);
+	expect(index, `placement ${placement.item.itemCode} does not match an unplaced input item`).toBeGreaterThanOrEqual(0);
 	return remaining.splice(index, 1)[0];
 }
 
 function assertBoxBounds(box: BoxTypeT, result: BoxResultT): void {
 	for (const placement of result.placements) {
-		expect(placement.x, `${placement.itemCode} has a negative x coordinate`).toBeGreaterThanOrEqual(0);
-		expect(placement.y, `${placement.itemCode} has a negative y coordinate`).toBeGreaterThanOrEqual(0);
-		expect(placement.z, `${placement.itemCode} has a negative z coordinate`).toBeGreaterThanOrEqual(0);
-		expect(placement.x + placement.width, `${placement.itemCode} exceeds box width`).toBeLessThanOrEqual(box.width);
-		expect(placement.y + placement.depth, `${placement.itemCode} exceeds box depth`).toBeLessThanOrEqual(box.depth);
-		expect(placement.z + placement.length, `${placement.itemCode} exceeds box length`).toBeLessThanOrEqual(box.length);
+		expect(placement.x, `${placement.item.itemCode} has a negative x coordinate`).toBeGreaterThanOrEqual(0);
+		expect(placement.y, `${placement.item.itemCode} has a negative y coordinate`).toBeGreaterThanOrEqual(0);
+		expect(placement.z, `${placement.item.itemCode} has a negative z coordinate`).toBeGreaterThanOrEqual(0);
+		expect(placement.x + placement.item.width, `${placement.item.itemCode} exceeds box width`).toBeLessThanOrEqual(box.width);
+		expect(placement.y + placement.item.depth, `${placement.item.itemCode} exceeds box depth`).toBeLessThanOrEqual(box.depth);
+		expect(placement.z + placement.item.length, `${placement.item.itemCode} exceeds box length`).toBeLessThanOrEqual(box.length);
 	}
 }
 
 function assertNoOverlap(result: BoxResultT): void {
 	for (let left = 0; left < result.placements.length; left++) {
 		for (let right = left + 1; right < result.placements.length; right++) {
-			expect(overlaps(result.placements[left], result.placements[right]), `${result.placements[left].itemCode} overlaps ${result.placements[right].itemCode}`).toBe(false);
+			expect(overlaps(result.placements[left], result.placements[right]), `${result.placements[left].item.itemCode} overlaps ${result.placements[right].item.itemCode}`).toBe(false);
 		}
 	}
 }

@@ -37,11 +37,11 @@ describe("upstream fixture adapter", () => {
 		const expected = new Map(items.map((item) => [`${item.itemCode}/${item.itemReference}`, item.quantity]));
 		const actual = new Map<string, number>();
 		for (const box of result.results) for (const item of box.placements) {
-			const key = `${item.itemCode}/${item.itemReference}`;
+			const key = `${item.item.itemCode}/${item.item.itemReference}`;
 			actual.set(key, (actual.get(key) ?? 0) + 1);
-			expect(item.x + item.width).toBeLessThanOrEqual(Number(width));
-			expect(item.y + item.depth).toBeLessThanOrEqual(Number(depth));
-			expect(item.z + item.length).toBeLessThanOrEqual(Number(length));
+			expect(item.x + item.item.width).toBeLessThanOrEqual(Number(width));
+			expect(item.y + item.item.depth).toBeLessThanOrEqual(Number(depth));
+			expect(item.z + item.item.length).toBeLessThanOrEqual(Number(length));
 		}
 		for (const item of result.failed) {
 			const key = `${item.itemCode}/${item.itemReference}`;

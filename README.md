@@ -65,10 +65,9 @@ const response = await solve({
 ```
 
 The default algorithm is `SolveAlgorithm.PHPSolver`. The available algorithms
-are `Greedy`, `ExtremePoint`, `StackBased`, and `PHPSolver`. `StackBased` is the
+are ``ExtremePoint`, `StackBased`, and `PHPSolver`. `StackBased` is the
 current stacking implementation and `ExtremePoint` is a full extreme-point
-solver. `Greedy` is dispatchable but currently rejects requests because its
-solver is not implemented.
+solver.
 
 ### ExtremePoint
 
@@ -147,7 +146,9 @@ minimum corner of the item.
 Each response contains `results`, failed item definitions in `failed`, and
 `algorithmUs` and `serverUs` timing values. Box results include placements,
 packed dimensions, and optional `totalWeight`, `utilization`, and outer
-dimensions.
+dimensions. A placement carries `x`, `y`, and `z` plus an `item` holding the
+full item definition it was packed from, so weight, group, rotation policy, and
+constraint are reported without rejoining the request by code.
 
 ## Build
 
@@ -197,7 +198,7 @@ local FlatBuffers compiler cache.
 ## Repository Layout
 
 - `src/` — C++ core, CLI, and native addon boundary.
-- `src/algorithms/` — algorithm registry plus isolated ExtremePoint, Greedy, StackBased, and PHPSolver implementations.
+- `src/algorithms/` — algorithm registry plus isolated ExtremePoint, StackBased, and PHPSolver implementations.
 - `fbs/` — FlatBuffers schemas shared by the core and addon.
 - `src/gen/` — generated C++ bindings.
 - `node/src/` — TypeScript API and generated TypeScript bindings.

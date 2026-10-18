@@ -163,7 +163,6 @@ add_subdirectory(src/algorithms/php_solver)
 add_library(solver_core OBJECT
     src/solver.cpp
     src/algorithms/algo_registry.cpp
-    src/algorithms/greedy/algo_greedy.cpp
     src/algorithms/extreme_point/algo_extreme_point.cpp
     src/algorithms/stack_based/algo_stack_based.cpp
     src/algorithms/php_solver/php_solver.cpp

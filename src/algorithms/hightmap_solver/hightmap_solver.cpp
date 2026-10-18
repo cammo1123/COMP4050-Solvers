@@ -260,14 +260,18 @@ SolveResponse to_response(::Solution const& solution, ::NormalizedInput const& n
 			used_volume += static_cast<uint64_t>(placement.w) * placement.l * placement.d;
 
 			result.placements.push_back(ItemPlacement {
-				.item_code = unit.code,
-				.item_reference = unit.reference,
 				.x = placement.x, // width axis
 				.y = placement.z, // VERTICAL axis (pipeline z)
 				.z = placement.y, // length axis (pipeline y)
-				.width = placement.w,
-				.length = placement.l,
-				.depth = placement.d,
+				.item = ItemType {
+					.item_code = unit.code,
+					.item_reference = unit.reference,
+					.width = placement.w,
+					.length = placement.l,
+					.depth = placement.d,
+					.weight = static_cast<float>(unit.weight),
+					.box_group = unit.boxGroup.empty() ? std::nullopt : std::optional<std::string>(unit.boxGroup),
+				},
 			});
 		}
 

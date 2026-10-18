@@ -25,7 +25,6 @@ export type BoxTypeT = {
     outerDepth?: number;
 };
 export type ExtremePointOptionsT = {};
-export type GreedyOptionsT = {};
 export type HeightmapSolverOptionsT = {
     maxBoxes?: number;
     allowRotation?: boolean;
@@ -36,14 +35,10 @@ export type HeightmapSolverOptionsT = {
     strictUnsupported?: boolean;
 };
 export type ItemPlacementT = {
-    itemCode: string;
-    itemReference: string;
     x: number;
     y: number;
     z: number;
-    width: number;
-    length: number;
-    depth: number;
+    item: ItemTypeT;
 };
 export type ItemTypeT = {
     itemCode: string;
@@ -78,7 +73,6 @@ export type PlacementConstraintT = {
 };
 export type SolveOptionsT = {
     timeoutMs?: number;
-    greedyOptions?: GreedyOptionsT | null;
     extremePointOptions?: ExtremePointOptionsT | null;
     stackBasedOptions?: StackBasedOptionsT | null;
     phpSolverOptions?: PHPSolverOptionsT | null;
@@ -98,11 +92,6 @@ export type SolveRequest = {
     boxes: BoxTypeT[];
     items: ItemTypeT[];
 } & ({
-    algorithm: typeof SolveAlgorithm.Greedy;
-    options?: BaseOptions & {
-        greedyOptions?: GreedyOptionsT;
-    };
-} | {
     algorithm: typeof SolveAlgorithm.ExtremePoint;
     options?: BaseOptions & {
         extremePointOptions?: ExtremePointOptionsT;

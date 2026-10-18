@@ -5,8 +5,6 @@ namespace fbs;
 attribute "optional";
 attribute "algorithm_specific_options";
 
-table GreedyOptions {}
-
 table ExtremePointOptions {}
 
 table StackBasedOptions {}
@@ -33,7 +31,6 @@ table PHPSolverOptions {
 }
 
 union SolveStrategyOptions {
-  GreedyOptions,
   ExtremePointOptions,
   StackBasedOptions,
   PHPSolverOptions,
@@ -41,11 +38,10 @@ union SolveStrategyOptions {
 }
 
 enum SolveAlgorithm : byte {
-	Greedy = 0,
-	ExtremePoint = 1,
-	StackBased = 2,
-  PHPSolver = 3,
-  HeightmapSolver = 4,
+	ExtremePoint = 0,
+	StackBased = 1,
+  PHPSolver = 2,
+  HeightmapSolver = 3,
 }
 
 table SolveRequest {
@@ -61,14 +57,10 @@ table SolveOptions {
 }
 
 table ItemPlacement {
-  item_code: string;
-  item_reference: string;
   x: uint;
   y: uint;
   z: uint;
-  width: uint;
-  length: uint;
-  depth: uint;
+  item: ItemType;
 }
 
 table BoxResult {

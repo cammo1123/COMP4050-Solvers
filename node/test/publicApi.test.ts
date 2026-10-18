@@ -40,11 +40,14 @@ describe("package public API (typed entry)", () => {
 					utilization: 1,
 					placements: [
 						{
-							itemCode: "A",
-							itemReference: "A",
-							depth: 10,
-							length: 10,
-							width: 10,
+							item: {
+								itemCode: "A",
+								itemReference: "A",
+								depth: 10,
+								length: 10,
+								width: 10,
+								weight: 10,
+							},
 							x: 0,
 							y: 0,
 							z: 0,
@@ -91,11 +94,14 @@ describe("package public API (typed entry)", () => {
 					utilization: 1,
 					placements: [
 						{
-							itemCode: "A",
-							itemReference: "A",
-							depth: 10,
-							length: 10,
-							width: 10,
+							item: {
+								itemCode: "A",
+								itemReference: "A",
+								depth: 10,
+								length: 10,
+								width: 10,
+								weight: 10,
+							},
 							x: 0,
 							y: 0,
 							z: 0,

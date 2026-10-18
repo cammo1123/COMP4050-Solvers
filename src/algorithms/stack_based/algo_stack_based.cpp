@@ -44,15 +44,13 @@ auto solve_stack_based(SolveRequest const& request, SolveOptions const& options,
 		on_progress(i, request.items.size());
 	}
 	for (auto const& item : request.items) {
+		auto placed = item;
+		placed.quantity = std::nullopt;
 		placements.push_back(ItemPlacement {
-			.item_code = item.item_code,
-			.item_reference = item.item_reference,
 			.x = 0,
 			.y = y,
 			.z = 0,
-			.width = item.width,
-			.length = item.length,
-			.depth = item.depth,
+			.item = std::move(placed),
 		});
 
 		total_weight += item.weight;
