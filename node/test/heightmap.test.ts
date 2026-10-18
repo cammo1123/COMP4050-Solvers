@@ -48,7 +48,7 @@ describe("heightmap solver", () => {
 		const response = await solve(request);
 		const groupOf = new Map(request.items.map((item) => [item.itemCode, item.boxGroup]));
 		for (const result of response.results) {
-			const groups = new Set(result.placements.map((placement) => groupOf.get(placement.itemCode)).filter(Boolean));
+			const groups = new Set(result.placements.map((placement) => groupOf.get(placement.item.itemCode)).filter(Boolean));
 			expect(groups.size).toBeLessThanOrEqual(1);
 		}
 	});
@@ -90,7 +90,7 @@ describe("heightmap solver", () => {
 			items: [{ itemCode: "bar", itemReference: "bar", width: 10, length: 5, depth: 2, weight: 1, quantity: 3, rotationPolicy: RotationPolicy.Never }],
 		}));
 		for (const placement of response.results.flatMap((result) => result.placements)) {
-			expect([placement.width, placement.length, placement.depth]).toEqual([10, 5, 2]);
+			expect([placement.item.width, placement.item.length, placement.item.depth]).toEqual([10, 5, 2]);
 		}
 	});
 

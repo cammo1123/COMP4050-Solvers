@@ -25,7 +25,6 @@ export type BoxTypeT = {
     outerDepth?: number;
 };
 export type ExtremePointOptionsT = {};
-export type GreedyOptionsT = {};
 export type HeightmapSolverOptionsT = {
     maxBoxes?: number;
     allowRotation?: boolean;
@@ -36,14 +35,10 @@ export type HeightmapSolverOptionsT = {
     strictUnsupported?: boolean;
 };
 export type ItemPlacementT = {
-    itemCode: string;
-    itemReference: string;
     x: number;
     y: number;
     z: number;
-    width: number;
-    length: number;
-    depth: number;
+    item: ItemTypeT;
 };
 export type ItemTypeT = {
     itemCode: string;
@@ -55,7 +50,6 @@ export type ItemTypeT = {
     quantity?: number;
     boxGroup?: string | Uint8Array;
     rotationPolicy?: RotationPolicy;
-    linkedGroup?: string | Uint8Array;
     constraint?: PlacementConstraintT | null;
 };
 export type PHPSolverOptionsT = {
@@ -77,15 +71,14 @@ export type PlacementConstraintT = {
     maxY?: number;
     maxZ?: number;
 };
-export type ShitStackOptionsT = {};
 export type SolveOptionsT = {
     timeoutMs?: number;
-    greedyOptions?: GreedyOptionsT | null;
     extremePointOptions?: ExtremePointOptionsT | null;
-    shitStackOptions?: ShitStackOptionsT | null;
+    stackBasedOptions?: StackBasedOptionsT | null;
     phpSolverOptions?: PHPSolverOptionsT | null;
     heightmapSolverOptions?: HeightmapSolverOptionsT | null;
 };
+export type StackBasedOptionsT = {};
 export type BaseOptions = {
     timeoutMs?: number;
 };
@@ -99,19 +92,14 @@ export type SolveRequest = {
     boxes: BoxTypeT[];
     items: ItemTypeT[];
 } & ({
-    algorithm: typeof SolveAlgorithm.Greedy;
-    options?: BaseOptions & {
-        greedyOptions?: GreedyOptionsT;
-    };
-} | {
     algorithm: typeof SolveAlgorithm.ExtremePoint;
     options?: BaseOptions & {
         extremePointOptions?: ExtremePointOptionsT;
     };
 } | {
-    algorithm: typeof SolveAlgorithm.ShitStack;
+    algorithm: typeof SolveAlgorithm.StackBased;
     options?: BaseOptions & {
-        shitStackOptions?: ShitStackOptionsT;
+        stackBasedOptions?: StackBasedOptionsT;
     };
 } | {
     algorithm: typeof SolveAlgorithm.PHPSolver;
@@ -126,7 +114,7 @@ export type SolveRequest = {
 } | {
     algorithm?: undefined;
     options?: BaseOptions & {
-        heightmapSolverOptions?: HeightmapSolverOptionsT;
+        extremePointOptions?: ExtremePointOptionsT;
     };
 });
 export declare function encodeRequest(request: SolveRequest): Uint8Array;

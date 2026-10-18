@@ -16,19 +16,17 @@ namespace fbs {
 namespace domain {
 
 enum class SolveAlgorithm : int8_t {
-	Greedy = 0,
-	ExtremePoint = 1,
-	ShitStack = 2,
-	PHPSolver = 3,
-	HeightmapSolver = 4
+	ExtremePoint = 0,
+	StackBased = 1,
+	PHPSolver = 2,
+	HeightmapSolver = 3
 };
 
 inline SolveAlgorithm toDomain(::fbs::SolveAlgorithm value)
 {
 	switch (value) {
-	case ::fbs::SolveAlgorithm_Greedy: return SolveAlgorithm::Greedy;
 	case ::fbs::SolveAlgorithm_ExtremePoint: return SolveAlgorithm::ExtremePoint;
-	case ::fbs::SolveAlgorithm_ShitStack: return SolveAlgorithm::ShitStack;
+	case ::fbs::SolveAlgorithm_StackBased: return SolveAlgorithm::StackBased;
 	case ::fbs::SolveAlgorithm_PHPSolver: return SolveAlgorithm::PHPSolver;
 	case ::fbs::SolveAlgorithm_HeightmapSolver: return SolveAlgorithm::HeightmapSolver;
 	default: throw std::invalid_argument("invalid SolveAlgorithm value");
@@ -38,24 +36,19 @@ inline SolveAlgorithm toDomain(::fbs::SolveAlgorithm value)
 inline ::fbs::SolveAlgorithm fromDomain(SolveAlgorithm value)
 {
 	switch (value) {
-	case SolveAlgorithm::Greedy: return ::fbs::SolveAlgorithm_Greedy;
 	case SolveAlgorithm::ExtremePoint: return ::fbs::SolveAlgorithm_ExtremePoint;
-	case SolveAlgorithm::ShitStack: return ::fbs::SolveAlgorithm_ShitStack;
+	case SolveAlgorithm::StackBased: return ::fbs::SolveAlgorithm_StackBased;
 	case SolveAlgorithm::PHPSolver: return ::fbs::SolveAlgorithm_PHPSolver;
 	case SolveAlgorithm::HeightmapSolver: return ::fbs::SolveAlgorithm_HeightmapSolver;
 	default: throw std::invalid_argument("invalid SolveAlgorithm value");
 	}
 }
 
-struct GreedyOptions {
-
-};
-
 struct ExtremePointOptions {
 
 };
 
-struct ShitStackOptions {
+struct StackBasedOptions {
 
 };
 
@@ -81,9 +74,8 @@ struct PHPSolverOptions {
 
 struct SolveOptions {
 	std::optional<uint32_t> timeout_ms = std::nullopt;
-	std::optional<GreedyOptions> greedy_options = std::nullopt;
 	std::optional<ExtremePointOptions> extreme_point_options = std::nullopt;
-	std::optional<ShitStackOptions> shit_stack_options = std::nullopt;
+	std::optional<StackBasedOptions> stack_based_options = std::nullopt;
 	std::optional<PHPSolverOptions> php_solver_options = std::nullopt;
 	std::optional<HeightmapSolverOptions> heightmap_solver_options = std::nullopt;
 };
@@ -91,19 +83,15 @@ struct SolveOptions {
 struct SolveRequest {
 	std::vector<BoxType> boxes{};
 	std::vector<ItemType> items{};
-	SolveAlgorithm algorithm = SolveAlgorithm::PHPSolver;
+	SolveAlgorithm algorithm = SolveAlgorithm::ExtremePoint;
 	std::optional<SolveOptions> options = std::nullopt;
 };
 
 struct ItemPlacement {
-	std::string item_code{};
-	std::string item_reference{};
 	uint32_t x = 0;
 	uint32_t y = 0;
 	uint32_t z = 0;
-	uint32_t width = 0;
-	uint32_t length = 0;
-	uint32_t depth = 0;
+	ItemType item{};
 };
 
 struct BoxResult {
@@ -126,20 +114,6 @@ struct SolveResponse {
 	uint32_t server_us = 0;
 };
 
-inline GreedyOptions toDomain([[maybe_unused]] fbs::GreedyOptionsT const& value)
-{
-	GreedyOptions out;
-
-	return out;
-}
-
-inline fbs::GreedyOptionsT fromDomain([[maybe_unused]] GreedyOptions const& value)
-{
-	fbs::GreedyOptionsT out;
-
-	return out;
-}
-
 inline ExtremePointOptions toDomain([[maybe_unused]] fbs::ExtremePointOptionsT const& value)
 {
 	ExtremePointOptions out;
@@ -154,16 +128,16 @@ inline fbs::ExtremePointOptionsT fromDomain([[maybe_unused]] ExtremePointOptions
 	return out;
 }
 
-inline ShitStackOptions toDomain([[maybe_unused]] fbs::ShitStackOptionsT const& value)
+inline StackBasedOptions toDomain([[maybe_unused]] fbs::StackBasedOptionsT const& value)
 {
-	ShitStackOptions out;
+	StackBasedOptions out;
 
 	return out;
 }
 
-inline fbs::ShitStackOptionsT fromDomain([[maybe_unused]] ShitStackOptions const& value)
+inline fbs::StackBasedOptionsT fromDomain([[maybe_unused]] StackBasedOptions const& value)
 {
-	fbs::ShitStackOptionsT out;
+	fbs::StackBasedOptionsT out;
 
 	return out;
 }
@@ -308,16 +282,12 @@ inline SolveOptions toDomain([[maybe_unused]] fbs::SolveOptionsT const& value)
 		out.timeout_ms = *value.timeout_ms;
 	}
 
-	if (value.algo_options.type == ::fbs::SolveStrategyOptions_GreedyOptions) {
-		out.greedy_options = toDomain(*value.algo_options.AsGreedyOptions());
-	}
-
 	if (value.algo_options.type == ::fbs::SolveStrategyOptions_ExtremePointOptions) {
 		out.extreme_point_options = toDomain(*value.algo_options.AsExtremePointOptions());
 	}
 
-	if (value.algo_options.type == ::fbs::SolveStrategyOptions_ShitStackOptions) {
-		out.shit_stack_options = toDomain(*value.algo_options.AsShitStackOptions());
+	if (value.algo_options.type == ::fbs::SolveStrategyOptions_StackBasedOptions) {
+		out.stack_based_options = toDomain(*value.algo_options.AsStackBasedOptions());
 	}
 
 	if (value.algo_options.type == ::fbs::SolveStrategyOptions_PHPSolverOptions) {
@@ -339,16 +309,12 @@ inline fbs::SolveOptionsT fromDomain([[maybe_unused]] SolveOptions const& value)
 		out.timeout_ms = *value.timeout_ms;
 	}
 
-	if (value.greedy_options.has_value()) {
-		out.algo_options.Set(fromDomain(*value.greedy_options));
-	}
-
 	if (value.extreme_point_options.has_value()) {
 		out.algo_options.Set(fromDomain(*value.extreme_point_options));
 	}
 
-	if (value.shit_stack_options.has_value()) {
-		out.algo_options.Set(fromDomain(*value.shit_stack_options));
+	if (value.stack_based_options.has_value()) {
+		out.algo_options.Set(fromDomain(*value.stack_based_options));
 	}
 
 	if (value.php_solver_options.has_value()) {
@@ -412,21 +378,15 @@ inline ItemPlacement toDomain([[maybe_unused]] fbs::ItemPlacementT const& value)
 {
 	ItemPlacement out;
 
-	out.item_code = value.item_code;
-
-	out.item_reference = value.item_reference;
-
 	out.x = value.x;
 
 	out.y = value.y;
 
 	out.z = value.z;
 
-	out.width = value.width;
-
-	out.length = value.length;
-
-	out.depth = value.depth;
+	if (value.item) {
+		out.item = toDomain(*value.item);
+	}
 
 	return out;
 }
@@ -435,21 +395,13 @@ inline fbs::ItemPlacementT fromDomain([[maybe_unused]] ItemPlacement const& valu
 {
 	fbs::ItemPlacementT out;
 
-	out.item_code = value.item_code;
-
-	out.item_reference = value.item_reference;
-
 	out.x = value.x;
 
 	out.y = value.y;
 
 	out.z = value.z;
 
-	out.width = value.width;
-
-	out.length = value.length;
-
-	out.depth = value.depth;
+	out.item = std::make_unique<fbs::ItemTypeT>(fromDomain(value.item));
 
 	return out;
 }
