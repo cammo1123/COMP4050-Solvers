@@ -273,9 +273,10 @@ is unavailable (or with `-DCOMP4050_CODEGEN=OFF`), so a schema change needs
 `pnpm build` (or `node scripts/generate.mjs`) first. The target itself is
 node-free, which is what lets the `php` workflow build the extension without the
 Node toolchain.
-Set `PHP_ZTS=1` to build against a thread-safe PHP. Extension compatibility
-depends on the PHP version, thread-safety, and architecture, not only on the
-platform. Its binary matrix is therefore larger than the Node matrix.
+Set `PHP_ZTS=1` to build against a thread-safe PHP. Set `PHP_DEBUG=1` to build
+against a debug PHP. Extension compatibility depends on the PHP version,
+thread-safety, and architecture, not only on the platform. Its binary matrix is
+therefore larger than the Node matrix.
 
 To create a platform-specific package prebuild after building the addon:
 

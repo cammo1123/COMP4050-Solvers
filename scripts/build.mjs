@@ -254,6 +254,7 @@ if (buildsPhp) {
 	}
 	if (includeDir) configure.push(`-DCOMP4050_PHP_INCLUDE_DIR=${includeDir}`)
 	if (process.env.PHP_ZTS === '1') configure.push('-DCOMP4050_PHP_ZTS=ON')
+	if (process.env.PHP_DEBUG === '1') configure.push('-DCOMP4050_PHP_DEBUG=ON')
 }
 configure.push(`-DCMAKE_BUILD_TYPE=${buildType}`)
 configure.push('-DCMAKE_EXPORT_COMPILE_COMMANDS=ON')
