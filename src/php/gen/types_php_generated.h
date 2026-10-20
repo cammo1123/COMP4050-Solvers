@@ -41,11 +41,12 @@ inline fbs::domain::RotationPolicy readRotationPolicy(zval* value, std::string c
 
 	if (Z_TYPE_P(value) == IS_STRING) {
 		char const* text = Z_STRVAL_P(value);
-		if (std::strcmp(text, "Never") == 0)
+		size_t const length = Z_STRLEN_P(value);
+		if (length == sizeof("Never") - 1 && std::memcmp(text, "Never", length) == 0)
 			return fbs::domain::RotationPolicy::Never;
-		if (std::strcmp(text, "KeepFlat") == 0)
+		if (length == sizeof("KeepFlat") - 1 && std::memcmp(text, "KeepFlat", length) == 0)
 			return fbs::domain::RotationPolicy::KeepFlat;
-		if (std::strcmp(text, "BestFit") == 0)
+		if (length == sizeof("BestFit") - 1 && std::memcmp(text, "BestFit", length) == 0)
 			return fbs::domain::RotationPolicy::BestFit;
 		fail(path + " must be one of Never, KeepFlat, BestFit");
 	}

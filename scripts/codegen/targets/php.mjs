@@ -28,21 +28,49 @@ const PHP_SCALAR_READER = {
 	double: "required_double",
 };
 
+/**
+ * Returns the PHP array key a field is read from and written to.
+ *
+ * A union member uses the option property name, everything else the camel
+ * case form of the schema field name.
+ *
+ * @param {object} field the resolved field
+ * @returns {string} the array key
+ */
 function phpKey(field) {
 	if (field.unionMember) return optionPropertyName(field.unionMember);
 	return toCamelCase(field.name);
 }
 
+/**
+ * Names the generated reader for an enum.
+ *
+ * @param {string} enumName the schema enum name
+ * @returns {string} the reader function name
+ */
 function enumReader(enumName) {
 	return `read${enumName}`;
 }
 
+/**
+ * Names the generated writer for an enum.
+ *
+ * @param {string} enumName the schema enum name
+ * @returns {string} the writer function name
+ */
 function enumWriter(enumName) {
 	return `${enumName.charAt(0).toLowerCase()}${enumName.slice(1)}Name`;
 }
 
 // Class constants are SCREAMING_SNAKE_CASE so Bionic\Solver\Algorithm::PHP_SOLVER
 // and Bionic\Solver\RotationPolicy::KEEP_FLAT read naturally in PHP.
+
+/**
+ * Emits the C++ that writes one field of a domain struct into a PHP array.
+ *
+ * @param {object} field the resolved field
+ * @returns {string} the emitted statements
+ */
 function writeField(field) {
 	const key = phpKey(field);
 	const access = `value.${field.name}`;
@@ -126,11 +154,35 @@ function writeField(field) {
 	throw new Error(`unhandled kind "${field.kind}" for ${field.name}`);
 }
 
+/**
+ * Emits the opening of a vector read.
+ *
+ * A required vector is read with required_array, which fails when the key is
+ * missing. An optional vector is only read when the key is present, so an
+ * omitted field leaves the default vector alone.
+ *
+ * @param {string} key the PHP array key
+ * @param {boolean} guarded whether the key may be absent
+ * @returns {string} the emitted statements
+ */
+function openVector(key, guarded) {
+	return guarded
+		? `if (HashTable* list = optional_array(table, "${key}", path)) {`
+		: `{\n\tHashTable* list = required_array(table, "${key}", path);`;
+}
+
 // "optional" means the key may be absent (it has a default or is marked
 // optional); "nullable" means the domain field is itself an optional<T>. They
 // are not the same thing: `algorithm: SolveAlgorithm = ExtremePoint` is
 // optional but not nullable, so its absence must leave the domain default
 // alone rather than clear it.
+
+/**
+ * Emits the C++ that reads one field of a PHP array into a domain struct.
+ *
+ * @param {object} field the resolved field
+ * @returns {string} the emitted statements
+ */
 function readField(field) {
 	const key = phpKey(field);
 	const path = `path + ".${key}"`;
@@ -175,8 +227,7 @@ function readField(field) {
 	if (field.kind === "vector-string") {
 		const element = `${path} + "[" + std::to_string(index) + "]"`;
 		return [
-			"{",
-			`\tHashTable* list = required_array(table, "${key}", path);`,
+			openVector(key, guarded),
 			"\tuint32_t count = static_cast<uint32_t>(zend_hash_num_elements(list));",
 			`\tout.${field.name}.reserve(count);`,
 			"\tfor (uint32_t index = 0; index < count; ++index) {",
@@ -200,8 +251,7 @@ function readField(field) {
 			]
 			: [`\t\tout.${field.name}.push_back(${reader}(entry, ${element}));`];
 		return [
-			"{",
-			`\tHashTable* list = required_array(table, "${key}", path);`,
+			openVector(key, guarded),
 			"\tuint32_t count = static_cast<uint32_t>(zend_hash_num_elements(list));",
 			`\tout.${field.name}.reserve(count);`,
 			"\tfor (uint32_t index = 0; index < count; ++index) {",
@@ -215,8 +265,7 @@ function readField(field) {
 	if (field.kind === "vector-table") {
 		const element = `${path} + "[" + std::to_string(index) + "]"`;
 		return [
-			"{",
-			`\tHashTable* list = required_array(table, "${key}", path);`,
+			openVector(key, guarded),
 			"\tuint32_t count = static_cast<uint32_t>(zend_hash_num_elements(list));",
 			`\tout.${field.name}.reserve(count);`,
 			"\tfor (uint32_t index = 0; index < count; ++index) {",
@@ -245,8 +294,16 @@ function readField(field) {
 	throw new Error(`unhandled kind "${field.kind}" for ${field.name}`);
 }
 
-// Readers and writers must be declared before the tables that call them, which
-// is the same dependency order the C++ domain structs are emitted in.
+/**
+ * Orders the tables so that every table is declared before the one that
+ * reads it, which is the same dependency order the C++ domain structs are
+ * emitted in.
+ *
+ * @param {object} tables the schema tables
+ * @param {object} unions the schema unions
+ * @param {string[]} names the tables to emit
+ * @returns {string[]} the ordered table names
+ */
 function dependencyOrder(tables, unions, names) {
 	const ordered = [];
 	const visited = new Set();
@@ -268,6 +325,15 @@ function dependencyOrder(tables, unions, names) {
 	return ordered.filter((name) => names.includes(name));
 }
 
+/**
+ * Emits the readers, writers and constants of every declared enum.
+ *
+ * The name of an enum value is matched on an explicit length, so a PHP string
+ * carrying a NUL byte cannot pass as a valid enum name.
+ *
+ * @param {object} schema the parsed schema IR
+ * @returns {{ blocks: string[], structs: string[] }} the emitted blocks
+ */
 function generateEnums(schema) {
 	const blocks = [];
 	const structs = [];
@@ -281,10 +347,12 @@ function generateEnums(schema) {
 			.map(([value]) => `case fbs::domain::${name}::${value}: return "${value}";`)
 			.join("\n");
 
+		// The name is matched on an explicit length: a PHP string may carry a
+		// NUL byte, so "BestFit\0junk" must not be accepted as "BestFit".
 		const byName = entries
 			.map(
 				([value]) =>
-					`if (std::strcmp(text, "${value}") == 0)\n\treturn fbs::domain::${name}::${value};`,
+					`if (length == sizeof("${value}") - 1 && std::memcmp(text, "${value}", length) == 0)\n\treturn fbs::domain::${name}::${value};`,
 			)
 			.join("\n");
 
@@ -326,6 +394,7 @@ function generateEnums(schema) {
 				"",
 				"\tif (Z_TYPE_P(value) == IS_STRING) {",
 				"\t\tchar const* text = Z_STRVAL_P(value);",
+				"\t\tsize_t const length = Z_STRLEN_P(value);",
 				indent(byName, 2),
 				`\t\tfail(path + " must be one of ${entries.map(([value]) => value).join(", ")}");`,
 				"\t}",
@@ -352,6 +421,13 @@ function generateEnums(schema) {
 	return { blocks, structs };
 }
 
+/**
+ * Emits the reader and writer of one table.
+ *
+ * @param {string} name the table name
+ * @param {object[]} fields the resolved fields of the table
+ * @returns {string} the emitted C++
+ */
 function generateTable(name, fields) {
 	const writer = [
 		`inline void write${name}(zval* out, fbs::domain::${name} const& value)`,
@@ -373,6 +449,14 @@ function generateTable(name, fields) {
 	return `${writer}\n\n${reader}`;
 }
 
+/**
+ * Emits the whole PHP binding header of one schema.
+ *
+ * @param {object} schema the parsed schema IR
+ * @param {string} basename the schema file name without its extension
+ * @param {string} label the schema label used in the generated comment
+ * @returns {string} the header contents
+ */
 export function generatePhp(schema, basename, label) {
 	const { tables, unions } = schema;
 	const order = dependencyOrder(tables, unions, schema.declaredTables);
@@ -425,6 +509,13 @@ export const phpTarget = {
 	// no flatc arguments and never invokes flatc.
 	flatcArgs: null,
 	outputDir: PHP_OUT,
+	/**
+	 * Writes the PHP binding header of one schema.
+	 *
+	 * @param {object} schema the parsed schema IR
+	 * @param {{ basename: string, label: string }} context the generation context
+	 * @returns {string[]} the written paths
+	 */
 	emit(schema, { basename, label }) {
 		const header = path.join(PHP_OUT, `${basename}_php_generated.h`);
 		fs.writeFileSync(header, generatePhp(schema, basename, label));
