@@ -7,6 +7,17 @@ import { typescriptTarget } from './typescript.mjs'
 
 export const targets = [cppTarget, typescriptTarget, phpTarget]
 
+/**
+ * Runs one code generation target and returns the paths it wrote.
+ *
+ * A target that consumes the parsed IR on its own emits no flatc output, so
+ * flatc is only run for the targets that ask for it.
+ *
+ * @param {{ flatcArgs: string[]|null, outputDir: string, emit: Function, emitBarrel?: Function }} target the target to run
+ * @param {object} schema the parsed schema IR
+ * @param {{ fbsDir: string, schemaPath: string, symbols?: object }} context the generation context
+ * @returns {string[]} the written paths
+ */
 export function runTarget (target, schema, context) {
 	fs.mkdirSync(target.outputDir, { recursive: true })
 	// A target may consume the IR on its own and emit no flatc output.
