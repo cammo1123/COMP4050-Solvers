@@ -116,14 +116,31 @@ function prebuildAddonPath () {
 
 // The PHP extension is keyed by PHP version, TS/NTS and arch rather than by
 // platform alone, so it is not versioned like the Node prebuilds.
+
+/**
+ * Returns the file name of the PHP extension for this platform.
+ *
+ * @returns {string} the module file name
+ */
 function phpExtensionName () {
 	return isWin ? 'bionic_solver.dll' : 'bionic_solver.so'
 }
 
+/**
+ * Returns the path of the PHP extension built in the given build directory.
+ *
+ * @param {string} buildDir the build directory
+ * @returns {string} the path to the extension
+ */
 function builtPhpExtensionPath (buildDir) {
 	return path.join(repoRoot, buildDir, phpExtensionName())
 }
 
+/**
+ * Returns the path the PHP extension is copied to.
+ *
+ * @returns {string} the path to the extension
+ */
 function phpExtensionPath () {
 	return path.join(repoRoot, 'php', phpExtensionName())
 }
@@ -222,7 +239,11 @@ if (ninja) {
 }
 
 const configure = ['-S', repoRoot, '-B', buildDir]
-if (target === 'core') configure.push('-DCOMP4050_BUILD_ADDON=OFF')
+// The build directory is shared between targets, so both feature flags are
+// always set explicitly: a cached value from an earlier target would
+// otherwise silently change what this build produces.
+if (target === 'core') configure.push('-DCOMP4050_BUILD_ADDON=OFF', '-DCOMP4050_BUILD_PHP=OFF')
+if (buildsAddon) configure.push('-DCOMP4050_BUILD_ADDON=ON', '-DCOMP4050_BUILD_PHP=OFF')
 if (buildsPhp) {
 	configure.push('-DCOMP4050_BUILD_ADDON=OFF', '-DCOMP4050_BUILD_PHP=ON')
 	// php-config resolves itself on unix; on Windows the development package has

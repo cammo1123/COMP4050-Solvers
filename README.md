@@ -153,9 +153,9 @@ items in a box may appear in a different order.
 
 ## PHP
 
-The same C++ core is exposed to PHP through a native extension. The PHP build
-is independent of the Node toolchain: it compiles against the committed
-generated headers and never invokes the code generator.
+The same C++ core is exposed to PHP through a native extension. The PHP CMake
+target does not require the Node toolchain: without node (or with
+`-DCOMP4050_CODEGEN=OFF`) it compiles against the committed generated headers.
 
 ```php
 use Bionic\Solver\Algorithm;
@@ -196,7 +196,8 @@ C++ core surface as `Bionic\Solver\Exception` and never take the process down.
 
 `onProgress` is optional. Because the call is synchronous it is invoked directly
 from the solving thread, and an exception thrown by the callback aborts the
-solve and propagates.
+solve and propagates. A value that is not callable is rejected with a
+`TypeError` while the arguments are parsed, before any solving starts.
 
 ## Data model
 
@@ -265,10 +266,11 @@ so unpack the matching development package from
 PHP_INCLUDE_DIR=/c/php-devel/include pnpm build:php
 ```
 
-The PHP build compiles against the committed generated headers and never runs
-the code generator, so a schema change needs `pnpm build` (or
-`node scripts/generate.mjs`) first. The CMake target itself is node-free, which
-is what lets the `php` workflow build the extension without the Node toolchain.
+The PHP CMake target compiles against the committed generated headers when node
+is unavailable (or with `-DCOMP4050_CODEGEN=OFF`), so a schema change needs
+`pnpm build` (or `node scripts/generate.mjs`) first. The target itself is
+node-free, which is what lets the `php` workflow build the extension without the
+Node toolchain.
 Set `PHP_ZTS=1` to build against a thread-safe PHP. Because the extension is
 keyed
 to a PHP version, thread-safety and architecture rather than to a platform

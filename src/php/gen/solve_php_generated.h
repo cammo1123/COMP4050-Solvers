@@ -42,13 +42,14 @@ inline fbs::domain::SolveAlgorithm readSolveAlgorithm(zval* value, std::string c
 
 	if (Z_TYPE_P(value) == IS_STRING) {
 		char const* text = Z_STRVAL_P(value);
-		if (std::strcmp(text, "ExtremePoint") == 0)
+		size_t const length = Z_STRLEN_P(value);
+		if (length == sizeof("ExtremePoint") - 1 && std::memcmp(text, "ExtremePoint", length) == 0)
 			return fbs::domain::SolveAlgorithm::ExtremePoint;
-		if (std::strcmp(text, "StackBased") == 0)
+		if (length == sizeof("StackBased") - 1 && std::memcmp(text, "StackBased", length) == 0)
 			return fbs::domain::SolveAlgorithm::StackBased;
-		if (std::strcmp(text, "PHPSolver") == 0)
+		if (length == sizeof("PHPSolver") - 1 && std::memcmp(text, "PHPSolver", length) == 0)
 			return fbs::domain::SolveAlgorithm::PHPSolver;
-		if (std::strcmp(text, "HeightmapSolver") == 0)
+		if (length == sizeof("HeightmapSolver") - 1 && std::memcmp(text, "HeightmapSolver", length) == 0)
 			return fbs::domain::SolveAlgorithm::HeightmapSolver;
 		fail(path + " must be one of ExtremePoint, StackBased, PHPSolver, HeightmapSolver");
 	}
