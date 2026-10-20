@@ -153,6 +153,17 @@ if (optimize) configure.push('-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON')
 if (ninja) configure.push('-G', 'Ninja', `-DCMAKE_MAKE_PROGRAM=${ninja}`)
 if (findClangCl()) configure.push('-DCMAKE_CXX_COMPILER=clang-cl')
 
+if (process.env.COMP4050_GIT_HASH) {
+	configure.push(`-DBUILDINFO_GIT_HASH=${process.env.COMP4050_GIT_HASH}`)
+}
+if (process.env.COMP4050_GIT_BRANCH) {
+	configure.push(`-DBUILDINFO_GIT_BRANCH=${process.env.COMP4050_GIT_BRANCH}`)
+}
+
+if (process.env.COMP4050_STATIC_CXX_RUNTIME) {
+	configure.push(`-DCOMP4050_STATIC_CXX_RUNTIME=${process.env.COMP4050_STATIC_CXX_RUNTIME}`)
+}
+
 run(cmake, configure, { env })
 run(cmake, ['--build', buildDir], { env })
 
