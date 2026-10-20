@@ -10,6 +10,14 @@
 
 namespace addon {
 
+/**
+ * Creates a worker that reports the progress of the solve to a JavaScript
+ * callback.
+ *
+ * @param {Napi::Env} env the environment the worker runs in
+ * @param {std::vector<uint8_t>} request the encoded FlatBuffers SolveRequest
+ * @param {Napi::Function} callback the callback that receives the progress of the solve
+ */
 SolveWorker::SolveWorker(Napi::Env env, std::vector<uint8_t> request, Napi::Function callback)
 	: Napi::AsyncWorker(env, "solver::solve")
 	, _request(std::move(request))
@@ -18,6 +26,12 @@ SolveWorker::SolveWorker(Napi::Env env, std::vector<uint8_t> request, Napi::Func
 {
 }
 
+/**
+ * Creates a worker that solves without reporting the progress.
+ *
+ * @param {Napi::Env} env the environment the worker runs in
+ * @param {std::vector<uint8_t>} request the encoded FlatBuffers SolveRequest
+ */
 SolveWorker::SolveWorker(Napi::Env env, std::vector<uint8_t> request)
 	: Napi::AsyncWorker(env, "solver::solve")
 	, _request(std::move(request))
@@ -25,17 +39,26 @@ SolveWorker::SolveWorker(Napi::Env env, std::vector<uint8_t> request)
 {
 }
 
+/**
+ * Returns the promise that is settled with the result of the solve.
+ *
+ * @returns {Napi::Promise} the promise of the worker
+ */
 Napi::Promise SolveWorker::Promise()
 {
 	return _deferred.Promise();
 }
 
+/**
+ * Runs the solve and encodes the response.
+ *
+ * The prebuild links the unwinder statically, so an exception that leaves
+ * the addon is unwound by a different implementation than the rest of the
+ * process. Everything that can throw is caught here; node-addon-api only
+ * catches std::exception.
+ */
 void SolveWorker::Execute()
 {
-	// The prebuild links the unwinder statically, so an exception that leaves
-	// the addon is unwound by a different implementation than the rest of the
-	// process. Everything that can throw is caught here; node-addon-api only
-	// catches std::exception.
 	try {
 		fbs::SolveRequestT request;
 		std::string error;
@@ -69,6 +92,10 @@ void SolveWorker::Execute()
 	}
 }
 
+/**
+ * Releases the progress callback and resolves the promise with the encoded
+ * response.
+ */
 void SolveWorker::OnOK()
 {
 	if (_tsfn) {
@@ -78,6 +105,12 @@ void SolveWorker::OnOK()
 	_deferred.Resolve(Napi::Buffer<uint8_t>::Copy(Env(), _response.data(), _response.size()));
 }
 
+/**
+ * Releases the progress callback and rejects the promise with the error of the
+ * solve.
+ *
+ * @param {Napi::Error} error the error the solve failed with
+ */
 void SolveWorker::OnError(Napi::Error const& error)
 {
 	if (_tsfn) {
