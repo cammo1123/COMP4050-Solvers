@@ -1,25 +1,28 @@
 [
   {
-    "ItemCode": "ITM-001",
-    "ItemReference": "Widget A",
-    "Width": 100,
-    "Length": 200,
-    "Depth": 50,
-    "BoxGroup": "GROUP-A"
+    "itemCode": "ITM-001",
+    "itemReference": "Widget A",
+    "width": 100,
+    "length": 200,
+    "depth": 50,
+    "boxGroup": "GROUP-A",
+    "weight": 1.2
   },
   {
-    "ItemCode": "ITM-002",
-    "ItemReference": "Widget B",
-    "Width": 300,
-    "Length": 150,
-    "Depth": 75
+    "itemCode": "ITM-002",
+    "itemReference": "Widget B",
+    "width": 300,
+    "length": 150,
+    "depth": 75,
+    "weight": 3.5
   },
   {
-    "ItemCode": "ITM-003",
-    "ItemReference": "Fragile Glassware",
-    "Width": 80,
-    "Length": 80,
-    "Depth": 120,
-    "BoxGroup": "GROUP-B"
+    "itemCode": "ITM-003",
+    "itemReference": "Fragile Glassware",
+    "width": 80,
+    "length": 80,
+    "depth": 120,
+    "boxGroup": "GROUP-B",
+    "weight": 0.8
   }
 ]
