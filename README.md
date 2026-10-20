@@ -21,6 +21,40 @@ Install dependencies with:
 pnpm install
 ```
 
+### Linux runtime requirements
+
+The prebuilt Linux addon is loaded with `dlopen()`, so the host has to provide
+every symbol version the binary asks for. A binary compiled on a recent
+distro otherwise fails to load on an older one with, for example,
+``version `GLIBCXX_3.4.32' not found``.
+
+The Linux prebuild is therefore built inside the `manylinux_2_28` container
+(AlmaLinux 8, glibc 2.28) and links the C++ runtime statically, which gives
+it these guarantees:
+
+- it needs glibc 2.28 or newer (Debian 10+, Ubuntu 20.04+, RHEL 8+);
+- it does not need any `GLIBCXX_*` symbol, so the `libstdc++` version of the
+  host is irrelevant;
+- the statically linked C++ symbols are kept local: the addon is linked with
+  a version script that exports the two symbols Node looks up and makes
+  everything else local, so neither the `libstdc++.so.6` that Node itself has
+  loaded nor the `std::` symbols the addon exports on its own can preempt
+  them.
+
+`pnpm check:abi` verifies those guarantees against the produced binary and
+the `prebuild` workflow runs it on every Linux build. The check inspects the
+binary with `readelf`, so it needs `binutils`; it fails without it on Linux
+and is skipped on the other platforms.
+
+The static C++ runtime is only used for the shipped prebuild. It is opt-in
+through the `COMP4050_STATIC_CXX_RUNTIME` CMake option, because a locally
+built addon is always loaded by a host that has the matching `libstdc++`. The
+option only has an effect on Linux:
+
+```sh
+COMP4050_STATIC_CXX_RUNTIME=ON pnpm build
+```
+
 ## Package API
 
 The package exposes named exports, a default export, and CommonJS support:
@@ -178,6 +212,21 @@ To create a platform-specific package prebuild after building the addon:
 pnpm prebuild:binaries
 ```
 
+The Linux prebuild is built in the `manylinux_2_28` container so that it
+stays loadable on older hosts (see
+[Linux runtime requirements](#linux-runtime-requirements)):
+
+```sh
+pnpm prebuild:linux   # requires Docker
+```
+
+The script runs the test suite, builds the optimised addon, checks that the
+stripped binary still loads and that the standalone solver still runs, and
+writes the result to `node/prebuilds/linux-x64/addon.node`. It runs on Linux
+and macOS hosts; on Windows it has to be run from Git Bash, which needs the
+path conversion of the MSYS shell to be disabled for the Docker arguments (the
+script does that itself).
+
 Generated bindings are produced from `fbs/` and written under `src/gen/` and
 `node/src/gen/`. Do not edit generated files manually.
 
@@ -189,6 +238,7 @@ pnpm test:watch    # Build and run Vitest in watch mode
 pnpm typecheck     # TypeScript type checking
 pnpm lint:check    # clang-format validation for src/
 pnpm lint:fix      # Apply clang-format to src/
+pnpm check:abi     # Verify the Linux prebuild's glibc/libstdc++ requirements (needs binutils, Linux only)
 pnpm bench         # Optimized benchmark suite
 ```
 
@@ -212,7 +262,9 @@ local FlatBuffers compiler cache.
 The `test` workflow builds and tests on Ubuntu, Windows, and macOS for pull
 requests targeting `dev` or `main`, and pushes to `dev`. The `prebuild` workflow
 builds platform prebuilds, runs the tests and standalone smoke test, and commits
-generated distribution files and prebuilds on branch pushes.
+generated distribution files and prebuilds on branch pushes. The Linux prebuild
+is built in the `manylinux_2_28` container and checked against the supported
+runtime baseline before it is uploaded.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for branch rules and development
 workflow.

@@ -4,6 +4,7 @@
 #include "solve_translation_generated.h"
 #include "solver.h"
 
+#include <exception>
 #include <string>
 #include <utility>
 
@@ -31,31 +32,41 @@ Napi::Promise SolveWorker::Promise()
 
 void SolveWorker::Execute()
 {
-	fbs::SolveRequestT request;
-	std::string error;
-	if (!fbs::translation::decodeRequest(_request.data(), _request.size(), request, error)) {
-		SetError(error);
-		return;
-	}
+	// The prebuild links the unwinder statically, so an exception that leaves
+	// the addon is unwound by a different implementation than the rest of the
+	// process. Everything that can throw is caught here; node-addon-api only
+	// catches std::exception.
+	try {
+		fbs::SolveRequestT request;
+		std::string error;
+		if (!fbs::translation::decodeRequest(_request.data(), _request.size(), request, error)) {
+			SetError(error);
+			return;
+		}
 
-	fbs::domain::SolveRequest const domain = fbs::domain::toDomain(request);
-	solver::ProgressCallback on_progress;
-	if (_tsfn) {
-		auto tsfn = _tsfn;
-		on_progress = [tsfn](size_t done, size_t total) {
-			auto* value = new std::pair<size_t, size_t>(done, total);
-			auto const status = tsfn.NonBlockingCall(value, [](Napi::Env env, Napi::Function jsCallback, std::pair<size_t, size_t>* value) {
-				jsCallback.Call({ Napi::Number::New(env, static_cast<double>(value->first)), Napi::Number::New(env, static_cast<double>(value->second)) });
-				delete value;
-			});
-			if (status != napi_ok)
-				delete value;
-		};
-	}
+		fbs::domain::SolveRequest const domain = fbs::domain::toDomain(request);
+		solver::ProgressCallback on_progress;
+		if (_tsfn) {
+			auto tsfn = _tsfn;
+			on_progress = [tsfn](size_t done, size_t total) {
+				auto* value = new std::pair<size_t, size_t>(done, total);
+				auto const status = tsfn.NonBlockingCall(value, [](Napi::Env env, Napi::Function jsCallback, std::pair<size_t, size_t>* value) {
+					jsCallback.Call({ Napi::Number::New(env, static_cast<double>(value->first)), Napi::Number::New(env, static_cast<double>(value->second)) });
+					delete value;
+				});
+				if (status != napi_ok)
+					delete value;
+			};
+		}
 
-	fbs::domain::SolveResponse const response = solver::solve(domain, on_progress);
-	fbs::SolveResponseT const encoded = fbs::domain::fromDomain(response);
-	_response = fbs::translation::encodeResponse(encoded);
+		fbs::domain::SolveResponse const response = solver::solve(domain, on_progress);
+		fbs::SolveResponseT const encoded = fbs::domain::fromDomain(response);
+		_response = fbs::translation::encodeResponse(encoded);
+	} catch (std::exception const& e) {
+		SetError(e.what());
+	} catch (...) {
+		SetError("the solver failed with an unknown error");
+	}
 }
 
 void SolveWorker::OnOK()
