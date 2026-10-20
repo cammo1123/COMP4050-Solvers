@@ -57,7 +57,7 @@ if(GIT_FOUND)
         set(BUILDINFO_GIT_HASH "${buildinfo_git_hash}")
     endif()
 
-    if(buildinfo_git_branch_result EQUAL 0 AND buildinfo_git_branch)
+    if(buildinfo_git_branch_result EQUAL 0 AND buildinfo_git_branch AND NOT buildinfo_git_branch STREQUAL "HEAD")
         set(BUILDINFO_GIT_BRANCH "${buildinfo_git_branch}")
     endif()
 endif()
