@@ -185,9 +185,11 @@ mod_php it blocks the worker for the duration of the solve, which is why the
 core's `timeoutMs` is worth setting — it bounds the work rather than relying on
 `max_execution_time`.
 
-The array shape is identical to the JavaScript package. Enums accept either the
-schema name (`"ExtremePoint"`) or the ordinal, and are reported back as schema
-names. `Bionic\Solver\Algorithm` and `Bionic\Solver\RotationPolicy` expose the
+The array shape matches the JavaScript package, with one difference: PHP passes
+`onProgress` as a separate second argument to `solve()` rather than including
+it in the request array. Enums accept either the schema name (`"ExtremePoint"`)
+or the ordinal, and are reported back as schema names.
+`Bionic\Solver\Algorithm` and `Bionic\Solver\RotationPolicy` expose the
 ordinals as class constants.
 
 Invalid input raises a `ValueError` whose message carries the offending path,
