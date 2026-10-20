@@ -396,6 +396,7 @@ endif()
 # ---- PHP extension ----
 option(COMP4050_BUILD_PHP "Build the PHP extension" OFF)
 option(COMP4050_PHP_ZTS "Build the PHP extension against a thread-safe PHP" OFF)
+option(COMP4050_PHP_DEBUG "Build the PHP extension against a debug PHP" OFF)
 set(COMP4050_PHP_INCLUDE_DIR "" CACHE PATH "Directory containing php.h")
 set(COMP4050_PHP_LIB "" CACHE FILEPATH "PHP import library (php8.lib or php8ts.lib)")
 
@@ -534,10 +535,15 @@ if(COMP4050_BUILD_PHP)
         target_compile_definitions(bionic_solver PRIVATE ZTS=1)
     endif()
 
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        target_compile_definitions(bionic_solver PRIVATE ZEND_DEBUG=1)
-    else()
-        target_compile_definitions(bionic_solver PRIVATE ZEND_DEBUG=0)
+    # The Windows development package ships no php_config.h, so ZEND_DEBUG has
+    # to be defined here. On unix php-config already reports the right value
+    # through php_config.h, and redefining it would contradict that header.
+    if(WIN32)
+        if(COMP4050_PHP_DEBUG)
+            target_compile_definitions(bionic_solver PRIVATE ZEND_DEBUG=1)
+        else()
+            target_compile_definitions(bionic_solver PRIVATE ZEND_DEBUG=0)
+        endif()
     endif()
 
     # The extension resolves every zend_* symbol from the hosting PHP binary; on

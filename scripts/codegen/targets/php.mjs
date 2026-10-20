@@ -241,7 +241,7 @@ function readField(field) {
 	if (field.kind === "vector-scalar") {
 		const reader = PHP_SCALAR_READER[field.scalar] ?? "required_int";
 		const range = rangeFor(field);
-		const element = `path + "[" + std::to_string(index) + "]"`;
+		const element = `${path} + "[" + std::to_string(index) + "]"`;
 		const read = range
 			? [
 				`\t\tint64_t _value = ${reader}(entry, ${element});`,
