@@ -8,11 +8,16 @@ on:
 
 jobs:
     prebuild:
+        name: ${{ matrix.name }}
         runs-on: ${{ matrix.os }}
         strategy:
             fail-fast: false
             matrix:
-                os: [ubuntu-latest, windows-latest, macos-latest]
+                include:
+                    - name: Windows
+                      os: windows-latest
+                    - name: macOS
+                      os: macos-latest
         steps:
             - uses: actions/checkout@v4
 
@@ -39,11 +44,29 @@ jobs:
             - name: Upload prebuilds
               uses: actions/upload-artifact@v4
               with:
-                  name: prebuilds-${{ matrix.os }}
+                  name: prebuilds-${{ matrix.name }}
+                  path: node/prebuilds/
+
+    prebuild-linux:
+        name: Linux
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Build prebuild (manylinux_2_28 container)
+              run: bash scripts/build-linux-prebuild.sh
+
+            - name: Verify Linux runtime compatibility
+              run: node scripts/check-addon-abi.mjs node/prebuilds/linux-x64/addon.node
+
+            - name: Upload prebuilds
+              uses: actions/upload-artifact@v4
+              with:
+                  name: prebuilds-Linux
                   path: node/prebuilds/
 
     commit:
-        needs: prebuild
+        needs: [prebuild, prebuild-linux]
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         runs-on: ubuntu-latest
         permissions:

@@ -10,6 +10,11 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 option(COMP4050_BUILD_ADDON "Build the Node.js N-API addon" ON)
+option(
+    COMP4050_STATIC_CXX_RUNTIME
+    "Link the C++ runtime statically on Linux so the binaries do not depend on the host libstdc++ version"
+    OFF
+)
 
 # ---- build info ----
 find_package(Git QUIET)
@@ -17,32 +22,43 @@ find_package(Git QUIET)
 set(BUILDINFO_PROJECT_NAME "${PROJECT_NAME}")
 set(BUILDINFO_PROJECT_VERSION "${PROJECT_VERSION}")
 set(BUILDINFO_PLATFORM "${CMAKE_SYSTEM_NAME}")
-set(BUILDINFO_GIT_HASH "unknown")
-set(BUILDINFO_GIT_BRANCH "unknown")
+
+# The containerised Linux build copies the sources without the git metadata, so
+# the caller can pass the revision in; the repository wins when it has one.
+if(BUILDINFO_GIT_HASH STREQUAL "")
+    set(BUILDINFO_GIT_HASH "unknown")
+endif()
+
+if(BUILDINFO_GIT_BRANCH STREQUAL "")
+    set(BUILDINFO_GIT_BRANCH "unknown")
+endif()
+
 set(BUILDINFO_BUILD_TIME "")
 
 if(GIT_FOUND)
     execute_process(
         COMMAND "${GIT_EXECUTABLE}" rev-parse --short HEAD
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-        OUTPUT_VARIABLE BUILDINFO_GIT_HASH
+        OUTPUT_VARIABLE buildinfo_git_hash
         OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
         RESULT_VARIABLE buildinfo_git_hash_result
     )
     execute_process(
         COMMAND "${GIT_EXECUTABLE}" rev-parse --abbrev-ref HEAD
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-        OUTPUT_VARIABLE BUILDINFO_GIT_BRANCH
+        OUTPUT_VARIABLE buildinfo_git_branch
         OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
         RESULT_VARIABLE buildinfo_git_branch_result
     )
 
-    if(NOT buildinfo_git_hash_result EQUAL 0 OR NOT BUILDINFO_GIT_HASH)
-        set(BUILDINFO_GIT_HASH "unknown")
+    if(buildinfo_git_hash_result EQUAL 0 AND buildinfo_git_hash)
+        set(BUILDINFO_GIT_HASH "${buildinfo_git_hash}")
     endif()
 
-    if(NOT buildinfo_git_branch_result EQUAL 0 OR NOT BUILDINFO_GIT_BRANCH)
-        set(BUILDINFO_GIT_BRANCH "unknown")
+    if(buildinfo_git_branch_result EQUAL 0 AND buildinfo_git_branch)
+        set(BUILDINFO_GIT_BRANCH "${buildinfo_git_branch}")
     endif()
 endif()
 
@@ -107,6 +123,48 @@ function(comp4050_fetch_archive url dest)
 endfunction()
 
 find_package(Threads REQUIRED)
+
+# The prebuild is loaded with dlopen(), so the host has to provide every symbol
+# version the binary asks for: one built with GCC 13 needs GLIBCXX_3.4.32,
+# which a host with GCC 11 does not have. Linking the C++ runtime statically
+# removes that dependency, and the flags below keep the symbols of the static
+# archives and of the addon itself local, so the libstdc++ the host has already
+# loaded cannot preempt the copies the addon was compiled against.
+set(COMP4050_STATIC_CXX_FLAGS "")
+set(COMP4050_HIDDEN_VISIBILITY_FLAGS "")
+
+if(COMP4050_STATIC_CXX_RUNTIME AND UNIX AND NOT APPLE)
+    unset(COMP4050_LIBSTDCXX_STATIC CACHE)
+    set(comp4050_saved_library_suffixes "${CMAKE_FIND_LIBRARY_SUFFIXES}")
+    set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+    find_library(
+        COMP4050_LIBSTDCXX_STATIC
+        NAMES stdc++
+        PATHS ${CMAKE_CXX_IMPLICIT_LINK_DIRECTORIES}
+        NO_DEFAULT_PATH
+    )
+    set(CMAKE_FIND_LIBRARY_SUFFIXES "${comp4050_saved_library_suffixes}")
+    unset(comp4050_saved_library_suffixes)
+
+    if(COMP4050_LIBSTDCXX_STATIC)
+        set(
+            COMP4050_STATIC_CXX_FLAGS
+            "-static-libstdc++"
+            "-static-libgcc"
+            "-Wl,--exclude-libs,ALL"
+        )
+        set(
+            COMP4050_HIDDEN_VISIBILITY_FLAGS
+            "-fvisibility=hidden"
+            "-fvisibility-inlines-hidden"
+        )
+    else()
+        message(
+            WARNING
+            "libstdc++.a was not found; the binaries will require the host libstdc++ to be at least as new as the build toolchain."
+        )
+    endif()
+endif()
 
 find_program(NODE_EXECUTABLE node)
 
@@ -183,6 +241,16 @@ foreach(target php_solver solver_core solver)
         target_compile_options(${target} PRIVATE -Wall -Wextra)
     endif()
 endforeach()
+
+if(COMP4050_HIDDEN_VISIBILITY_FLAGS)
+    foreach(target php_solver solver_core)
+        target_compile_options(${target} PRIVATE ${COMP4050_HIDDEN_VISIBILITY_FLAGS})
+    endforeach()
+endif()
+
+if(COMP4050_STATIC_CXX_FLAGS)
+    target_link_options(solver PRIVATE ${COMP4050_STATIC_CXX_FLAGS})
+endif()
 
 # solver_core and php_solver are linked into the Node addon module, which
 # requires position-independent code.
@@ -264,6 +332,27 @@ if(COMP4050_BUILD_ADDON)
         target_link_libraries(solver_addon PRIVATE "${node_lib}")
     elseif(APPLE)
         target_link_options(solver_addon PRIVATE "-undefined" "dynamic_lookup")
+    endif()
+
+    if(COMP4050_STATIC_CXX_FLAGS)
+        target_link_options(solver_addon PRIVATE ${COMP4050_STATIC_CXX_FLAGS})
+    endif()
+
+    if(COMP4050_HIDDEN_VISIBILITY_FLAGS)
+        target_compile_options(solver_addon PRIVATE ${COMP4050_HIDDEN_VISIBILITY_FLAGS})
+    endif()
+
+    if(COMP4050_STATIC_CXX_FLAGS)
+        # The version script exports the two symbols Node looks up and makes
+        # every other symbol of the addon local.
+        set(COMP4050_ADDON_EXPORTS "${CMAKE_CURRENT_BINARY_DIR}/addon-exports.map")
+        file(
+            WRITE "${COMP4050_ADDON_EXPORTS}"
+            "{\n  global:\n    napi_register_module_v1;\n    node_api_module_get_api_version_v1;\n  local:\n    *;\n};\n"
+        )
+        target_link_options(
+            solver_addon PRIVATE "-Wl,--version-script=${COMP4050_ADDON_EXPORTS}"
+        )
     endif()
 
     if(MSVC)
