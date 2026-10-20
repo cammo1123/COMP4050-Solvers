@@ -1,102 +1,518 @@
+# Public data reference; authoritative schemas are in fbs/.
 openapi: 3.0.3
 info:
-  title: Box Types API
-  description: Data structure for box type reference data (dimensions and weights).
+  title: Bionic Solver data reference
   version: 1.0.0
-
+  description: Public camelCase request and response shapes for the in-process Node.js and PHP
+    APIs. No HTTP service is provided. Authoritative definitions are fbs/types.fbs and fbs/operations/*.fbs;
+    see ../README.md for algorithm-specific behavior.
 paths: {}
-
 components:
   schemas:
+    SolveAlgorithm:
+      type: integer
+      enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      description: 0 = ExtremePoint, 1 = StackBased, 2 = PHPSolver, 3 = HeightmapSolver. PHP
+        also accepts these schema names as strings.
+    RotationPolicy:
+      type: integer
+      enum:
+      - 0
+      - 1
+      - 2
+      description: 0 = Never, 1 = KeepFlat, 2 = BestFit. PHP also accepts these schema names
+        as strings.
+    ExtremePointOptions:
+      type: object
+      properties: {}
+    StackBasedOptions:
+      type: object
+      properties: {}
+    HeightmapSolverOptions:
+      type: object
+      properties:
+        maxBoxes:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          description: Global box count cap; omitted means unlimited, zero means none.
+        allowRotation:
+          type: boolean
+          default: true
+          description: Global rotation switch; defaults to true. Uniform Never policy also disables
+            rotation.
+        minSupport:
+          type: number
+          format: double
+          description: Fraction of base area that must be supported; defaults to 0.6.
+        cellSize:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          description: Ignored; the heightmap uses exact millimetres.
+        restarts:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          description: Additional attempts after the baseline; defaults to 24. Zero runs only
+            the baseline.
+        seed:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          description: Restart RNG seed; defaults to 42.
+        strictUnsupported:
+          type: boolean
+          description: 'Defaults to true: reject active constraints, KeepFlat, or mixed rotation
+            policies. False bypasses rejection and ignores unsupported per-item rules.'
+    PHPSolverOptions:
+      type: object
+      properties:
+        balanceWeight:
+          type: boolean
+          description: Try balancing item weight between packed boxes; defaults to false.
+        allPermutations:
+          type: boolean
+          description: Try up to 256 orderings within the deadline; defaults to false.
+        singleBox:
+          type: boolean
+          description: Set global box limit to one; defaults to false.
+        strictItemOrder:
+          type: boolean
+          description: Preserve item order and disable permutation search and layer reordering;
+            defaults to false.
+        bestSubset:
+          type: boolean
+          description: Search item subsets when evaluating boxes; defaults to false.
+        maxBoxes:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          description: Global box count cap; omitted means unlimited, zero means none.
+        allowRotation:
+          type: boolean
+          default: true
+          description: Allow rotations consistent with per-item policy; defaults to true.
+    SolveRequest:
+      type: object
+      required:
+      - boxes
+      - items
+      properties:
+        boxes:
+          type: array
+          items:
+            $ref: '#/components/schemas/BoxType'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemType'
+        algorithm:
+          allOf:
+          - $ref: '#/components/schemas/SolveAlgorithm'
+          description: Defaults to ExtremePoint (0). Select the algorithm matching the strategy
+            options.
+        options:
+          $ref: '#/components/schemas/SolveOptions'
+      example:
+        boxes:
+        - reference: SML
+          width: 150
+          length: 150
+          depth: 150
+          maxWeight: 8.5
+          boxWeight: 0.5
+          active: true
+          maximumBoxes: 100
+        - reference: MED
+          width: 400
+          length: 400
+          depth: 400
+          maxWeight: 15.2
+          boxWeight: 0.75
+          active: true
+        - reference: LRG
+          width: 1200
+          length: 1200
+          depth: 1200
+          active: false
+        items:
+        - itemCode: ITM-001
+          itemReference: Widget A
+          width: 100
+          length: 200
+          depth: 50
+          boxGroup: GROUP-A
+          weight: 1.2
+        - itemCode: ITM-002
+          itemReference: Widget B
+          width: 300
+          length: 150
+          depth: 75
+          weight: 3.5
+        - itemCode: ITM-003
+          itemReference: Fragile Glassware
+          width: 80
+          length: 80
+          depth: 120
+          boxGroup: GROUP-B
+          weight: 0.8
+        algorithm: 0
+    SolveOptions:
+      type: object
+      properties:
+        timeoutMs:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          description: Milliseconds. ExtremePoint has no deadline when omitted; PHPSolver defaults to 4294967295.
+            HeightmapSolver defaults to 1000 and always completes its baseline. StackBased ignores
+            it.
+        extremePointOptions:
+          allOf:
+          - $ref: '#/components/schemas/ExtremePointOptions'
+          description: Options for the corresponding selected algorithm. Supply at most one
+            strategy options object.
+        stackBasedOptions:
+          allOf:
+          - $ref: '#/components/schemas/StackBasedOptions'
+          description: Options for the corresponding selected algorithm. Supply at most one
+            strategy options object.
+        phpSolverOptions:
+          allOf:
+          - $ref: '#/components/schemas/PHPSolverOptions'
+          description: Options for the corresponding selected algorithm. Supply at most one
+            strategy options object.
+        heightmapSolverOptions:
+          allOf:
+          - $ref: '#/components/schemas/HeightmapSolverOptions'
+          description: Options for the corresponding selected algorithm. Supply at most one
+            strategy options object.
+      description: Common timeout and at most one strategy options object, matching SolveRequest.algorithm.
+        FlatBuffers union fields are flattened into public option keys.
+    ItemPlacement:
+      type: object
+      required:
+      - x
+      - y
+      - z
+      - item
+      properties:
+        x:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          description: Minimum corner on the width axis in whole millimetres.
+        y:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          description: Minimum corner on the vertical depth axis in whole millimetres.
+        z:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          description: Minimum corner on the length axis in whole millimetres.
+        item:
+          allOf:
+          - $ref: '#/components/schemas/ItemType'
+          description: Oriented item dimensions and identifiers. ExtremePoint/PHPSolver preserve
+            optional rules and omit quantity. HeightmapSolver omits rotationPolicy and constraint.
+    BoxResult:
+      type: object
+      required:
+      - boxReference
+      - width
+      - length
+      - depth
+      - placements
+      properties:
+        boxReference:
+          type: string
+        width:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+        length:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+        depth:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+        placements:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemPlacement'
+        totalWeight:
+          type: number
+          format: float
+          description: 'Kilograms: contents only for ExtremePoint, PHPSolver, and StackBased;
+            contents plus box tare for HeightmapSolver.'
+        utilization:
+          type: number
+          format: float
+          description: Packed item volume divided by box interior volume.
+        outerWidth:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+        outerLength:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+        outerDepth:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+    SolveResponse:
+      type: object
+      required:
+      - results
+      - failed
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BoxResult'
+        failed:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemType'
+          description: One entry per failed instance for packing heuristics. ExtremePoint/PHPSolver
+            omit quantity; HeightmapSolver sets quantity to one. StackBased returns original
+            definitions when no boxes are supplied.
+        algorithmUs:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          default: 0
+          description: Elapsed core solve time in microseconds.
+        serverUs:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          default: 0
+          description: 'Microseconds: total wrapper time in Node.js; core call duration in PHP.
+            Wrappers set this value after solving.'
+    PlacementConstraint:
+      type: object
+      properties:
+        noStacking:
+          type: boolean
+          description: Require the item to be placed on the floor (y = 0). Defaults to false.
+        requiredVertical:
+          type: boolean
+          description: Preserve original depth as the vertical dimension. Defaults to false.
+        minX:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          description: Inclusive bound on the minimum placement corner in whole millimetres.
+            Minima default to zero; maxima default to uint32 maximum.
+        minY:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          description: Inclusive bound on the minimum placement corner in whole millimetres.
+            Minima default to zero; maxima default to uint32 maximum.
+        minZ:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          description: Inclusive bound on the minimum placement corner in whole millimetres.
+            Minima default to zero; maxima default to uint32 maximum.
+        maxX:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          description: Inclusive bound on the minimum placement corner in whole millimetres.
+            Minima default to zero; maxima default to uint32 maximum.
+        maxY:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          description: Inclusive bound on the minimum placement corner in whole millimetres.
+            Minima default to zero; maxima default to uint32 maximum.
+        maxZ:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          description: Inclusive bound on the minimum placement corner in whole millimetres.
+            Minima default to zero; maxima default to uint32 maximum.
     BoxType:
       type: object
       required:
-        - Reference
-        - Width
-        - Length
-        - Depth
+      - reference
+      - width
+      - length
+      - depth
       properties:
-        Reference:
+        reference:
           type: string
-          description: Unique code identifying the box type
-          example: SML
-        Width:
-          type: number
-          description: Internal width in millimeters
-          example: 150
-        Length:
-          type: number
-          description: Internal length in millimeters
-          example: 150
-        Depth:
-          type: number
-          description: Internal depth in millimeters
-          example: 150
-        MaxWeight:
-          type: number
-          format: float
-          description: Maximum weight the box can hold, in kilograms. If omitted, the box has no maximum weight limit.
-          example: 8.5
-        BoxWeight:
-          type: number
-          format: float
-          description: Weight of the empty box itself, in kilograms. If omitted, the box weight is not considered.
-          example: 0.5
-        Active:
-          type: boolean
-          description: Whether this box type is currently active and available for use. If omitted, defaults to true.
-          default: true
-          example: true
-        MaximumBoxes:
+        width:
           type: integer
-          description: Maximum quantity of this box type available to use. If omitted, there is no limit.
-          example: 100
+          minimum: 0
+          maximum: 4294967295
+          description: Whole millimetres. Usable interior dimension.
+        length:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          description: Whole millimetres. Usable interior dimension.
+        depth:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          description: Whole millimetres. Usable interior dimension.
+        maxWeight:
+          type: number
+          format: float
+          description: Cargo weight limit in kilograms; non-positive or omitted means unlimited.
+            Excludes boxWeight.
+        boxWeight:
+          type: number
+          format: float
+          description: Empty box weight in kilograms. Included in HeightmapSolver totalWeight
+            only.
+        active:
+          type: boolean
+          description: Whether the type may be opened; defaults to true. Ignored by StackBased.
+        maximumBoxes:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          description: Stock limit per type. Omitted means unlimited. Zero prohibits ExtremePoint/PHPSolver
+            boxes but means unlimited in HeightmapSolver; ignored by StackBased.
+        outerWidth:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          description: Shipping dimension in whole millimetres; all three must be present to
+            appear in packing results.
+        outerLength:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          description: Shipping dimension in whole millimetres; all three must be present to
+            appear in packing results.
+        outerDepth:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          description: Shipping dimension in whole millimetres; all three must be present to
+            appear in packing results.
       example:
-        Reference: SML
-        Width: 150
-        Length: 150
-        Depth: 150
-        MaxWeight: 8.5
-        BoxWeight: 0.5
-        Active: true
-
-    Item:
+        reference: SML
+        width: 150
+        length: 150
+        depth: 150
+        maxWeight: 8.5
+        boxWeight: 0.5
+        active: true
+        maximumBoxes: 100
+    ItemType:
       type: object
       required:
-        - ItemCode
-        - ItemReference
-        - Width
-        - Length
-        - Depth
+      - itemCode
+      - itemReference
+      - width
+      - length
+      - depth
+      - weight
       properties:
-        ItemCode:
+        itemCode:
           type: string
-          description: Unique code identifying the item
-          example: ITM-001
-        ItemReference:
+        itemReference:
           type: string
-          description: Reference name or description for the item
-          example: Widget A
-        Width:
+        width:
           type: integer
-          description: Item width in millimeters
-          example: 100
-        Length:
+          minimum: 0
+          maximum: 4294967295
+          description: Whole millimetres. Original item dimension on input; oriented dimension
+            in placements.
+        length:
           type: integer
-          description: Item length in millimeters
-          example: 200
-        Depth:
+          minimum: 0
+          maximum: 4294967295
+          description: Whole millimetres. Original item dimension on input; oriented dimension
+            in placements.
+        depth:
           type: integer
-          description: Item depth in millimeters
-          example: 50
-        BoxGroup:
+          minimum: 0
+          maximum: 4294967295
+          description: Whole millimetres. Original item dimension on input; oriented dimension
+            in placements.
+        weight:
+          type: number
+          format: float
+          description: Item weight in kilograms; required even for weightless items (use zero).
+        quantity:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          description: 'Instances to pack: omitted means one, zero means none. StackBased ignores
+            this field.'
+        boxGroup:
           type: string
-          description: Designates which items should be packed together or separately. If omitted, the item can go in any box group.
-          example: GROUP-A
+          description: At most one non-empty group per box; ungrouped items may share any box.
+            Does not require all group members to share one box. Ignored by StackBased.
+        rotationPolicy:
+          allOf:
+          - $ref: '#/components/schemas/RotationPolicy'
+          description: Defaults to BestFit. HeightmapSolver requires uniform Never or BestFit
+            under strict checks; StackBased ignores this field.
+        constraint:
+          allOf:
+          - $ref: '#/components/schemas/PlacementConstraint'
+          description: Honoured by ExtremePoint and PHPSolver. HeightmapSolver rejects active
+            constraints by default; StackBased ignores them.
       example:
-        ItemCode: ITM-001
-        ItemReference: Widget A
-        Width: 100
-        Length: 200
-        Depth: 50
-        BoxGroup: GROUP-A
+        itemCode: ITM-001
+        itemReference: Widget A
+        width: 100
+        length: 200
+        depth: 50
+        boxGroup: GROUP-A
+        weight: 1.2
+    InfoRequest:
+      type: object
+      properties: {}
+      description: Empty native info request. Public info() takes no arguments.
+    InfoResponse:
+      type: object
+      required:
+      - projectName
+      - projectVersion
+      - buildType
+      - gitHash
+      - gitBranch
+      - buildTime
+      - platform
+      - arch
+      - compiler
+      properties:
+        projectName:
+          type: string
+        projectVersion:
+          type: string
+        buildType:
+          type: string
+        gitHash:
+          type: string
+        gitBranch:
+          type: string
+        buildTime:
+          type: string
+        platform:
+          type: string
+        arch:
+          type: string
+        compiler:
+          type: string
+      description: Build metadata returned synchronously by info().

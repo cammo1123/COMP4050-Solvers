@@ -1,59 +1,93 @@
-# Extreme Point Algorithm Doc by Arnav please read for a better understanding thank you.
+# ExtremePoint packing algorithm
 
-This folder contains a highly optimized, multi threaded implementation of the **Extreme Point** heuristic for 3D Bin Packing. You can find a paper if you want to know about it here (my maths is bad so i wont explain that in detail here): https://doi.org/10.1287/ijoc.1070.0250
+`SolveAlgorithm.ExtremePoint` is the default packing algorithm. It implements
+an extreme-point heuristic inspired by
+[Crainic, Perboli, and Tadei (2008)](https://doi.org/10.1287/ijoc.1070.0250).
+The public API and differences from other algorithms are described in the
+[root README](../../../README.md#extremepoint).
 
-If you are new to this codebase, this document will explain how the algorithm works at a high level, how the code is structured, and how it can be easily extended in the future without modifying the core mathematical engine.
+## Packing process
 
-## High-Level Concept
-Imagine trying to pack boxes into a shipping container. A naive algorithm might try to place a box at every single millimeter of the container to see if it fits. This is incredibly slow, as you may have experienced with the PHPSolver algorithm.
+The engine considers candidate corners instead of scanning every coordinate
+inside a box. After placing an item, it projects up to six new candidate points
+onto surrounding surfaces, updates residual space, and removes blocked points.
 
-The **Extreme Point** algorithm solves this by taking a shortcut: it can tell that a new box should always be placed flush against the corner of the container, or flush against the edges of boxes that have already been placed. Every time a box is placed, the algorithm projects invisible "rays" (or so they're called online) outward along the X, Y, and Z axes. Where these rays hit another surface, a new **Extreme Point** is generated.
+`algo_extreme_point.cpp` performs the following steps:
 
-Instead of searching millions of coordinates, the algorithm only tests these specific points. This speed gain is most visible on larger data sets.
+1. Build immutable box and item metadata, expand quantities, enumerate allowed
+   orientations, and reject items that cannot fit any usable box.
+2. Run each item ordering in the policy portfolio against that shared metadata.
+   Each run owns its placements, frontier, and remaining stock.
+3. Evaluate candidate positions subject to box dimensions, cargo weight,
+   rotation policy, positional constraints, centre support, and box groups.
+4. Update the frontier after each accepted placement. Search uses bounded
+   candidate evaluations and an overall deterministic evaluation budget.
+5. Choose the run with the fewest failed instances, then the fewest boxes,
+   then the greatest packed item volume. Exact ties keep the earlier strategy
+   in the portfolio.
+6. Emit oriented placements and one failed entry per unpacked instance.
 
-## How the Core Engine Works (`algo_extreme_point.cpp`)
+Saturating arithmetic in `ep_math.h` protects volume and scoring calculations
+against overflow. Coordinates use the public Y-up convention: X is width,
+Y is vertical depth, and Z is length.
 
-The packing process is a loop that repeats until all items are packed or we run out of space:
+## Files and policies
 
-1. **Sort the Items:** Items (`item_type`) are sorted based on a specific strategy (like descending volume).
-2. **Find the Best Point:** For a given item, we test it against all currently available extreme points (`point`) in the bin's `frontier`. We calculate the "waste" (how much empty space is left over if we place it there). The point with the least waste wins.
-3. **Place the Item:** The item becomes a `placed_item`.
-4. **Generate New Points:** We shoot rays outward from the newly `placed_item` to create up to 6 `new_points`.
-5. **Clean Up:** We update the remaining space (`residual_x`, `residual_y`, `residual_z`) for all existing points. If a point gets completely blocked (residual space becomes 0), it is deleted to keep the search incredibly fast.
+| File | Responsibility |
+| --- | --- |
+| `algo_extreme_point.cpp` | Input normalization, candidate search, frontier maintenance, portfolio execution, and response conversion |
+| `ep_types.h` | Internal geometry and search state |
+| `ep_math.h` | Saturating arithmetic helpers |
+| `policies.h` | Policy concepts, orderings, support, grouping, and evaluation limits |
 
-To guarantee safety, all spatial calculations use saturated arithmetic defined in `ep_math.h` to prevent integer overflows, an issue I had during testing. This is maybe a hacky way to do it so you might be able to optimize this.
+The current `Portfolio` is
+`std::tuple<ByVolumeDesc, ByMaxDimDesc, ByBaseAreaDesc>`. Orderings sort by
+volume, longest dimension, or base area, using the source index to break ties.
 
-## Extensibility & Policies (`policies.h`)
+- `OrderPolicy` requires `less(Type const&, Type const&) -> bool`.
+- `SearchPolicy` defines `base_evaluations` and `rescue_evaluations`.
+  The engine currently selects `BaselineSearchPolicy` (64 base evaluations,
+  no rescue evaluations); `AdaptiveSearchPolicy` is available but not selected.
+- `CentreSupport` requires an elevated item's base centre to lie over one
+  supporting item's top face. It does not implement PHPSolver's aspect-ratio
+  tipping check.
+- `SingleGroupPerBox` permits at most one non-empty `boxGroup` in a box;
+  ungrouped items can share any box. It does not enforce fragility rules.
 
-This algorithm was designed with **extensibility** in mind.
+### Extending the portfolio
 
-Because finding the "perfect" packing arrangement is mathematically impossible to do quickly according to the internet and my DSA professor (it's NP Hard), heuristics often rely on different strategies. Rather than hard coding these strategies into the engine, we use modern C++ Policies with Templates and Concepts.
+Implement a strict ordering that satisfies `OrderPolicy`, including stable tie
+breaking, then add its type to `Portfolio` in `policies.h`. The portfolio size
+and strategy instantiations follow the tuple automatically. A policy can only
+use fields available in the internal `Type`; additional inputs require changes
+to metadata construction.
 
-You can easily alter the behavior of the solver by swapping out policies without ever touching `algo_extreme_point.cpp`:
+Strategy zero runs on the calling thread and emits progress. Other strategies
+normally run in `std::jthread` workers. When hardware concurrency is one, or
+thread creation fails, the affected work runs synchronously. All workers join
+before selection; errors are captured and rethrown on the calling thread.
+Changing support, group, or search policies also requires changing the template
+arguments selected by `run_strategy` in `algo_extreme_point.cpp`.
 
-* **`OrderPolicy`:** Determines the order in which items are packed. Right now, i provide `ByVolumeDesc`, `ByMaxDimDesc`, and `ByBaseAreaDesc`. You can add a new sorting strategy just by creating a new struct with a `less(type_a, type_b)` function.
-* **`SearchPolicy`:** Controls how many points the algorithm is allowed to evaluate before it gives up on an item (the `budget`). This prevents the algorithm from stalling on possibly impossible shapes.
-* **`SupportPolicy`:** Determines the rules for gravity. `CentreSupport` enforces that an item's center of mass must rest on a solid surface.
-* **`GroupPolicy`:** Enforces business logic, such as ensuring fragile items aren't packed with heavy items.
+## Limits and result semantics
 
-### How to Add a New Strategy
+- `maximumBoxes: 0` prohibits that box type; omission means unlimited.
+- Inactive boxes and boxes with zero dimensions are excluded.
+- The expanded quantity limit is 1,000,000 instances. Exceeding it raises
+  `std::length_error` (a rejected Node promise or a PHP solver exception).
+- `maxWeight` limits contents only; non-positive values mean unlimited.
+  `totalWeight` reports contents without the box tare.
+- `noStacking` requires floor placement. `requiredVertical` preserves the
+  item's original depth. Position bounds constrain the item's minimum corner.
+- Rotation defaults to `BestFit`; orientations are shared with PHPSolver.
+- `ExtremePointOptions` is empty. Only the common `timeoutMs` option applies.
+  Without a timeout, the deterministic evaluation budget limits search.
+- A timeout returns the best available valid partial result; unpacked instances
+  appear in `failed`. Timing fields vary on every run. Placements and failures
+  are repeatable against the same build unless the wall-clock timeout fires.
+- Progress comes from strategy zero and the final winning packed count; it is
+  not a count of portfolio strategies completed.
 
-If a future requirement asks for a completely new way of sorting boxes (like packing the heaviest items first), you **do not** need to rewrite the packing engine.
-
-1. Open `policies.h`.
-2. Create a new struct (e.g., `struct ByWeightDesc`).
-3. Add it to the `Portfolio` tuple at the bottom of the file: `using Portfolio = std::tuple<ByVolumeDesc, ByMaxDimDesc, ByBaseAreaDesc, ByWeightDesc>;`
-
-The C++ compiler will automatically generate a new, fully optimized background thread (`std::jthread`) to run your new strategy in parallel with the others. The strategy that drops the fewest items automatically wins! You're welcome.
-
-## Assumptions & Deviations (or "Why I ignored some of the original rules")
-
-Here are the core assumptions this engine runs on so you can tweak if needed:
-
-1. **`maximumBoxes: 0` means exactly zero.** Passing `maximumBoxes: 0` into this engine completely bans that box type. If you want unlimited boxes, just omit the field entirely from your request and it defaults to max int.
-
-2. **Volume utilization** Originally i wanted us to optimize for volume utilization. When I tested this against some real data, the algorithm packed 120 items into 51 small boxes just to get perfect utilization. That seemed suboptimal to me. So, currently, this engine actively ignores that rule and instead prioritizes packing as many items as possible into decent sized boxes. Again, you can easily modify this.
-
-3. **We prioritize "Fewest Failed Items" over "Fewest Boxes".** Originally, the "best" pack was the one that used the fewest boxes. But mathematically, if the algorithm gives up and packs exactly 0 items into 0 boxes, it technically "wins" that rule. So, the engine now scores a run based on whichever parallel strategy leaves the fewest unpacked items on the warehouse floor. Remember, we multithreading the work.
-
-4. **This engine is built for heavy lifting, not trivial workloads.** If you benchmark this against a 1 item, 1 box payload, the old PHP solver might actually beat it by a fraction of a millisecond. That's because EP does a lot of preprocessing, it takes a moment to initialize its 3D tracking matrices, gravity arrays, and frontiers. But throw a 10,000 item workload at it, and this algorithm will finish in 30ms while the PHP solver will slow down significantly or crash. We might be able to chose the algorithm based on number of items. For very small jobs, it MIGHT be worth using a different algo. But for any realistic job, this algo will be much faster. 
+Performance depends on the input geometry, constraints, and machine. Use
+`pnpm bench` and representative fixtures to compare algorithms; this guide does
+not promise a fixed runtime or packing quality.
