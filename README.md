@@ -334,7 +334,7 @@ packed item volume divided by box interior volume. `algorithmUs` measures core
 solve time; the Node wrapper sets `serverUs` to total wrapper time.
 
 See [docs/README.md](docs/README.md) for executable input examples and the
-reference schema. Public JavaScript and PHP keys use camelCase; FlatBuffers
+authoritative schema links. Public JavaScript and PHP keys use camelCase; FlatBuffers
 and C++ domain fields use snake_case.
 
 ## Build
@@ -471,7 +471,7 @@ build with code generation disabled after cleaning.
 - `node/test/` — Vitest tests and benchmarks.
 - `scripts/` — generation, build, run, clean, and codegen scripts.
 - `scripts/codegen/targets/` — one module per output language.
-- `docs/` — public data schemas and camelCase JSON input examples.
+- `docs/` — reference data and camelCase JSON input examples.
 - `build/` — local CMake output; generated and ignored build artifacts.
 
 ## Continuous Integration

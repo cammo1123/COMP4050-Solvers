@@ -2,9 +2,9 @@
 
 The public Node.js and PHP APIs use **camelCase** field names. The C++ domain
 model and FlatBuffers schemas use snake_case. The authoritative definitions are
-[`types.fbs`](../fbs/types.fbs) and [`solve.fbs`](../fbs/operations/solve.fbs);
-[`packer_schemas.yaml`](packer_schemas.yaml) mirrors their public data shapes
-as OpenAPI components. It describes in-process data, with no HTTP endpoints.
+[`types.fbs`](../fbs/types.fbs) and [`solve.fbs`](../fbs/operations/solve.fbs).
+[`packer_schemas.yaml`](packer_schemas.yaml) is a separate reference that uses
+PascalCase field names. Use the camelCase examples below for library inputs.
 Algorithm-specific behavior and defaults are in the
 [root README](../README.md#package-api).
 
