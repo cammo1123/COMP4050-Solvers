@@ -10,10 +10,17 @@ using namespace addon;
 
 namespace {
 
-// The prebuild links the unwinder statically, so an exception that leaves the
-// addon is unwound by a different implementation than the rest of the process.
-// Everything that can throw is therefore caught here: node-addon-api only
-// catches std::exception, and the JS callbacks it wraps are noexcept.
+/**
+ * Turns the exception that is currently handled into a JavaScript error.
+ *
+ * The prebuild links the unwinder statically, so an exception that leaves the
+ * addon is unwound by a different implementation than the rest of the process.
+ * Everything that can throw is therefore caught here: node-addon-api only
+ * catches std::exception, and the JS callbacks it wraps are noexcept.
+ *
+ * @param {Napi::Env} env the environment the JavaScript error is created for
+ * @param {string} fallback the message used when the exception is not a std::exception
+ */
 void reportError(Napi::Env env, char const* fallback)
 {
 	try {
@@ -27,6 +34,12 @@ void reportError(Napi::Env env, char const* fallback)
 
 } // namespace
 
+/**
+ * Returns the build information of the solver as a FlatBuffers buffer.
+ *
+ * @param {Napi::CallbackInfo} cbInfo the callback information of the JavaScript call
+ * @returns {Napi::Value} a Buffer with the encoded InfoResponse
+ */
 Napi::Value info(Napi::CallbackInfo const& cbInfo)
 {
 	Napi::Env env = cbInfo.Env();
@@ -41,6 +54,16 @@ Napi::Value info(Napi::CallbackInfo const& cbInfo)
 	}
 }
 
+/**
+ * Starts the solver and reports the result through a promise.
+ *
+ * The first argument has to be a Buffer with an encoded FlatBuffers
+ * SolveRequest. An optional second argument is a callback that receives the
+ * progress of the solve as (done, total) pairs.
+ *
+ * @param {Napi::CallbackInfo} cbInfo the callback information of the JavaScript call
+ * @returns {Napi::Value} a Promise that resolves with a Buffer holding the encoded SolveResponse
+ */
 Napi::Value solve(Napi::CallbackInfo const& cbInfo)
 {
 	Napi::Env env = cbInfo.Env();
@@ -68,6 +91,13 @@ Napi::Value solve(Napi::CallbackInfo const& cbInfo)
 	}
 }
 
+/**
+ * Registers the exports of the addon.
+ *
+ * @param {Napi::Env} env the environment the addon is initialised in
+ * @param {Napi::Object} exports the object the addon exports are added to
+ * @returns {Napi::Object} the exports of the addon
+ */
 Napi::Object Init(Napi::Env env, Napi::Object exports)
 {
 	try {

@@ -25,11 +25,11 @@ set(BUILDINFO_PLATFORM "${CMAKE_SYSTEM_NAME}")
 
 # The containerised Linux build copies the sources without the git metadata, so
 # the caller can pass the revision in; the repository wins when it has one.
-if(BUILDINFO_GIT_HASH STREQUAL "")
+if("${BUILDINFO_GIT_HASH}" STREQUAL "")
     set(BUILDINFO_GIT_HASH "unknown")
 endif()
 
-if(BUILDINFO_GIT_BRANCH STREQUAL "")
+if("${BUILDINFO_GIT_BRANCH}" STREQUAL "")
     set(BUILDINFO_GIT_BRANCH "unknown")
 endif()
 
