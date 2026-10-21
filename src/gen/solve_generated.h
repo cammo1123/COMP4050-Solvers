@@ -326,6 +326,8 @@ struct HeightmapSolverOptionsT : public ::flatbuffers::NativeTable {
   ::flatbuffers::Optional<uint32_t> restarts = ::flatbuffers::nullopt;
   ::flatbuffers::Optional<uint32_t> seed = ::flatbuffers::nullopt;
   ::flatbuffers::Optional<bool> strict_unsupported = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<uint8_t> combos = ::flatbuffers::nullopt;
+  ::flatbuffers::Optional<double> combo_threshold = ::flatbuffers::nullopt;
 };
 
 struct HeightmapSolverOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
@@ -338,7 +340,9 @@ struct HeightmapSolverOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::T
     VT_CELL_SIZE = 10,
     VT_RESTARTS = 12,
     VT_SEED = 14,
-    VT_STRICT_UNSUPPORTED = 16
+    VT_STRICT_UNSUPPORTED = 16,
+    VT_COMBOS = 18,
+    VT_COMBO_THRESHOLD = 20
   };
   ::flatbuffers::Optional<uint32_t> max_boxes() const {
     return GetOptional<uint32_t, uint32_t>(VT_MAX_BOXES);
@@ -361,6 +365,12 @@ struct HeightmapSolverOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::T
   ::flatbuffers::Optional<bool> strict_unsupported() const {
     return GetOptional<uint8_t, bool>(VT_STRICT_UNSUPPORTED);
   }
+  ::flatbuffers::Optional<uint8_t> combos() const {
+    return GetOptional<uint8_t, uint8_t>(VT_COMBOS);
+  }
+  ::flatbuffers::Optional<double> combo_threshold() const {
+    return GetOptional<double, double>(VT_COMBO_THRESHOLD);
+  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -371,6 +381,8 @@ struct HeightmapSolverOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::T
            VerifyField<uint32_t>(verifier, VT_RESTARTS, 4) &&
            VerifyField<uint32_t>(verifier, VT_SEED, 4) &&
            VerifyField<uint8_t>(verifier, VT_STRICT_UNSUPPORTED, 1) &&
+           VerifyField<uint8_t>(verifier, VT_COMBOS, 1) &&
+           VerifyField<double>(verifier, VT_COMBO_THRESHOLD, 8) &&
            verifier.EndTable();
   }
   HeightmapSolverOptionsT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
@@ -403,6 +415,12 @@ struct HeightmapSolverOptionsBuilder {
   void add_strict_unsupported(bool strict_unsupported) {
     fbb_.AddElement<uint8_t>(HeightmapSolverOptions::VT_STRICT_UNSUPPORTED, static_cast<uint8_t>(strict_unsupported));
   }
+  void add_combos(uint8_t combos) {
+    fbb_.AddElement<uint8_t>(HeightmapSolverOptions::VT_COMBOS, combos);
+  }
+  void add_combo_threshold(double combo_threshold) {
+    fbb_.AddElement<double>(HeightmapSolverOptions::VT_COMBO_THRESHOLD, combo_threshold);
+  }
   explicit HeightmapSolverOptionsBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -422,13 +440,17 @@ inline ::flatbuffers::Offset<HeightmapSolverOptions> CreateHeightmapSolverOption
     ::flatbuffers::Optional<uint32_t> cell_size = ::flatbuffers::nullopt,
     ::flatbuffers::Optional<uint32_t> restarts = ::flatbuffers::nullopt,
     ::flatbuffers::Optional<uint32_t> seed = ::flatbuffers::nullopt,
-    ::flatbuffers::Optional<bool> strict_unsupported = ::flatbuffers::nullopt) {
+    ::flatbuffers::Optional<bool> strict_unsupported = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<uint8_t> combos = ::flatbuffers::nullopt,
+    ::flatbuffers::Optional<double> combo_threshold = ::flatbuffers::nullopt) {
   HeightmapSolverOptionsBuilder builder_(_fbb);
+  if(combo_threshold) { builder_.add_combo_threshold(*combo_threshold); }
   if(min_support) { builder_.add_min_support(*min_support); }
   if(seed) { builder_.add_seed(*seed); }
   if(restarts) { builder_.add_restarts(*restarts); }
   if(cell_size) { builder_.add_cell_size(*cell_size); }
   if(max_boxes) { builder_.add_max_boxes(*max_boxes); }
+  if(combos) { builder_.add_combos(*combos); }
   if(strict_unsupported) { builder_.add_strict_unsupported(*strict_unsupported); }
   builder_.add_allow_rotation(allow_rotation);
   return builder_.Finish();
@@ -1222,6 +1244,8 @@ inline void HeightmapSolverOptions::UnPackTo(HeightmapSolverOptionsT *_o, const 
   { auto _e = restarts(); _o->restarts = _e; }
   { auto _e = seed(); _o->seed = _e; }
   { auto _e = strict_unsupported(); _o->strict_unsupported = _e; }
+  { auto _e = combos(); _o->combos = _e; }
+  { auto _e = combo_threshold(); _o->combo_threshold = _e; }
 }
 
 inline ::flatbuffers::Offset<HeightmapSolverOptions> CreateHeightmapSolverOptions(::flatbuffers::FlatBufferBuilder &_fbb, const HeightmapSolverOptionsT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
@@ -1239,6 +1263,8 @@ inline ::flatbuffers::Offset<HeightmapSolverOptions> HeightmapSolverOptions::Pac
   auto _restarts = _o->restarts;
   auto _seed = _o->seed;
   auto _strict_unsupported = _o->strict_unsupported;
+  auto _combos = _o->combos;
+  auto _combo_threshold = _o->combo_threshold;
   return fbs::CreateHeightmapSolverOptions(
       _fbb,
       _max_boxes,
@@ -1247,7 +1273,9 @@ inline ::flatbuffers::Offset<HeightmapSolverOptions> HeightmapSolverOptions::Pac
       _cell_size,
       _restarts,
       _seed,
-      _strict_unsupported);
+      _strict_unsupported,
+      _combos,
+      _combo_threshold);
 }
 
 inline PHPSolverOptionsT *PHPSolverOptions::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {

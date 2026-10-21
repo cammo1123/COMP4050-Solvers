@@ -65,7 +65,8 @@ static void runPipeline(char const* title,
 	}
 
 	// STEPS 5..10 — pack (groups -> backfill -> downsize) under multi-start.
-	Solution s = solveMultiStart(part, items, norm.types, fm, opt);
+	Solution s = solveMultiStart(part, items, norm.types, fm, opt,
+		std::chrono::steady_clock::now() + std::chrono::milliseconds(opt.timeoutMs));
 
 	// Pre-flight rejects join the failed list so accounting covers everyone.
 	for (auto const& f : val.rejected)

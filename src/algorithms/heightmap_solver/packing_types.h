@@ -31,7 +31,18 @@ struct ItemSpec {
 	double weight = 0.0;					   // kg; 0 = unknown/weightless
 	std::string boxGroup;					   // "" = ungrouped (can ride anywhere)
 
+	// COMBO (combos.h): several units glued side by side, all the same
+	// height. Members are laid out in this item's own frame; empty = a
+	// plain unit. A combo is placed as one block but committed member by
+	// member, so the heightmap always sees the real units.
+	struct Member {
+		int unit;					  // index of the unit in the item vector
+		uint32_t ox, oy, oz, w, l, d; // offset + oriented dims, combo frame
+	};
+	std::vector<Member> members;
+
 	uint64_t volume() const { return uint64_t(width) * length * depth; }
+	bool combo() const { return !members.empty(); }
 };
 
 // Why an item could not be packed (step 3 pre-flight or step 5/8 packing).
@@ -80,6 +91,14 @@ struct Options {
 	uint32_t timeoutMs = 1000;								  // safety cap on multi-start; results are
 															  // only reproducible when it doesn't fire
 	uint64_t seed = 42;										  // RNG seed — reproducible runs
+
+	// Combo builder (combos.h). Both = also solve without combos and keep
+	// the better answer, so combos can never make a result worse.
+	enum class ComboMode : uint8_t { Off,
+		On,
+		Both };
+	ComboMode combos = ComboMode::Both;
+	double comboThreshold = 0.90; // min filled share of a glued pair's bounding box
 };
 
 // Integer ceil-division helper used across steps: how many `b`-sized units

@@ -113,6 +113,10 @@ inline void writeHeightmapSolverOptions(zval* out, fbs::domain::HeightmapSolverO
 		put_int(out, "seed", *value.seed);
 	if (value.strict_unsupported)
 		put_bool(out, "strictUnsupported", *value.strict_unsupported);
+	if (value.combos)
+		put_int(out, "combos", *value.combos);
+	if (value.combo_threshold)
+		put_double(out, "comboThreshold", *value.combo_threshold);
 }
 
 inline fbs::domain::HeightmapSolverOptions readHeightmapSolverOptions(HashTable* table, std::string const& path)
@@ -146,6 +150,13 @@ inline fbs::domain::HeightmapSolverOptions readHeightmapSolverOptions(HashTable*
 		out.seed = *_value;
 	}
 	out.strict_unsupported = optional_bool(find_key(table, "strictUnsupported"), path + ".strictUnsupported");
+	if (auto _value = optional_int(find_key(table, "combos"), path + ".combos"))
+	{
+		if (*_value < 0 || *_value > 255)
+			fail(path + ".combos" + " is out of uint8 range");
+		out.combos = *_value;
+	}
+	out.combo_threshold = optional_double(find_key(table, "comboThreshold"), path + ".comboThreshold");
 
 	return out;
 }

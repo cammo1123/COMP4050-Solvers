@@ -11,9 +11,10 @@
 //     Step 8 reuses this with tag "" for the ungrouped pool.
 //   * when nothing fits, a new box is opened — and the TYPE is re-decided
 //     at every opening from what REMAINS, not fixed once per group:
-//       ShrinkingTail (default): if some type's derated capacity holds all
-//         remaining items, open the smallest such type (stops the last box
-//         being oversized); otherwise open the largest available workhorse.
+//       ShrinkingTail (default): if some type's capacity (derated volume AND
+//         weight cap) holds all remaining items, open the smallest such type
+//         (stops the last box being oversized); otherwise open the workhorse
+//         that carries the largest share of what remains.
 //       SmallestViable / Largest: the two simple policies, kept as
 //         multi-start variations so restarts can explore them.
 //   * MaximumBoxes / maxBoxes are consulted at EVERY opening; running out
@@ -42,14 +43,20 @@ struct PackState {
 	std::vector<OpenBox> boxes;
 	std::vector<uint32_t> openedOfType; // per-type instance counters
 	std::vector<FailedItem> failed;
+	// Stock held back for forced items (see reserveForForced). Empty = none.
+	std::vector<int> forcedType;	  // per item: its only limited type, or -1
+	std::vector<uint32_t> reserved;	  // per type: boxes only forced items may open
+	std::vector<uint32_t> forcedLeft; // per type: forced items still waiting
+	int onlyType = -1;				  // >= 0: the only type that may be opened
 	// Restarts give up past this point; the half-built answer is discarded.
 	std::optional<std::chrono::steady_clock::time_point> deadline;
 	bool aborted = false;
 };
 
-// Pick which type to open for `item`, given the volume still unpacked in the
-// current wave. Returns -1 when stock is exhausted everywhere the item fits.
-inline int chooseTypeToOpen(int item, uint64_t remainingVol,
+// Pick which type to open for `item`, given the volume and weight still
+// unpacked in the current wave. Returns -1 when stock is exhausted everywhere
+// the item fits.
+inline int chooseTypeToOpen(int item, uint64_t remainingVol, double remainingWeight,
 	std::vector<BoxTypeSpec> const& types,
 	FitsMatrix const& fm, Options const& opt,
 	OpenPolicy policy, PackState const& st)
@@ -58,9 +65,15 @@ inline int chooseTypeToOpen(int item, uint64_t remainingVol,
 	std::vector<int> cand;
 	if (st.boxes.size() >= opt.maxBoxes)
 		return -1;
-	for (int t = 0; t < int(types.size()); t++)
-		if (fm.fits[item][t] && st.openedOfType[t] < types[t].maximumBoxes)
+	for (int t = 0; t < int(types.size()); t++) {
+		if (!fm.fits[item][t] || (st.onlyType >= 0 && t != st.onlyType))
+			continue;
+		// Held-back boxes count as used for everyone but their forced items.
+		bool const mine = !st.forcedType.empty() && st.forcedType[item] == t;
+		uint32_t const held = (st.reserved.empty() || mine) ? 0 : st.reserved[t];
+		if (uint64_t(st.openedOfType[t]) + held < types[t].maximumBoxes)
 			cand.push_back(t);
+	}
 	if (cand.empty())
 		return -1;
 
@@ -75,13 +88,29 @@ inline int chooseTypeToOpen(int item, uint64_t remainingVol,
 	case OpenPolicy::Largest:
 		return cand.back();
 	case OpenPolicy::ShrinkingTail:
-	default:
-		// Smallest type whose DERATED capacity (~measured fill rate) could
-		// hold everything remaining — the shrinking-tail rule.
+	default: {
+		// Fraction of the remaining load one box of type t can take: its
+		// DERATED volume (~measured fill rate) and its weight cap, whichever
+		// binds first. A roomy box with a low cap carries few heavy items.
+		auto share = [&](int t) {
+			double byVol = double(types[t].volume()) * opt.derate / std::max(1.0, double(remainingVol));
+			double byWeight = remainingWeight > 0 ? types[t].maxWeight / remainingWeight
+												  : std::numeric_limits<double>::infinity();
+			return std::min(byVol, byWeight);
+		};
+		// Smallest type that could hold everything remaining — the
+		// shrinking-tail rule.
 		for (int t : cand)
-			if (double(types[t].volume()) * opt.derate >= double(remainingVol))
+			if (share(t) >= 1.0)
 				return t;
-		return cand.back(); // nothing holds it all: open the workhorse
+		// Nothing holds it all: open the workhorse carrying the most. `>=`
+		// keeps the larger type on ties (cand is sorted smallest first).
+		int best = cand.front();
+		for (int t : cand)
+			if (share(t) >= share(best))
+				best = t;
+		return best;
+	}
 	}
 }
 
@@ -106,11 +135,14 @@ inline void packGroup(std::string const& tag, std::vector<int> const& order,
 	FitsMatrix const& fm, Options const& opt,
 	OpenPolicy policy, PackState& st)
 {
-	// Volume still waiting — feeds the shrinking-tail decision, and shrinks
-	// as items are committed or failed.
+	// Volume and weight still waiting — feed the shrinking-tail decision, and
+	// shrink as items are committed or failed.
 	uint64_t remainingVol = 0;
-	for (int i : order)
+	double remainingWeight = 0;
+	for (int i : order) {
 		remainingVol += items[i].volume();
+		remainingWeight += items[i].weight;
+	}
 
 	// ---- one item per iteration, best placement across compatible boxes ----
 	for (int i : order) {
@@ -154,13 +186,16 @@ inline void packGroup(std::string const& tag, std::vector<int> const& order,
 
 		// Nothing open fits: decide a type from what remains and open it.
 		if (!best) {
-			int t = chooseTypeToOpen(i, remainingVol, types, fm, opt, policy, st);
+			int t = chooseTypeToOpen(i, remainingVol, remainingWeight, types, fm, opt, policy, st);
 			if (t >= 0) {
 				OpenBox fresh(t);
 				auto c = findBestInBox(fresh, types[t], it, opt, UINT32_MAX);
 				if (c) { // guaranteed: fits matrix said so
 					st.boxes.push_back(std::move(fresh));
 					st.openedOfType[t]++;
+					// A forced item opening its own type uses up one held box.
+					if (!st.forcedType.empty() && !st.reserved.empty() && st.forcedType[i] == t && st.reserved[t] > 0)
+						st.reserved[t]--;
 					best = c;
 					bestBox = int(st.boxes.size()) - 1;
 				}
@@ -168,10 +203,19 @@ inline void packGroup(std::string const& tag, std::vector<int> const& order,
 		}
 
 		if (best)
-			commit(st.boxes[bestBox], it, i, *best);
+			commitItem(st.boxes[bestBox], items, i, *best);
 		else
 			st.failed.push_back({ i, FailReason::BoxLimit });
 
+		// Once every forced item of a type is handled, release what is left
+		// (forced items that shared a box needed fewer than were held).
+		if (!st.forcedType.empty() && !st.reserved.empty() && st.forcedType[i] >= 0) {
+			int const ft = st.forcedType[i];
+			if (--st.forcedLeft[ft] == 0)
+				st.reserved[ft] = 0;
+		}
+
 		remainingVol -= it.volume(); // packed or failed: no longer waiting
+		remainingWeight -= it.weight;
 	}
 }
