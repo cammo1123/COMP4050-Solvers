@@ -60,6 +60,8 @@ struct HeightmapSolverOptions {
 	std::optional<uint32_t> restarts = std::nullopt;
 	std::optional<uint32_t> seed = std::nullopt;
 	std::optional<bool> strict_unsupported = std::nullopt;
+	std::optional<uint8_t> combos = std::nullopt;
+	std::optional<double> combo_threshold = std::nullopt;
 };
 
 struct PHPSolverOptions {
@@ -172,6 +174,14 @@ inline HeightmapSolverOptions toDomain([[maybe_unused]] fbs::HeightmapSolverOpti
 		out.strict_unsupported = *value.strict_unsupported;
 	}
 
+	if (value.combos.has_value()) {
+		out.combos = *value.combos;
+	}
+
+	if (value.combo_threshold.has_value()) {
+		out.combo_threshold = *value.combo_threshold;
+	}
+
 	return out;
 }
 
@@ -203,6 +213,14 @@ inline fbs::HeightmapSolverOptionsT fromDomain([[maybe_unused]] HeightmapSolverO
 
 	if (value.strict_unsupported.has_value()) {
 		out.strict_unsupported = *value.strict_unsupported;
+	}
+
+	if (value.combos.has_value()) {
+		out.combos = *value.combos;
+	}
+
+	if (value.combo_threshold.has_value()) {
+		out.combo_threshold = *value.combo_threshold;
 	}
 
 	return out;

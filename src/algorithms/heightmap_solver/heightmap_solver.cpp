@@ -44,6 +44,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <numeric>
 #include <utility>
 #include <vector>
 
@@ -55,6 +56,7 @@
 // in the GLOBAL namespace, so everything from them is written with a leading
 // "::" below to keep it visually distinct from the fbs::domain types.
 // (Worth doing later: wrap them in `namespace heightmap { ... }`.)
+#include "combos.h"
 #include "commit_placement.h"
 #include "data_normalization.h"
 #include "downsize.h"
@@ -217,6 +219,15 @@ std::vector<::ItemSpec> to_pipeline_items(SolveRequest const& request, std::vect
 			result.seed = *algo_opts.seed;
 		}
 		strict_unsupported = algo_opts.strict_unsupported.value_or(true);
+		if (algo_opts.combos.has_value()) {
+			if (*algo_opts.combos > 2) {
+				throw std::invalid_argument("hightmap solver: combos must be 0 (off), 1 (on) or 2 (both)");
+			}
+			result.combos = static_cast<::Options::ComboMode>(*algo_opts.combos);
+		}
+		if (algo_opts.combo_threshold.has_value()) {
+			result.comboThreshold = *algo_opts.combo_threshold;
+		}
 	}
 
 	(void)items;
@@ -322,23 +333,78 @@ auto solve_heightmap_solver(SolveRequest const& request, SolveOptions const& opt
 		on_progress(0, total_units);
 	}
 
-	// ---- STEP 2: fits matrix (fit + tiling capacity per unit x type) ------
-	::FitsMatrix fits = buildFitsMatrix(units, normalized.types, pipeline_options);
+	// Steps 2-10 on one item list: the units alone, or units + combos where
+	// only `active` (combos + unglued units) is packed. Placements always
+	// come back per unit (commitItem); failures are expanded here.
+	auto solve_with = [&](std::vector<::ItemSpec> const& items, std::vector<int> const& active) {
+		std::vector<bool> is_active(items.size(), false);
+		for (int i : active) {
+			is_active[static_cast<std::size_t>(i)] = true;
+		}
 
-	// ---- STEP 3: pre-flight (reject units no active box can ever hold) ----
-	::ValidationResult validation = preflight(units, fits);
+		// ---- STEP 2: fits matrix (fit + tiling capacity per item x type) --
+		::FitsMatrix fits = buildFitsMatrix(items, normalized.types, pipeline_options);
 
-	// ---- STEP 4: partition by BoxGroup ------------------------------------
-	::GroupPartition partition = partitionByGroup(units, validation.packable);
+		// ---- STEP 3: pre-flight (reject items no active box can ever hold)
+		::ValidationResult validation = preflight(items, fits);
+		std::vector<int> packable;
+		for (int i : validation.packable) {
+			if (is_active[static_cast<std::size_t>(i)]) {
+				packable.push_back(i);
+			}
+		}
 
-	// ---- STEPS 5-10: group pack -> ungrouped backfill -> downsize, under
-	// the multi-start loop, all inside the timeout budget.
-	::Solution solution = solveMultiStart(partition, units, normalized.types, fits, pipeline_options);
+		// ---- STEP 4: partition by BoxGroup --------------------------------
+		::GroupPartition partition = partitionByGroup(items, packable);
 
-	// Pre-flight rejects join the failed list so every unit is accounted for
-	// exactly once (placed XOR failed) — the invariant verify.h checks.
-	for (auto const& rejected : validation.rejected) {
-		solution.failed.push_back(rejected);
+		// ---- STEPS 5-10: group pack -> ungrouped backfill -> downsize, under
+		// the multi-start loop, all inside the timeout budget.
+		::Solution s = solveMultiStart(partition, items, normalized.types, fits, pipeline_options);
+
+		// Pre-flight rejects join the failed list so every unit is accounted
+		// for exactly once (placed XOR failed); a failed combo fails each unit.
+		for (auto const& rejected : validation.rejected) {
+			if (is_active[static_cast<std::size_t>(rejected.itemIndex)]) {
+				s.failed.push_back(rejected);
+			}
+		}
+		std::vector<::FailedItem> failed;
+		for (auto const& f : s.failed) {
+			auto const& item = items[static_cast<std::size_t>(f.itemIndex)];
+			if (!item.combo()) {
+				failed.push_back(f);
+				continue;
+			}
+			for (auto const& m : item.members) {
+				failed.push_back({ m.unit, f.reason });
+			}
+		}
+		s.failed = std::move(failed);
+		return s;
+	};
+
+	std::vector<int> all_units(units.size());
+	std::iota(all_units.begin(), all_units.end(), 0);
+
+	::Solution solution;
+	if (pipeline_options.combos == ::Options::ComboMode::Off) {
+		solution = solve_with(units, all_units);
+	} else {
+		std::vector<int> line_of(units.size());
+		for (std::size_t u = 0; u < units.size(); ++u) {
+			line_of[u] = static_cast<int>(origins[u].request_index);
+		}
+		::ComboPlan plan = buildCombos(units, line_of, normalized.types, pipeline_options);
+		solution = solve_with(plan.items, plan.active);
+
+		// Both: also solve without combos and keep the better answer, so the
+		// combo builder can never make a result worse.
+		if (pipeline_options.combos == ::Options::ComboMode::Both) {
+			::Solution plain = solve_with(units, all_units);
+			if (::better(plain, solution, normalized.types)) {
+				solution = std::move(plain);
+			}
+		}
 	}
 
 	if (on_progress) {

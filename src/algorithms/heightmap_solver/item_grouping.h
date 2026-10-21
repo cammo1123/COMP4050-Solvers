@@ -22,28 +22,84 @@
 #include <algorithm>
 #include <cmath>
 #include <map>
+#include <numeric>
 
 #include "fits_matrix.h"
 #include "packing_types.h"
 
 struct GroupPartition {
-	// Group name -> indices of its items. "" key is NOT stored here;
-	// ungrouped items live in `ungrouped` instead.
-	std::map<std::string, std::vector<int>> groups;
+	// (group name, indices of its items), in PACKING order — groups share
+	// box stock, so who goes first decides who gets scarce types. ""
+	// is NOT stored here; ungrouped items live in `ungrouped` instead.
+	std::vector<std::pair<std::string, std::vector<int>>> groups;
 	std::vector<int> ungrouped;
 };
 
+// Groups come out alphabetical; orderGroupsByConstraint picks the real order.
 inline GroupPartition partitionByGroup(std::vector<ItemSpec> const& items,
 	std::vector<int> const& packable)
 {
+	std::map<std::string, std::vector<int>> byName;
 	GroupPartition p;
 	for (int i : packable) {
 		if (items[i].boxGroup.empty())
 			p.ungrouped.push_back(i);
 		else
-			p.groups[items[i].boxGroup].push_back(i);
+			byName[items[i].boxGroup].push_back(i);
 	}
+	for (auto& [tag, idx] : byName)
+		p.groups.emplace_back(tag, std::move(idx));
 	return p;
+}
+
+// Most constrained group first (fail-first): the group whose least flexible
+// item fits the fewest box types, then the one with most items stuck on
+// limited-stock types, then the biggest. Flexible groups adapt to what is
+// left; the reverse order can only cause BoxLimit failures, never prevent them.
+inline void orderGroupsByConstraint(GroupPartition& p,
+	std::vector<ItemSpec> const& items,
+	std::vector<BoxTypeSpec> const& types,
+	FitsMatrix const& fm)
+{
+	struct Key {
+		int options;
+		int limited;
+		uint64_t volume;
+	};
+	auto keyOf = [&](std::vector<int> const& idx) {
+		Key k { int(types.size()) + 1, 0, 0 };
+		for (int i : idx) {
+			int n = 0;
+			bool onlyLimited = true;
+			for (int t = 0; t < int(types.size()); t++)
+				if (fm.fits[i][t]) {
+					n++;
+					onlyLimited = onlyLimited && types[t].maximumBoxes != std::numeric_limits<uint32_t>::max();
+				}
+			k.options = std::min(k.options, n);
+			k.limited += (n > 0 && onlyLimited) ? 1 : 0;
+			k.volume += items[i].volume();
+		}
+		return k;
+	};
+	std::vector<Key> keys;
+	keys.reserve(p.groups.size());
+	for (auto const& g : p.groups)
+		keys.push_back(keyOf(g.second));
+	std::vector<int> idx(p.groups.size());
+	std::iota(idx.begin(), idx.end(), 0);
+	std::stable_sort(idx.begin(), idx.end(), [&](int a, int b) {
+		if (keys[a].options != keys[b].options)
+			return keys[a].options < keys[b].options;
+		if (keys[a].limited != keys[b].limited)
+			return keys[a].limited > keys[b].limited;
+		return keys[a].volume > keys[b].volume;
+	});
+	std::vector<std::pair<std::string, std::vector<int>>> sorted;
+	sorted.reserve(idx.size());
+	for (int g : idx)
+		sorted.push_back(std::move(p.groups[g]));
+	p.groups = std::move(sorted);
 }
 
 // ---- bounds ----------------------------------------------------------------
@@ -143,4 +199,49 @@ typeThresholdBounds(std::vector<int> const& itemIdx,
 		}
 	}
 	return out;
+}
+
+// ---- holding stock back for forced items ------------------------------------
+
+// A FORCED item fits exactly one box type, and that type has limited stock
+// (ANVIL fits only the 2 Standard Cartons). Unless those boxes are held back,
+// an earlier group can open them and the forced item fails with BoxLimit.
+struct Reservation {
+	std::vector<int> forcedType;	  // per item: its only (limited) type, or -1
+	std::vector<uint32_t> reserved;	  // per type: boxes held for forced items
+	std::vector<uint32_t> forcedLeft; // per type: forced items not yet handled
+};
+
+inline Reservation reserveForForced(std::vector<int> const& itemIdx,
+	std::vector<ItemSpec> const& items,
+	std::vector<BoxTypeSpec> const& types,
+	FitsMatrix const& fm)
+{
+	Reservation r;
+	r.forcedType.assign(items.size(), -1);
+	r.reserved.assign(types.size(), 0);
+	r.forcedLeft.assign(types.size(), 0);
+	std::vector<std::vector<int>> forced(types.size());
+	for (int i : itemIdx) {
+		int only = -1, n = 0;
+		for (int t = 0; t < int(types.size()); t++)
+			if (fm.fits[i][t]) {
+				only = t;
+				n++;
+			}
+		if (n == 1 && types[only].maximumBoxes != std::numeric_limits<uint32_t>::max()) {
+			r.forcedType[i] = only;
+			forced[only].push_back(i);
+		}
+	}
+	// Demand = the proven minimum number of boxes those items need on their
+	// own, capped at stock: never hold back more than can be used.
+	for (int t = 0; t < int(types.size()); t++) {
+		if (forced[t].empty())
+			continue;
+		uint64_t need = lowerBound(forced[t], items, { types[t] });
+		r.reserved[t] = uint32_t(std::min<uint64_t>(need, types[t].maximumBoxes));
+		r.forcedLeft[t] = uint32_t(forced[t].size());
+	}
+	return r;
 }
