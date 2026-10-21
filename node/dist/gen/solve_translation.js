@@ -16,7 +16,7 @@ function toAlgoOptionsT(options) {
     }
     if (options?.heightmapSolverOptions) {
         const value = options.heightmapSolverOptions;
-        return { type: SolveStrategyOptions.HeightmapSolverOptions, value: new HeightmapSolverOptionsObject(value.maxBoxes ?? null, value.allowRotation ?? true, value.minSupport ?? null, value.cellSize ?? null, value.restarts ?? null, value.seed ?? null, value.strictUnsupported ?? null) };
+        return { type: SolveStrategyOptions.HeightmapSolverOptions, value: new HeightmapSolverOptionsObject(value.maxBoxes ?? null, value.allowRotation ?? true, value.minSupport ?? null, value.cellSize ?? null, value.restarts ?? null, value.seed ?? null, value.strictUnsupported ?? null, value.combos ?? null, value.comboThreshold ?? null) };
     }
     return { type: SolveStrategyOptions.NONE, value: null };
 }

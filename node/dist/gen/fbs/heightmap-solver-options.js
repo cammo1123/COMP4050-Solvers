@@ -44,8 +44,16 @@ export class HeightmapSolverOptions {
         const offset = this.bb.__offset(this.bb_pos, 16);
         return offset ? !!this.bb.readInt8(this.bb_pos + offset) : null;
     }
+    combos() {
+        const offset = this.bb.__offset(this.bb_pos, 18);
+        return offset ? this.bb.readUint8(this.bb_pos + offset) : null;
+    }
+    comboThreshold() {
+        const offset = this.bb.__offset(this.bb_pos, 20);
+        return offset ? this.bb.readFloat64(this.bb_pos + offset) : null;
+    }
     static startHeightmapSolverOptions(builder) {
-        builder.startObject(7);
+        builder.startObject(9);
     }
     static addMaxBoxes(builder, maxBoxes) {
         builder.addFieldInt32(0, maxBoxes, null);
@@ -68,11 +76,17 @@ export class HeightmapSolverOptions {
     static addStrictUnsupported(builder, strictUnsupported) {
         builder.addFieldInt8(6, +strictUnsupported, null);
     }
+    static addCombos(builder, combos) {
+        builder.addFieldInt8(7, combos, null);
+    }
+    static addComboThreshold(builder, comboThreshold) {
+        builder.addFieldFloat64(8, comboThreshold, null);
+    }
     static endHeightmapSolverOptions(builder) {
         const offset = builder.endObject();
         return offset;
     }
-    static createHeightmapSolverOptions(builder, maxBoxes, allowRotation, minSupport, cellSize, restarts, seed, strictUnsupported) {
+    static createHeightmapSolverOptions(builder, maxBoxes, allowRotation, minSupport, cellSize, restarts, seed, strictUnsupported, combos, comboThreshold) {
         HeightmapSolverOptions.startHeightmapSolverOptions(builder);
         if (maxBoxes !== null)
             HeightmapSolverOptions.addMaxBoxes(builder, maxBoxes);
@@ -87,10 +101,14 @@ export class HeightmapSolverOptions {
             HeightmapSolverOptions.addSeed(builder, seed);
         if (strictUnsupported !== null)
             HeightmapSolverOptions.addStrictUnsupported(builder, strictUnsupported);
+        if (combos !== null)
+            HeightmapSolverOptions.addCombos(builder, combos);
+        if (comboThreshold !== null)
+            HeightmapSolverOptions.addComboThreshold(builder, comboThreshold);
         return HeightmapSolverOptions.endHeightmapSolverOptions(builder);
     }
     unpack() {
-        return new HeightmapSolverOptionsT(this.maxBoxes(), this.allowRotation(), this.minSupport(), this.cellSize(), this.restarts(), this.seed(), this.strictUnsupported());
+        return new HeightmapSolverOptionsT(this.maxBoxes(), this.allowRotation(), this.minSupport(), this.cellSize(), this.restarts(), this.seed(), this.strictUnsupported(), this.combos(), this.comboThreshold());
     }
     unpackTo(_o) {
         _o.maxBoxes = this.maxBoxes();
@@ -100,6 +118,8 @@ export class HeightmapSolverOptions {
         _o.restarts = this.restarts();
         _o.seed = this.seed();
         _o.strictUnsupported = this.strictUnsupported();
+        _o.combos = this.combos();
+        _o.comboThreshold = this.comboThreshold();
     }
 }
 export class HeightmapSolverOptionsT {
@@ -110,7 +130,9 @@ export class HeightmapSolverOptionsT {
     restarts;
     seed;
     strictUnsupported;
-    constructor(maxBoxes = null, allowRotation = true, minSupport = null, cellSize = null, restarts = null, seed = null, strictUnsupported = null) {
+    combos;
+    comboThreshold;
+    constructor(maxBoxes = null, allowRotation = true, minSupport = null, cellSize = null, restarts = null, seed = null, strictUnsupported = null, combos = null, comboThreshold = null) {
         this.maxBoxes = maxBoxes;
         this.allowRotation = allowRotation;
         this.minSupport = minSupport;
@@ -118,9 +140,11 @@ export class HeightmapSolverOptionsT {
         this.restarts = restarts;
         this.seed = seed;
         this.strictUnsupported = strictUnsupported;
+        this.combos = combos;
+        this.comboThreshold = comboThreshold;
     }
     pack(builder) {
-        return HeightmapSolverOptions.createHeightmapSolverOptions(builder, this.maxBoxes, this.allowRotation, this.minSupport, this.cellSize, this.restarts, this.seed, this.strictUnsupported);
+        return HeightmapSolverOptions.createHeightmapSolverOptions(builder, this.maxBoxes, this.allowRotation, this.minSupport, this.cellSize, this.restarts, this.seed, this.strictUnsupported, this.combos, this.comboThreshold);
     }
 }
 //# sourceMappingURL=heightmap-solver-options.js.map

@@ -2,7 +2,8 @@
 // STEP 2 — BUILD THE FITS MATRIX
 //
 // One preprocessing table that four later steps reuse:
-//   fits[i][t]     — can item i enter box type t in ANY allowed orientation?
+//   fits[i][t]     — can item i enter box type t in ANY allowed orientation,
+//                    and is it within t's weight cap on its own?
 //                    (powers validation, search pruning, box choice)
 //   unitCap[i][t]  — how many copies of item i tile box type t by pure floor
 //                    division, best over orientations (powers bounds & box
@@ -40,6 +41,8 @@ orientationsOf(ItemSpec const& it, bool allowRotation)
 	for (int p = 0; p < 6; p++) {
 		if (!allowRotation && p != 0)
 			break; // identity only
+		if (it.combo() && p > 1)
+			break; // combos stay upright: only a turn about the vertical axis
 		std::array<uint32_t, 3> o = { dims[PERM[p][0]], dims[PERM[p][1]], dims[PERM[p][2]] };
 		if (seen.insert(o).second)
 			result.push_back(o);
@@ -79,7 +82,9 @@ inline FitsMatrix buildFitsMatrix(std::vector<ItemSpec> const& items,
 					* (bt.depth / o[2]);
 				bestCap = std::max(bestCap, cap);
 			}
-			if (bestCap > 0) { // at least one way in
+			// At least one way in, and the item alone is under the weight cap
+			// (else a fresh box could be opened for an item it can't carry).
+			if (bestCap > 0 && items[i].weight <= bt.maxWeight) {
 				m.fits[i][t] = true;
 				m.unitCap[i][t] = bestCap;
 			}

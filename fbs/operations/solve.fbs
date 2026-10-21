@@ -17,6 +17,8 @@ table HeightmapSolverOptions {
   restarts : uint = null;
   seed : uint = null;
   strict_unsupported : bool = null;
+  combos : ubyte = null;            // 0 off, 1 on, 2 both (default: solve with and without, keep the better)
+  combo_threshold : double = null;  // min filled share of a glued pair's bounding box (default 0.90)
 }
 
 

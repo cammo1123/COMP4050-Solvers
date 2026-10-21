@@ -74,7 +74,7 @@ struct Candidate {
 // -> vertical fit & zTop pruning -> support ratio. No overlap check is
 // needed: resting on the max of the heightmap makes overlap impossible.
 inline std::optional<Candidate>
-evaluate(OpenBox const& box, BoxTypeSpec const& bt, Options const& opt,
+evaluate(OpenBox const& box, BoxTypeSpec const& bt, double minSupport,
 	std::array<uint32_t, 3> const& dims,
 	uint32_t x, uint32_t y, uint32_t bestZTop)
 {
@@ -119,7 +119,7 @@ evaluate(OpenBox const& box, BoxTypeSpec const& bt, Options const& opt,
 				supported += uint64_t(ox2 - ox1) * (oy2 - oy1);
 		}
 	}
-	uint64_t const needed = uint64_t(std::ceil(opt.minSupport * double(area) - 1e-9));
+	uint64_t const needed = uint64_t(std::ceil(minSupport * double(area) - 1e-9));
 	if (supported < needed)
 		return std::nullopt;
 
@@ -135,13 +135,17 @@ inline std::optional<Candidate>
 findBestInBox(OpenBox const& box, BoxTypeSpec const& bt, ItemSpec const& item,
 	Options const& opt, uint32_t bestZTopSoFar)
 {
+	// A combo must sit fully supported: at 60% its edge units could float.
+	// ponytail: whole-combo 100% is stricter than needed; check per member
+	// if combos get rejected too often.
+	double const minSupport = item.combo() ? 1.0 : opt.minSupport;
 	std::optional<Candidate> best;
 	for (auto const& dims : orientationsOf(item, opt.allowRotation))
 		for (uint32_t x : box.ax)
 			for (uint32_t y : box.ay) {
 				uint32_t limit = best ? std::min(best->zTop, bestZTopSoFar)
 									  : bestZTopSoFar;
-				auto c = evaluate(box, bt, opt, dims, x, y, limit);
+				auto c = evaluate(box, bt, minSupport, dims, x, y, limit);
 				if (c && (!best || *c < *best))
 					best = c;
 			}
