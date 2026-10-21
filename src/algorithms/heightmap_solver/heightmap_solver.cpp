@@ -41,6 +41,7 @@
 #include "../algo_registry.h"
 
 #include <chrono>
+#include <cmath>
 
 #include <cstddef>
 #include <cstdint>
@@ -136,7 +137,12 @@ std::vector<::RawBoxType> to_pipeline_boxes(SolveRequest const& request)
 		box.maxWeight = max_weight > 0.0f ? static_cast<double>(max_weight)
 										  : std::numeric_limits<double>::infinity();
 
-		box.boxWeight = static_cast<double>(source.box_weight.value_or(0.0f));
+		// BoxWeight (tare) is the box's cost in the objective, so it must order.
+		float const box_weight = source.box_weight.value_or(0.0f);
+		if (!(box_weight >= 0.0f && std::isfinite(box_weight))) { // also rejects NaN
+			throw std::invalid_argument("heightmap solver: box_weight must be a finite value >= 0");
+		}
+		box.boxWeight = static_cast<double>(box_weight);
 		box.active = source.active.value_or(true);
 
 		box.maximumBoxes = source.maximum_boxes.value_or(std::numeric_limits<uint32_t>::max());
@@ -409,8 +415,9 @@ auto solve_heightmap_solver(SolveRequest const& request, SolveOptions const& opt
 		solution = solve_with(plan.items, plan.active);
 
 		// Both: also solve without combos and keep the better answer, so the
-		// combo builder can never make a result worse.
-		if (pipeline_options.combos == ::Options::ComboMode::Both) {
+		// combo builder can never make a result worse. Nothing glued means
+		// plan.items == units, so that solve would only repeat this one.
+		if (pipeline_options.combos == ::Options::ComboMode::Both && plan.items.size() != units.size()) {
 			::Solution plain = solve_with(units, all_units);
 			if (::better(plain, solution, normalized.types)) {
 				solution = std::move(plain);

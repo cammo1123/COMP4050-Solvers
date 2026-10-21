@@ -94,6 +94,31 @@ describe("heightmap solver", () => {
 		expect(second.failed).toEqual(first.failed);
 	});
 
+	it("stops restarting once pass 0 meets the box-count lower bound", async () => {
+		const request = heightmap({
+			boxes: [{ reference: "cube", width: 2, length: 2, depth: 2 }],
+			items: Array.from({ length: 16 }, (_, index) => ({ itemCode: `c${index}`, itemReference: "c", width: 1, length: 1, depth: 1, weight: 1 })),
+		});
+		const once = await solve({ ...request, ...tuned({ restarts: 0 }) });
+		const many = await solve({ ...request, algorithm: SolveAlgorithm.HeightmapSolver, options: { timeoutMs: 600_000, heightmapSolverOptions: { restarts: 1000 } } });
+		expect(once.results).toHaveLength(2);
+		expect(many.results).toEqual(once.results);
+		expect(many.failed).toEqual(once.failed);
+	});
+
+	it("stands items on the side height the order shares, so layers stay flat", async () => {
+		// Rods are thinnest at 40 mm, but the boards make 50 mm the common
+		// height; pre-orientation lays the rods 50 mm high on top of the boards.
+		const boards = Array.from({ length: 4 }, (_, index) => ({ itemCode: `board${index}`, itemReference: "board", width: 200, length: 200, depth: 50, weight: 1 }));
+		const rods = Array.from({ length: 4 }, (_, index) => ({ itemCode: `rod${index}`, itemReference: "rod", width: 40, length: 50, depth: 200, weight: 1 }));
+		const request = { ...heightmap({ boxes: [{ reference: "box", width: 400, length: 400, depth: 200 }], items: [...boards, ...rods] }), ...tuned({ combos: 0, restarts: 0 }) };
+		const response = await solve(request);
+		assertValidSolution(request, response);
+		expect(response.failed).toEqual([]);
+		const placements = response.results.flatMap((r) => r.placements);
+		expect(new Set(placements.map((p) => p.item.depth))).toEqual(new Set([50]));
+	});
+
 	it("packs eight unit cubes into one two-unit cube box", async () => {
 		const response = await solve(heightmap({
 			boxes: [{ reference: "cube", width: 2, length: 2, depth: 2 }],
@@ -165,11 +190,14 @@ describe("heightmap solver", () => {
 	it("folds lightly filled boxes together on the Chaotic fixture", async () => {
 		// Heavy items (2.9 kg SHOT) each opened a 5 kg-cap box, then downsized
 		// one-for-one into 20 single-SHOT Parts Boxes; the merge pass pairs them.
+		// The objective is opened volume (pass 0 gives 2.703 m³ in 86 boxes; it
+		// was 3.79 m³ in 68 before pass 0 tried every open policy).
 		const request = { ...loadThomax("Chaotic"), ...tuned({ restarts: 0 }) };
 		const response = await solve(request);
 		assertValidSolution(request, response);
 		expect(response.failed).toEqual([]);
-		expect(response.results.length).toBeLessThanOrEqual(77);
+		const volume = response.results.reduce((sum, r) => sum + r.width * r.length * r.depth, 0);
+		expect(volume).toBeLessThanOrEqual(2.71e9);
 	});
 
 	it("preserves zero and omitted maximumBoxes limits", async () => {
@@ -194,6 +222,31 @@ describe("heightmap solver", () => {
 		expect(response.results).toHaveLength(1);
 		expect(response.results[0].placements).toHaveLength(2);
 		expect(response.results[0].totalWeight).toBe(4);
+	});
+
+	it("prefers the box with the lighter tare, even when it is larger", async () => {
+		const boxes = [
+			{ reference: "dense", width: 10, length: 10, depth: 10, maxWeight: 6, boxWeight: 1 },
+			{ reference: "roomy", width: 12, length: 12, depth: 12, maxWeight: 6, boxWeight: 0.2 },
+		];
+		// One box: the single-box shortcut.
+		const one = await solve(heightmap({ boxes, items: [{ itemCode: "a", itemReference: "a", width: 9, length: 9, depth: 9, weight: 5 }] }));
+		expect(one.results.map((r) => r.boxReference)).toEqual(["roomy"]);
+		// Two boxes (weight allows one item per box): pack, downsize and objective.
+		const items = ["a1", "a2"].map((itemCode) => ({ itemCode, itemReference: "a", width: 9, length: 9, depth: 9, weight: 5 }));
+		const request = { ...heightmap({ boxes, items }), ...tuned({ restarts: 0 }) };
+		const two = await solve(request);
+		assertValidSolution(request, two);
+		expect(two.results.map((r) => r.boxReference)).toEqual(["roomy", "roomy"]);
+	});
+
+	it("rejects a negative or non-finite box weight", async () => {
+		for (const boxWeight of [-1, Number.NaN]) {
+			await expect(solve(heightmap({
+				boxes: [{ reference: "box", width: 10, length: 10, depth: 10, boxWeight }],
+				items: [{ itemCode: "a", itemReference: "a", width: 5, length: 5, depth: 5, weight: 1 }],
+			}))).rejects.toThrow("box_weight");
+		}
 	});
 
 	it("rejects quantities that exceed the remaining instance capacity", async () => {

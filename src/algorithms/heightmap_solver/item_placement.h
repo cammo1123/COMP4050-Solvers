@@ -126,21 +126,22 @@ evaluate(OpenBox const& box, BoxTypeSpec const& bt, double minSupport,
 	return Candidate { z + d, z, area - supported, y, x, dims };
 }
 
-// Best feasible placement of `item` in `box`, over allowed orientations and
-// the box's cached anchors — or nullopt. `bestSoFar` (from other boxes)
+// Best feasible placement of `item` in `box`, over the orientations given
+// (FitsMatrix::orients or ::preferred for this item) and the box's cached
+// anchors — or nullopt. `bestSoFar` (from other boxes)
 // feeds the pruning; a returned candidate is only kept by the caller if it
 // beats it. Weight and group gates are the CALLER's job (steps 5/8): this
 // function is pure geometry.
 inline std::optional<Candidate>
 findBestInBox(OpenBox const& box, BoxTypeSpec const& bt, ItemSpec const& item,
-	Options const& opt, uint32_t bestZTopSoFar)
+	std::vector<Dims> const& orients, Options const& opt, uint32_t bestZTopSoFar)
 {
 	// A combo must sit fully supported: at 60% its edge units could float.
 	// ponytail: whole-combo 100% is stricter than needed; check per member
 	// if combos get rejected too often.
 	double const minSupport = item.combo() ? 1.0 : opt.minSupport;
 	std::optional<Candidate> best;
-	for (auto const& dims : orientationsOf(item, opt.allowRotation))
+	for (auto const& dims : orients)
 		for (uint32_t x : box.ax)
 			for (uint32_t y : box.ay) {
 				uint32_t limit = best ? std::min(best->zTop, bestZTopSoFar)

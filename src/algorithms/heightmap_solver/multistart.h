@@ -1,20 +1,24 @@
 // ============================================================================
-// STEP 10 — OBJECTIVE + MULTI-START (parallel, deterministic)
+// STEP 10 â€” OBJECTIVE + MULTI-START (parallel, deterministic)
 //
 // One full pipeline pass (steps 5 -> 8 -> 9) is deterministic and fast.
 // Multi-start re-runs it `restarts` times with perturbed inputs and keeps
 // the best solution under the agreed objective:
 //   1. fewest failed items          (never trade a placed item for tidiness)
-//   2. least total opened-box volume (box count that understands sizes)
-//   3. emptiest least-filled box     (the box a human would repack)
+//   2. least total box tare (BoxWeight) (the cost of the boxes used)
+//   3. least total opened-box volume (box count that understands sizes)
+//   4. emptiest least-filled box     (the box a human would repack)
 //
+// Pass 0 runs the sorted order under each of the three box-opening policies.
 // Restarts vary (a) the item order inside each wave, via random adjacent
-// swaps, and (b) the box-opening policy. All perturbations are generated
+// swaps, and (b) the box-opening policy. The loop stops early at the box-count
+// lower bound or after a run of restarts that did not improve the answer.
+// All perturbations are generated
 // up-front from ONE sequential RNG and results are reduced in iteration
-// order, so the parallel run is bit-identical to a sequential one — just
+// order, so the parallel run is bit-identical to a sequential one â€” just
 // earlier on the wall clock. The RNG is drawn with plain modulo, NOT
 // std::uniform_int_distribution, whose output differs between libstdc++,
-// libc++ and MSVC — that would give each prebuilt platform its own answer.
+// libc++ and MSVC â€” that would give each prebuilt platform its own answer.
 //
 // The answer depends only on (input, seed, restarts): the restart COUNT is
 // the search budget. timeoutMs is a safety cap for pathological inputs;
@@ -63,9 +67,8 @@ inline std::optional<Solution> pipelineOnce(GroupPartition const& part,
 	if (st.aborted)
 		return std::nullopt;
 
-	// Step 9: shrink any box that ended up oversized, fold lightly filled
-	// boxes into others, then shrink again (a merge can free a smaller fit).
-	downsizeSweep(items, types, fm, opt, st);
+	// Step 9: first fold lightly filled boxes into open boxes with room
+	// (volume and weight), then shrink what is left into a cheaper type.
 	mergeSweep(items, types, fm, opt, st);
 	downsizeSweep(items, types, fm, opt, st);
 
@@ -82,7 +85,7 @@ inline std::optional<Solution> pipelineOnce(GroupPartition const& part,
 	return s;
 }
 
-// Every wave sorted large-first and groups most constrained first — the
+// Every wave sorted large-first and groups most constrained first â€” the
 // baseline order restarts perturb.
 inline GroupPartition sortPartition(GroupPartition part, std::vector<ItemSpec> const& items,
 	std::vector<BoxTypeSpec> const& types, FitsMatrix const& fm)
@@ -104,6 +107,14 @@ inline uint64_t openedVolume(Solution const& s, std::vector<BoxTypeSpec> const& 
 	return v;
 }
 
+inline uint64_t openedTareGrams(Solution const& s, std::vector<BoxTypeSpec> const& types)
+{
+	uint64_t g = 0;
+	for (auto const& b : s.boxes)
+		g += types[b.typeIndex].tareGrams();
+	return g;
+}
+
 inline uint64_t leastFilledItemVolume(Solution const& s)
 {
 	uint64_t worst = std::numeric_limits<uint64_t>::max();
@@ -121,6 +132,9 @@ inline bool better(Solution const& a, Solution const& b,
 {
 	if (a.failed.size() != b.failed.size())
 		return a.failed.size() < b.failed.size();
+	uint64_t ta = openedTareGrams(a, types), tb = openedTareGrams(b, types);
+	if (ta != tb)
+		return ta < tb;
 	uint64_t va = openedVolume(a, types), vb = openedVolume(b, types);
 	if (va != vb)
 		return va < vb;
@@ -145,8 +159,9 @@ inline Solution solveMultiStart(GroupPartition const& unsorted,
 	Reservation const res = reserveForForced(all, items, types, fm);
 
 	// Whole order in ONE box (impossible with 2+ groups: they never share).
-	// Smallest type first; the first that takes everything is provably the
-	// fewest boxes, so it is returned without any restarts.
+	// Cheapest type first (tare, then volume); the first that takes
+	// everything is one box at the least cost any one box can have, so it is
+	// returned without any restarts.
 	if (part.groups.size() <= 1 && !all.empty()) {
 		uint64_t vol = 0;
 		double wgt = 0;
@@ -157,7 +172,7 @@ inline Solution solveMultiStart(GroupPartition const& unsorted,
 		std::vector<int> bySize(types.size());
 		std::iota(bySize.begin(), bySize.end(), 0);
 		std::stable_sort(bySize.begin(), bySize.end(), [&](int a, int b) {
-			return types[a].volume() < types[b].volume();
+			return types[a].cheaperThan(types[b]);
 		});
 		Options one = opt;
 		one.maxBoxes = 1;
@@ -179,9 +194,38 @@ inline Solution solveMultiStart(GroupPartition const& unsorted,
 	// always completes (no deadline) so there is always an answer; restarts
 	// stop at the deadline.
 
-	// Pass 0: the deterministic baseline with the default policy.
-	Solution best = *pipelineOnce(part, items, types, fm, opt,
-		OpenPolicy::ShrinkingTail, res);
+	// Pass 0: the sorted order once per box-opening policy, kept best-of in
+	// policy order (ties go to ShrinkingTail, the old single pass 0).
+	std::vector<std::future<std::optional<Solution>>> pass0;
+	for (auto policy : { OpenPolicy::ShrinkingTail, OpenPolicy::SmallestViable, OpenPolicy::Largest })
+		pass0.push_back(std::async(std::launch::async, [&, policy] {
+			return pipelineOnce(part, items, types, fm, opt, policy, res);
+		}));
+	Solution best = *pass0[0].get();
+	for (size_t k = 1; k < pass0.size(); k++) {
+		Solution cand = *pass0[k].get();
+		if (better(cand, best, types))
+			best = std::move(cand);
+	}
+
+	// Early stop. (a) No failures at the box-count lower bound: no restart
+	// can open fewer boxes. (b) kStall restarts in a row without improving.
+	// Both are decided by restart index, never by batch, so the answer stays
+	// independent of the core count.
+	// ponytail: kStall is a constant; promote to HeightmapSolverOptions if
+	// the bench shows it needs tuning per request.
+	constexpr uint64_t kStall = 8;
+	uint64_t bound = lowerBound(all, items, types);
+	{
+		uint64_t groupSum = 0;
+		for (auto const& g : part.groups)
+			groupSum += lowerBound(g.second, items, types);
+		bound = std::max(bound, groupSum);
+	}
+	auto atBound = [&] { return best.failed.empty() && best.boxes.size() <= bound; };
+	if (atBound())
+		return best;
+	uint64_t sinceImproved = 0;
 
 	// Each restart's perturbation comes from one sequential RNG, drawn in
 	// restart order one batch at a time (memory stays bounded by `lanes`
@@ -229,11 +273,21 @@ inline Solution solveMultiStart(GroupPartition const& unsorted,
 				return pipelineOnce(variants[k].part, items, types, fm, opt,
 					variants[k].policy, res, deadline);
 			}));
+		bool stop = false;
 		for (auto& f : batch) {
-			std::optional<Solution> cand = f.get();
-			if (cand && better(*cand, best, types))
+			std::optional<Solution> cand = f.get(); // drain every future
+			if (stop)
+				continue; // past the stop index: ignored
+			if (cand && better(*cand, best, types)) {
 				best = std::move(*cand);
+				sinceImproved = 0;
+			} else {
+				sinceImproved++;
+			}
+			stop = atBound() || sinceImproved >= kStall;
 		}
+		if (stop)
+			break;
 	}
 	return best;
 }

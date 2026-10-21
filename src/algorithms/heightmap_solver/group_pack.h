@@ -165,22 +165,29 @@ inline void packGroup(std::string const& tag, std::vector<int> const& order,
 				< st.boxes[b].freeVolume(types[st.boxes[b].typeIndex]);
 		});
 
-		for (int b : byFullness) {
-			OpenBox& box = st.boxes[b];
-			BoxTypeSpec const& bt = types[box.typeIndex];
-			// Cheap per-box gates before any placement work. Ungrouped items
-			// (tag "") may enter any box; grouped ones only their own or untagged.
-			if (!tag.empty() && !box.groupTag.empty() && box.groupTag != tag)
-				continue;
-			if (!fm.fits[i][box.typeIndex])
-				continue; // never fits type
-			if (box.cargoWeight + it.weight > bt.maxWeight)
-				continue; // weight cap
+		// Preferred orientations across every open box first (flat layers),
+		// then every orientation, and only then a new box (fits_matrix.h).
+		bool const twoTries = fm.preferred[i].size() < fm.orients[i].size();
+		for (auto const* orients : { &fm.preferred[i], &fm.orients[i] }) {
+			if (best || (orients == &fm.orients[i] && !twoTries))
+				break;
+			for (int b : byFullness) {
+				OpenBox& box = st.boxes[b];
+				BoxTypeSpec const& bt = types[box.typeIndex];
+				// Cheap per-box gates before any placement work. Ungrouped items
+				// (tag "") may enter any box; grouped ones only their own or untagged.
+				if (!tag.empty() && !box.groupTag.empty() && box.groupTag != tag)
+					continue;
+				if (!fm.fits[i][box.typeIndex])
+					continue; // never fits type
+				if (box.cargoWeight + it.weight > bt.maxWeight)
+					continue; // weight cap
 
-			if (auto c = findBestInBox(box, bt, it, opt, UINT32_MAX)) {
-				best = c;
-				bestBox = b;
-				break; // fullest feasible box found
+				if (auto c = findBestInBox(box, bt, it, *orients, opt, UINT32_MAX)) {
+					best = c;
+					bestBox = b;
+					break; // fullest feasible box found
+				}
 			}
 		}
 
@@ -189,7 +196,9 @@ inline void packGroup(std::string const& tag, std::vector<int> const& order,
 			int t = chooseTypeToOpen(i, remainingVol, remainingWeight, types, fm, opt, policy, st);
 			if (t >= 0) {
 				OpenBox fresh(t);
-				auto c = findBestInBox(fresh, types[t], it, opt, UINT32_MAX);
+				auto c = findBestInBox(fresh, types[t], it, fm.preferred[i], opt, UINT32_MAX);
+				if (!c && twoTries)
+					c = findBestInBox(fresh, types[t], it, fm.orients[i], opt, UINT32_MAX);
 				if (c) { // guaranteed: fits matrix said so
 					st.boxes.push_back(std::move(fresh));
 					st.openedOfType[t]++;

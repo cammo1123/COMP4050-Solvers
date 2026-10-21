@@ -3,6 +3,7 @@
 // ============================================================================
 #pragma once
 
+#include <cmath>
 #include <cstdint>
 #include <limits>
 #include <string>
@@ -13,12 +14,23 @@ struct BoxTypeSpec {
 	std::string reference;
 	uint32_t width = 0, length = 0, depth = 0;					  // interior, mm (X, Y, Z-up)
 	double maxWeight = std::numeric_limits<double>::infinity();	  // cargo cap, kg
-	double boxWeight = 0.0;										  // empty box weight, kg (reporting)
+	double boxWeight = 0.0;										  // empty box weight (tare), kg: the box's cost
 	bool active = true;											  // inactive types are never opened
 	uint32_t maximumBoxes = std::numeric_limits<uint32_t>::max(); // stock cap
 
 	// Interior volume in mm^3 — used for bounds, box choice and the objective.
 	uint64_t volume() const { return uint64_t(width) * length * depth; }
+
+	// Tare in whole grams, so sums over boxes compare exactly (no float drift).
+	uint64_t tareGrams() const { return uint64_t(std::llround(boxWeight * 1000.0)); }
+
+	// Box cost order: lighter tare first, then smaller interior.
+	bool cheaperThan(BoxTypeSpec const& o) const
+	{
+		if (tareGrams() != o.tareGrams())
+			return tareGrams() < o.tareGrams();
+		return volume() < o.volume();
+	}
 };
 
 // One physical item to pack (API: Item). Weight is NOT in the API yet, so it
@@ -87,7 +99,7 @@ struct Options {
 	uint32_t maxBoxes = std::numeric_limits<uint32_t>::max(); // global cap
 	double derate = 0.75;									  // usable fraction of a box's volume when
 															  // ESTIMATING capacity (measured fill rate)
-	uint32_t restarts = 24;									  // multi-start iterations (0 = single pass)
+	uint32_t restarts = 0;									  // multi-start iterations (0 = pass 0 only)
 	uint32_t timeoutMs = 1000;								  // safety cap on multi-start; results are
 															  // only reproducible when it doesn't fire
 	uint64_t seed = 42;										  // RNG seed — reproducible runs
