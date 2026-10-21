@@ -309,7 +309,7 @@ SolveResponse to_response(::Solution const& solution, ::NormalizedInput const& n
 	for (auto const& failure : solution.failed) {
 		auto const origin = origins[static_cast<std::size_t>(failure.itemIndex)];
 		ItemType failed = request.items[origin.request_index];
-		failed.quantity = 1;
+		failed.quantity = std::nullopt;
 		response.failed.push_back(std::move(failed));
 	}
 

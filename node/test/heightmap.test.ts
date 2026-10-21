@@ -115,6 +115,7 @@ describe("heightmap solver", () => {
 		const response = await solve(request);
 		assertValidSolution(request, response);
 		expect(response.failed.map((item) => item.itemCode)).toEqual(["huge"]);
+		expect(response.failed[0]).not.toHaveProperty("quantity");
 	});
 
 	it("keeps item orientation when every item forbids rotation", async () => {
