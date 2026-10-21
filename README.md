@@ -99,9 +99,9 @@ const response = await solve({
 ```
 
 The default algorithm is `SolveAlgorithm.PHPSolver`. The available algorithms
-are ``ExtremePoint`, `StackBased`, and `PHPSolver`. `StackBased` is the
+are `ExtremePoint`, `StackBased`, `PHPSolver`, and `HeightmapSolver`. `StackBased` is the
 current stacking implementation and `ExtremePoint` is a full extreme-point
-solver.
+solver. `HeightmapSolver` is a heightmap-based multi-start packer.
 
 ### ExtremePoint
 

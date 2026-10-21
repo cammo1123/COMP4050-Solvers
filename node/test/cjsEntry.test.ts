@@ -1,9 +1,14 @@
 import { createRequire } from "node:module";
 import { describe, expect, it } from "vitest";
+import * as enums from "../src/enums";
 
 const require = createRequire(import.meta.url);
 
 describe("CommonJS entry (node/index.cjs)", () => {
+	it("exports the same forward and reverse enum mappings as TypeScript", () => {
+		expect(require("../enums.cjs")).toEqual({ ...enums });
+	});
+
 	it("provides enums synchronously right after require()", () => {
 		const entry = require("../index.cjs");
 		expect(entry.SolveAlgorithm.ExtremePoint).toBeTypeOf("number");

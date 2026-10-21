@@ -131,8 +131,7 @@ std::vector<::RawBoxType> to_pipeline_boxes(SolveRequest const& request)
 		box.depth = static_cast<double>(source.depth);
 
 		// MaxWeight is CARGO capacity per the API ("the weight the box can
-		// hold"); BoxWeight is reported separately as part of the gross and
-		// is deliberately NOT counted against the cap.
+		// hold"); BoxWeight is deliberately NOT counted against the cap.
 		float const max_weight = source.max_weight.value_or(0.0f);
 		box.maxWeight = max_weight > 0.0f ? static_cast<double>(max_weight)
 										  : std::numeric_limits<double>::infinity();
@@ -140,8 +139,7 @@ std::vector<::RawBoxType> to_pipeline_boxes(SolveRequest const& request)
 		box.boxWeight = static_cast<double>(source.box_weight.value_or(0.0f));
 		box.active = source.active.value_or(true);
 
-		uint32_t const maximum = source.maximum_boxes.value_or(0);
-		box.maximumBoxes = maximum > 0 ? maximum : std::numeric_limits<uint32_t>::max();
+		box.maximumBoxes = source.maximum_boxes.value_or(std::numeric_limits<uint32_t>::max());
 
 		boxes.push_back(std::move(box));
 	}
@@ -163,6 +161,9 @@ std::vector<::ItemSpec> to_pipeline_items(SolveRequest const& request, std::vect
 			throw std::invalid_argument("heightmap solver: item " + source.item_code + " has a zero dimension");
 		}
 		uint32_t const quantity = source.quantity.value_or(1);
+		if (quantity > std::size_t { 1'000'000 } - items.size()) {
+			throw std::length_error("heightmap solver: expanded item count exceeds 1000000 instances");
+		}
 
 		for (uint32_t instance = 0; instance < quantity; ++instance) {
 			::ItemSpec item;
@@ -263,8 +264,8 @@ SolveResponse to_response(::Solution const& solution, ::NormalizedInput const& n
 		result.length = type.length;
 		result.depth = type.depth;
 
-		// Gross weight: the empty box plus its cargo.
-		result.total_weight = static_cast<float>(type.boxWeight + packed.cargoWeight);
+		// Content weight, excluding the empty box.
+		result.total_weight = static_cast<float>(packed.cargoWeight);
 
 		if (source.outer_width.has_value() && source.outer_length.has_value() && source.outer_depth.has_value()) {
 			result.outer_width = source.outer_width;

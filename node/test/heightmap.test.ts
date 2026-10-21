@@ -164,11 +164,44 @@ describe("heightmap solver", () => {
 	it("folds lightly filled boxes together on the Chaotic fixture", async () => {
 		// Heavy items (2.9 kg SHOT) each opened a 5 kg-cap box, then downsized
 		// one-for-one into 20 single-SHOT Parts Boxes; the merge pass pairs them.
-		const request = loadThomax("Chaotic");
+		const request = { ...loadThomax("Chaotic"), ...tuned({ restarts: 0 }) };
 		const response = await solve(request);
 		assertValidSolution(request, response);
 		expect(response.failed).toEqual([]);
 		expect(response.results.length).toBeLessThanOrEqual(77);
+	});
+
+	it("preserves zero and omitted maximumBoxes limits", async () => {
+		for (const maximumBoxes of [0, undefined]) {
+			const request = heightmap({
+				boxes: [{ reference: "box", width: 5, length: 5, depth: 5, maximumBoxes }],
+				items: Array.from({ length: 2 }, (_, index) => ({ itemCode: `cube${index}`, itemReference: "cube", width: 5, length: 5, depth: 5, weight: 1 })),
+			});
+			const response = await solve(request);
+			assertValidSolution(request, response);
+			expect(response.results).toHaveLength(maximumBoxes === 0 ? 0 : 2);
+			expect(response.failed).toHaveLength(maximumBoxes === 0 ? 2 : 0);
+		}
+	});
+
+	it("reports cargo weight without the box tare", async () => {
+		const response = await solve(heightmap({
+			boxes: [{ reference: "box", width: 10, length: 10, depth: 10, maxWeight: 4, boxWeight: 3 }],
+			items: [{ itemCode: "cube", itemReference: "cube", width: 5, length: 5, depth: 5, weight: 2, quantity: 2 }],
+		}));
+		expect(response.failed).toEqual([]);
+		expect(response.results).toHaveLength(1);
+		expect(response.results[0].placements).toHaveLength(2);
+		expect(response.results[0].totalWeight).toBe(4);
+	});
+
+	it("rejects quantities that exceed the remaining instance capacity", async () => {
+		for (const quantities of [[1_000_001], [0xffff_ffff], [1, 1_000_000]]) {
+			await expect(solve(heightmap({
+				boxes: [{ reference: "box", width: 10, length: 10, depth: 10 }],
+				items: quantities.map((quantity, index) => ({ itemCode: `cube${index}`, itemReference: "cube", width: 1, length: 1, depth: 1, weight: 1, quantity })),
+			}))).rejects.toThrow("heightmap solver: expanded item count exceeds 1000000 instances");
+		}
 	});
 
 	it("keeps every unit supported on the client fixtures with combos on", async () => {
