@@ -35,6 +35,7 @@ export type HeightmapSolverOptionsT = {
     strictUnsupported?: boolean;
     combos?: number;
     comboThreshold?: number;
+    heavyOnBottom?: boolean;
 };
 export type ItemPlacementT = {
     x: number;

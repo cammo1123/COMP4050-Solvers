@@ -14,6 +14,7 @@ export declare class HeightmapSolverOptions implements flatbuffers.IUnpackableOb
     strictUnsupported(): boolean | null;
     combos(): number | null;
     comboThreshold(): number | null;
+    heavyOnBottom(): boolean | null;
     static startHeightmapSolverOptions(builder: flatbuffers.Builder): void;
     static addMaxBoxes(builder: flatbuffers.Builder, maxBoxes: number): void;
     static addAllowRotation(builder: flatbuffers.Builder, allowRotation: boolean): void;
@@ -24,8 +25,9 @@ export declare class HeightmapSolverOptions implements flatbuffers.IUnpackableOb
     static addStrictUnsupported(builder: flatbuffers.Builder, strictUnsupported: boolean): void;
     static addCombos(builder: flatbuffers.Builder, combos: number): void;
     static addComboThreshold(builder: flatbuffers.Builder, comboThreshold: number): void;
+    static addHeavyOnBottom(builder: flatbuffers.Builder, heavyOnBottom: boolean): void;
     static endHeightmapSolverOptions(builder: flatbuffers.Builder): flatbuffers.Offset;
-    static createHeightmapSolverOptions(builder: flatbuffers.Builder, maxBoxes: number | null, allowRotation: boolean, minSupport: number | null, cellSize: number | null, restarts: number | null, seed: number | null, strictUnsupported: boolean | null, combos: number | null, comboThreshold: number | null): flatbuffers.Offset;
+    static createHeightmapSolverOptions(builder: flatbuffers.Builder, maxBoxes: number | null, allowRotation: boolean, minSupport: number | null, cellSize: number | null, restarts: number | null, seed: number | null, strictUnsupported: boolean | null, combos: number | null, comboThreshold: number | null, heavyOnBottom: boolean | null): flatbuffers.Offset;
     unpack(): HeightmapSolverOptionsT;
     unpackTo(_o: HeightmapSolverOptionsT): void;
 }
@@ -39,7 +41,8 @@ export declare class HeightmapSolverOptionsT implements flatbuffers.IGeneratedOb
     strictUnsupported: boolean | null;
     combos: number | null;
     comboThreshold: number | null;
-    constructor(maxBoxes?: number | null, allowRotation?: boolean, minSupport?: number | null, cellSize?: number | null, restarts?: number | null, seed?: number | null, strictUnsupported?: boolean | null, combos?: number | null, comboThreshold?: number | null);
+    heavyOnBottom: boolean | null;
+    constructor(maxBoxes?: number | null, allowRotation?: boolean, minSupport?: number | null, cellSize?: number | null, restarts?: number | null, seed?: number | null, strictUnsupported?: boolean | null, combos?: number | null, comboThreshold?: number | null, heavyOnBottom?: boolean | null);
     pack(builder: flatbuffers.Builder): flatbuffers.Offset;
 }
 //# sourceMappingURL=heightmap-solver-options.d.ts.map

@@ -212,6 +212,7 @@ inline ::Options to_pipeline_options(SolveOptions const& options, SolveRequest c
 			result.seed = *algo_opts.seed;
 		}
 		strict_unsupported = algo_opts.strict_unsupported.value_or(true);
+		result.heavyOnBottom = algo_opts.heavy_on_bottom.value_or(true);
 		if (algo_opts.combos.has_value()) {
 			if (*algo_opts.combos > 2) {
 				throw std::invalid_argument("heightmap solver: combos must be 0 (off), 1 (on) or 2 (both)");

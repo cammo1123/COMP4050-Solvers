@@ -71,12 +71,15 @@ struct Candidate {
 
 // Can `dims`-oriented item sit with its corner at real position (x, y)?
 // Checks, in order: bounds -> resting height (max top under the footprint)
-// -> vertical fit & zTop pruning -> support ratio. No overlap check is
-// needed: resting on the max of the heightmap makes overlap impossible.
+// -> vertical fit & zTop pruning -> support ratio and, when `maxOnTop` is
+// set, heavy-on-bottom: every item it rests on must weigh at least
+// `*maxOnTop`. No overlap check is needed: resting on the max of the
+// heightmap makes overlap impossible.
 inline std::optional<Candidate>
 evaluate(OpenBox const& box, BoxTypeSpec const& bt, double minSupport,
 	std::array<uint32_t, 3> const& dims,
-	uint32_t x, uint32_t y, uint32_t bestZTop)
+	uint32_t x, uint32_t y, uint32_t bestZTop,
+	std::optional<double> maxOnTop = std::nullopt)
 {
 	uint32_t const w = dims[0], l = dims[1], d = dims[2];
 
@@ -115,8 +118,12 @@ evaluate(OpenBox const& box, BoxTypeSpec const& bt, double minSupport,
 				continue;
 			uint32_t const ox1 = std::max(x, p.x), ox2 = std::min(x + w, p.x + p.w);
 			uint32_t const oy1 = std::max(y, p.y), oy2 = std::min(y + l, p.y + p.l);
-			if (ox1 < ox2 && oy1 < oy2)
+			if (ox1 < ox2 && oy1 < oy2) {
+				// Equal weights may stack; the epsilon only absorbs float noise.
+				if (maxOnTop && p.weight + 1e-9 < *maxOnTop)
+					return std::nullopt; // would rest on something lighter
 				supported += uint64_t(ox2 - ox1) * (oy2 - oy1);
+			}
 		}
 	}
 	uint64_t const needed = uint64_t(std::ceil(minSupport * double(area) - 1e-9));
@@ -130,8 +137,8 @@ evaluate(OpenBox const& box, BoxTypeSpec const& bt, double minSupport,
 // (FitsMatrix::orients or ::preferred for this item) and the box's cached
 // anchors — or nullopt. `bestSoFar` (from other boxes)
 // feeds the pruning; a returned candidate is only kept by the caller if it
-// beats it. Weight and group gates are the CALLER's job (steps 5/8): this
-// function is pure geometry.
+// beats it. The box's weight cap and group gates are the CALLER's job (steps
+// 5/8): this function checks geometry, support and heavy-on-bottom.
 inline std::optional<Candidate>
 findBestInBox(OpenBox const& box, BoxTypeSpec const& bt, ItemSpec const& item,
 	std::vector<Dims> const& orients, Options const& opt, uint32_t bestZTopSoFar)
@@ -140,13 +147,14 @@ findBestInBox(OpenBox const& box, BoxTypeSpec const& bt, ItemSpec const& item,
 	// ponytail: whole-combo 100% is stricter than needed; check per member
 	// if combos get rejected too often.
 	double const minSupport = item.combo() ? 1.0 : opt.minSupport;
+	std::optional<double> const maxOnTop = opt.heavyOnBottom ? std::optional<double>(item.unitWeight()) : std::nullopt;
 	std::optional<Candidate> best;
 	for (auto const& dims : orients)
 		for (uint32_t x : box.ax)
 			for (uint32_t y : box.ay) {
 				uint32_t limit = best ? std::min(best->zTop, bestZTopSoFar)
 									  : bestZTopSoFar;
-				auto c = evaluate(box, bt, minSupport, dims, x, y, limit);
+				auto c = evaluate(box, bt, minSupport, dims, x, y, limit, maxOnTop);
 				if (c && (!best || *c < *best))
 					best = c;
 			}

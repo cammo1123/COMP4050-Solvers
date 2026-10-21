@@ -69,8 +69,13 @@ comboThreshold():number|null {
   return offset ? this.bb!.readFloat64(this.bb_pos + offset) : null;
 }
 
+heavyOnBottom():boolean|null {
+  const offset = this.bb!.__offset(this.bb_pos, 22);
+  return offset ? !!this.bb!.readInt8(this.bb_pos + offset) : null;
+}
+
 static startHeightmapSolverOptions(builder:flatbuffers.Builder) {
-  builder.startObject(9);
+  builder.startObject(10);
 }
 
 static addMaxBoxes(builder:flatbuffers.Builder, maxBoxes:number) {
@@ -109,12 +114,16 @@ static addComboThreshold(builder:flatbuffers.Builder, comboThreshold:number) {
   builder.addFieldFloat64(8, comboThreshold, null);
 }
 
+static addHeavyOnBottom(builder:flatbuffers.Builder, heavyOnBottom:boolean) {
+  builder.addFieldInt8(9, +heavyOnBottom, null);
+}
+
 static endHeightmapSolverOptions(builder:flatbuffers.Builder):flatbuffers.Offset {
   const offset = builder.endObject();
   return offset;
 }
 
-static createHeightmapSolverOptions(builder:flatbuffers.Builder, maxBoxes:number|null, allowRotation:boolean, minSupport:number|null, cellSize:number|null, restarts:number|null, seed:number|null, strictUnsupported:boolean|null, combos:number|null, comboThreshold:number|null):flatbuffers.Offset {
+static createHeightmapSolverOptions(builder:flatbuffers.Builder, maxBoxes:number|null, allowRotation:boolean, minSupport:number|null, cellSize:number|null, restarts:number|null, seed:number|null, strictUnsupported:boolean|null, combos:number|null, comboThreshold:number|null, heavyOnBottom:boolean|null):flatbuffers.Offset {
   HeightmapSolverOptions.startHeightmapSolverOptions(builder);
   if (maxBoxes !== null)
     HeightmapSolverOptions.addMaxBoxes(builder, maxBoxes);
@@ -133,6 +142,8 @@ static createHeightmapSolverOptions(builder:flatbuffers.Builder, maxBoxes:number
     HeightmapSolverOptions.addCombos(builder, combos);
   if (comboThreshold !== null)
     HeightmapSolverOptions.addComboThreshold(builder, comboThreshold);
+  if (heavyOnBottom !== null)
+    HeightmapSolverOptions.addHeavyOnBottom(builder, heavyOnBottom);
   return HeightmapSolverOptions.endHeightmapSolverOptions(builder);
 }
 
@@ -146,7 +157,8 @@ unpack(): HeightmapSolverOptionsT {
     this.seed(),
     this.strictUnsupported(),
     this.combos(),
-    this.comboThreshold()
+    this.comboThreshold(),
+    this.heavyOnBottom()
   );
 }
 
@@ -161,6 +173,7 @@ unpackTo(_o: HeightmapSolverOptionsT): void {
   _o.strictUnsupported = this.strictUnsupported();
   _o.combos = this.combos();
   _o.comboThreshold = this.comboThreshold();
+  _o.heavyOnBottom = this.heavyOnBottom();
 }
 }
 
@@ -174,7 +187,8 @@ constructor(
   public seed: number|null = null,
   public strictUnsupported: boolean|null = null,
   public combos: number|null = null,
-  public comboThreshold: number|null = null
+  public comboThreshold: number|null = null,
+  public heavyOnBottom: boolean|null = null
 ){}
 
 
@@ -188,7 +202,8 @@ pack(builder:flatbuffers.Builder): flatbuffers.Offset {
     this.seed,
     this.strictUnsupported,
     this.combos,
-    this.comboThreshold
+    this.comboThreshold,
+    this.heavyOnBottom
   );
 }
 }

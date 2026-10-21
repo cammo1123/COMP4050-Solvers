@@ -117,6 +117,8 @@ inline void writeHeightmapSolverOptions(zval* out, fbs::domain::HeightmapSolverO
 		put_int(out, "combos", *value.combos);
 	if (value.combo_threshold)
 		put_double(out, "comboThreshold", *value.combo_threshold);
+	if (value.heavy_on_bottom)
+		put_bool(out, "heavyOnBottom", *value.heavy_on_bottom);
 }
 
 inline fbs::domain::HeightmapSolverOptions readHeightmapSolverOptions(HashTable* table, std::string const& path)
@@ -157,6 +159,7 @@ inline fbs::domain::HeightmapSolverOptions readHeightmapSolverOptions(HashTable*
 		out.combos = *_value;
 	}
 	out.combo_threshold = optional_double(find_key(table, "comboThreshold"), path + ".comboThreshold");
+	out.heavy_on_bottom = optional_bool(find_key(table, "heavyOnBottom"), path + ".heavyOnBottom");
 
 	return out;
 }

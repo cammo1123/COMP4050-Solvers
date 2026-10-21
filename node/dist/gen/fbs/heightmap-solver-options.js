@@ -52,8 +52,12 @@ export class HeightmapSolverOptions {
         const offset = this.bb.__offset(this.bb_pos, 20);
         return offset ? this.bb.readFloat64(this.bb_pos + offset) : null;
     }
+    heavyOnBottom() {
+        const offset = this.bb.__offset(this.bb_pos, 22);
+        return offset ? !!this.bb.readInt8(this.bb_pos + offset) : null;
+    }
     static startHeightmapSolverOptions(builder) {
-        builder.startObject(9);
+        builder.startObject(10);
     }
     static addMaxBoxes(builder, maxBoxes) {
         builder.addFieldInt32(0, maxBoxes, null);
@@ -82,11 +86,14 @@ export class HeightmapSolverOptions {
     static addComboThreshold(builder, comboThreshold) {
         builder.addFieldFloat64(8, comboThreshold, null);
     }
+    static addHeavyOnBottom(builder, heavyOnBottom) {
+        builder.addFieldInt8(9, +heavyOnBottom, null);
+    }
     static endHeightmapSolverOptions(builder) {
         const offset = builder.endObject();
         return offset;
     }
-    static createHeightmapSolverOptions(builder, maxBoxes, allowRotation, minSupport, cellSize, restarts, seed, strictUnsupported, combos, comboThreshold) {
+    static createHeightmapSolverOptions(builder, maxBoxes, allowRotation, minSupport, cellSize, restarts, seed, strictUnsupported, combos, comboThreshold, heavyOnBottom) {
         HeightmapSolverOptions.startHeightmapSolverOptions(builder);
         if (maxBoxes !== null)
             HeightmapSolverOptions.addMaxBoxes(builder, maxBoxes);
@@ -105,10 +112,12 @@ export class HeightmapSolverOptions {
             HeightmapSolverOptions.addCombos(builder, combos);
         if (comboThreshold !== null)
             HeightmapSolverOptions.addComboThreshold(builder, comboThreshold);
+        if (heavyOnBottom !== null)
+            HeightmapSolverOptions.addHeavyOnBottom(builder, heavyOnBottom);
         return HeightmapSolverOptions.endHeightmapSolverOptions(builder);
     }
     unpack() {
-        return new HeightmapSolverOptionsT(this.maxBoxes(), this.allowRotation(), this.minSupport(), this.cellSize(), this.restarts(), this.seed(), this.strictUnsupported(), this.combos(), this.comboThreshold());
+        return new HeightmapSolverOptionsT(this.maxBoxes(), this.allowRotation(), this.minSupport(), this.cellSize(), this.restarts(), this.seed(), this.strictUnsupported(), this.combos(), this.comboThreshold(), this.heavyOnBottom());
     }
     unpackTo(_o) {
         _o.maxBoxes = this.maxBoxes();
@@ -120,6 +129,7 @@ export class HeightmapSolverOptions {
         _o.strictUnsupported = this.strictUnsupported();
         _o.combos = this.combos();
         _o.comboThreshold = this.comboThreshold();
+        _o.heavyOnBottom = this.heavyOnBottom();
     }
 }
 export class HeightmapSolverOptionsT {
@@ -132,7 +142,8 @@ export class HeightmapSolverOptionsT {
     strictUnsupported;
     combos;
     comboThreshold;
-    constructor(maxBoxes = null, allowRotation = true, minSupport = null, cellSize = null, restarts = null, seed = null, strictUnsupported = null, combos = null, comboThreshold = null) {
+    heavyOnBottom;
+    constructor(maxBoxes = null, allowRotation = true, minSupport = null, cellSize = null, restarts = null, seed = null, strictUnsupported = null, combos = null, comboThreshold = null, heavyOnBottom = null) {
         this.maxBoxes = maxBoxes;
         this.allowRotation = allowRotation;
         this.minSupport = minSupport;
@@ -142,9 +153,10 @@ export class HeightmapSolverOptionsT {
         this.strictUnsupported = strictUnsupported;
         this.combos = combos;
         this.comboThreshold = comboThreshold;
+        this.heavyOnBottom = heavyOnBottom;
     }
     pack(builder) {
-        return HeightmapSolverOptions.createHeightmapSolverOptions(builder, this.maxBoxes, this.allowRotation, this.minSupport, this.cellSize, this.restarts, this.seed, this.strictUnsupported, this.combos, this.comboThreshold);
+        return HeightmapSolverOptions.createHeightmapSolverOptions(builder, this.maxBoxes, this.allowRotation, this.minSupport, this.cellSize, this.restarts, this.seed, this.strictUnsupported, this.combos, this.comboThreshold, this.heavyOnBottom);
     }
 }
 //# sourceMappingURL=heightmap-solver-options.js.map

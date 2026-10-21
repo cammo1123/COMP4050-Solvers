@@ -119,6 +119,40 @@ describe("heightmap solver", () => {
 		expect(new Set(placements.map((p) => p.item.depth))).toEqual(new Set([50]));
 	});
 
+	it("never rests an item on a lighter one by default", async () => {
+		for (const seed of [1, 2, 3]) {
+			const request = randomOrder(60, seed);
+			const response = await solve(request);
+			assertValidSolution(request, response);
+			for (const box of response.results) {
+				for (const p of box.placements) {
+					for (const q of box.placements) {
+						if (q === p || q.y + q.item.depth !== p.y) continue;
+						const overlaps = Math.min(p.x + p.item.width, q.x + q.item.width) > Math.max(p.x, q.x) && Math.min(p.z + p.item.length, q.z + q.item.length) > Math.max(p.z, q.z);
+						if (overlaps) expect(q.item.weight, `${p.item.itemCode} (${p.item.weight} kg) rests on ${q.item.itemCode}`).toBeGreaterThanOrEqual(p.item.weight - 1e-6);
+					}
+				}
+			}
+		}
+	});
+
+	it("opens a second box rather than stack a heavy item on a light one, unless switched off", async () => {
+		// The light board covers the whole floor, so the heavy block can only go on top of it.
+		const order = heightmap({
+			boxes: [{ reference: "box", width: 200, length: 200, depth: 100 }],
+			items: [
+				{ itemCode: "board", itemReference: "board", width: 200, length: 200, depth: 50, weight: 0.5 },
+				{ itemCode: "block", itemReference: "block", width: 100, length: 100, depth: 50, weight: 5 },
+			],
+		});
+		const on = await solve({ ...order, ...tuned({ restarts: 0 }) });
+		assertValidSolution(order, on);
+		expect(on.results).toHaveLength(2);
+		const off = await solve({ ...order, algorithm: SolveAlgorithm.HeightmapSolver, options: { heightmapSolverOptions: { heavyOnBottom: false } } });
+		assertValidSolution(order, off);
+		expect(off.results).toHaveLength(1);
+	});
+
 	it("packs eight unit cubes into one two-unit cube box", async () => {
 		const response = await solve(heightmap({
 			boxes: [{ reference: "cube", width: 2, length: 2, depth: 2 }],
@@ -191,8 +225,9 @@ describe("heightmap solver", () => {
 		// Heavy items (2.9 kg SHOT) each opened a 5 kg-cap box, then downsized
 		// one-for-one into 20 single-SHOT Parts Boxes; the merge pass pairs them.
 		// The objective is opened volume (pass 0 gives 2.703 m³ in 86 boxes; it
-		// was 3.79 m³ in 68 before pass 0 tried every open policy).
-		const request = { ...loadThomax("Chaotic"), ...tuned({ restarts: 0 }) };
+		// was 3.79 m³ in 68 before pass 0 tried every open policy). Heavy-on-
+		// bottom is off: it costs volume by design (2.84 m³) and is tested apart.
+		const request = { ...loadThomax("Chaotic"), algorithm: SolveAlgorithm.HeightmapSolver as const, options: { heightmapSolverOptions: { restarts: 0, heavyOnBottom: false } } };
 		const response = await solve(request);
 		assertValidSolution(request, response);
 		expect(response.failed).toEqual([]);

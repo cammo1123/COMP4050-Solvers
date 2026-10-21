@@ -36,255 +36,255 @@
 		"volumeL": 67.375
 	},
 	"SemiRealistic combos=0 restarts=0": {
-		"hash": "8a0bc92c5078a6aa4656edfce01df39ad7015d5a2bfee464a0a143e4697d48cc",
-		"boxes": 3,
+		"hash": "69af95b2ea6487ce524c431e10d29e90fb6dcdfdf6ac2ca2305e2ad349def386",
+		"boxes": 4,
 		"failed": 0,
-		"volumeL": 189
+		"volumeL": 252
 	},
 	"SemiRealistic combos=0 restarts=3": {
-		"hash": "8a0bc92c5078a6aa4656edfce01df39ad7015d5a2bfee464a0a143e4697d48cc",
-		"boxes": 3,
+		"hash": "69af95b2ea6487ce524c431e10d29e90fb6dcdfdf6ac2ca2305e2ad349def386",
+		"boxes": 4,
 		"failed": 0,
-		"volumeL": 189
+		"volumeL": 252
 	},
 	"SemiRealistic combos=1 restarts=0": {
-		"hash": "a691ea010520cae78c73cd42f5c7368afa91a7a4ea8a26e45f1520e4edf35be8",
-		"boxes": 13,
+		"hash": "eaaa7d766c75c20bc434c613dd61d062558a99a847a22418afb49832dcff2af1",
+		"boxes": 10,
 		"failed": 0,
-		"volumeL": 214
+		"volumeL": 245
 	},
 	"SemiRealistic combos=1 restarts=3": {
-		"hash": "a691ea010520cae78c73cd42f5c7368afa91a7a4ea8a26e45f1520e4edf35be8",
-		"boxes": 13,
+		"hash": "eaaa7d766c75c20bc434c613dd61d062558a99a847a22418afb49832dcff2af1",
+		"boxes": 10,
 		"failed": 0,
-		"volumeL": 214
+		"volumeL": 245
 	},
 	"SemiRealistic combos=2 restarts=0": {
-		"hash": "8a0bc92c5078a6aa4656edfce01df39ad7015d5a2bfee464a0a143e4697d48cc",
-		"boxes": 3,
+		"hash": "69af95b2ea6487ce524c431e10d29e90fb6dcdfdf6ac2ca2305e2ad349def386",
+		"boxes": 4,
 		"failed": 0,
-		"volumeL": 189
+		"volumeL": 252
 	},
 	"SemiRealistic combos=2 restarts=3": {
-		"hash": "8a0bc92c5078a6aa4656edfce01df39ad7015d5a2bfee464a0a143e4697d48cc",
-		"boxes": 3,
+		"hash": "69af95b2ea6487ce524c431e10d29e90fb6dcdfdf6ac2ca2305e2ad349def386",
+		"boxes": 4,
 		"failed": 0,
-		"volumeL": 189
+		"volumeL": 252
 	},
 	"Chaotic combos=0 restarts=0": {
-		"hash": "90ea976d1d120704e46c84c26c556c9b042d9ca281788009555aa4629a4a5f64",
-		"boxes": 84,
+		"hash": "60c97fdc9e7ca45aec5e92db593e2c6fd156ce22362a432800490dc82138063c",
+		"boxes": 91,
 		"failed": 0,
-		"volumeL": 2693.284
+		"volumeL": 2837.859
 	},
 	"Chaotic combos=0 restarts=3": {
-		"hash": "90ea976d1d120704e46c84c26c556c9b042d9ca281788009555aa4629a4a5f64",
-		"boxes": 84,
+		"hash": "60c97fdc9e7ca45aec5e92db593e2c6fd156ce22362a432800490dc82138063c",
+		"boxes": 91,
 		"failed": 0,
-		"volumeL": 2693.284
+		"volumeL": 2837.859
 	},
 	"Chaotic combos=1 restarts=0": {
-		"hash": "f121528ec1257654cac9b8fc121c13008f4928e20cd3119c6ca4becf336ca6f5",
-		"boxes": 41,
-		"failed": 32,
-		"volumeL": 3369.085
+		"hash": "7606a9a3c21ed4262b5400126f3c07d3ad7e8f67a73f3c66cc66b091f1eed1e5",
+		"boxes": 42,
+		"failed": 36,
+		"volumeL": 3808.085
 	},
 	"Chaotic combos=1 restarts=3": {
-		"hash": "f121528ec1257654cac9b8fc121c13008f4928e20cd3119c6ca4becf336ca6f5",
-		"boxes": 41,
-		"failed": 32,
-		"volumeL": 3369.085
+		"hash": "7606a9a3c21ed4262b5400126f3c07d3ad7e8f67a73f3c66cc66b091f1eed1e5",
+		"boxes": 42,
+		"failed": 36,
+		"volumeL": 3808.085
 	},
 	"Chaotic combos=2 restarts=0": {
-		"hash": "90ea976d1d120704e46c84c26c556c9b042d9ca281788009555aa4629a4a5f64",
-		"boxes": 84,
+		"hash": "60c97fdc9e7ca45aec5e92db593e2c6fd156ce22362a432800490dc82138063c",
+		"boxes": 91,
 		"failed": 0,
-		"volumeL": 2693.284
+		"volumeL": 2837.859
 	},
 	"Chaotic combos=2 restarts=3": {
-		"hash": "90ea976d1d120704e46c84c26c556c9b042d9ca281788009555aa4629a4a5f64",
-		"boxes": 84,
+		"hash": "60c97fdc9e7ca45aec5e92db593e2c6fd156ce22362a432800490dc82138063c",
+		"boxes": 91,
 		"failed": 0,
-		"volumeL": 2693.284
+		"volumeL": 2837.859
 	},
 	"random60 combos=0 restarts=0": {
-		"hash": "0230cd52de8465030d4a0cbf3081f4fdbe701a5f77de6a2ee98b9c3e08ea9447",
-		"boxes": 2,
-		"failed": 0,
-		"volumeL": 128
-	},
-	"random60 combos=0 restarts=3": {
-		"hash": "0230cd52de8465030d4a0cbf3081f4fdbe701a5f77de6a2ee98b9c3e08ea9447",
-		"boxes": 2,
-		"failed": 0,
-		"volumeL": 128
-	},
-	"random60 combos=1 restarts=0": {
-		"hash": "387cfd1fa7dbb13c705a12b249fea5adabe044edb8888e8b372243d2ca39bd6b",
+		"hash": "1df62c6b6fa4d0bded7adcff59daec6b12e90d7891d2af2a9554633542c69623",
 		"boxes": 3,
 		"failed": 0,
 		"volumeL": 192
 	},
-	"random60 combos=1 restarts=3": {
-		"hash": "eab8663ad087b5104be6de30cba645199ffd986688ecf10d03a627b0d5d64eab",
-		"boxes": 2,
+	"random60 combos=0 restarts=3": {
+		"hash": "d0630691d0e4711183921fd9d17be2f5a5139a11d236cba093674dc8d891614d",
+		"boxes": 3,
 		"failed": 0,
-		"volumeL": 128
+		"volumeL": 192
+	},
+	"random60 combos=1 restarts=0": {
+		"hash": "4b0d333890353e36ec30d23d85a054621737d4f44ce9f3ade2afd5b2f184702a",
+		"boxes": 4,
+		"failed": 0,
+		"volumeL": 256
+	},
+	"random60 combos=1 restarts=3": {
+		"hash": "74ae0d96d37c36345577310eb565729df1f7e284eac259db48d0065b65d21a0d",
+		"boxes": 3,
+		"failed": 0,
+		"volumeL": 192
 	},
 	"random60 combos=2 restarts=0": {
-		"hash": "0230cd52de8465030d4a0cbf3081f4fdbe701a5f77de6a2ee98b9c3e08ea9447",
-		"boxes": 2,
+		"hash": "1df62c6b6fa4d0bded7adcff59daec6b12e90d7891d2af2a9554633542c69623",
+		"boxes": 3,
 		"failed": 0,
-		"volumeL": 128
+		"volumeL": 192
 	},
 	"random60 combos=2 restarts=3": {
-		"hash": "eab8663ad087b5104be6de30cba645199ffd986688ecf10d03a627b0d5d64eab",
-		"boxes": 2,
+		"hash": "d0630691d0e4711183921fd9d17be2f5a5139a11d236cba093674dc8d891614d",
+		"boxes": 3,
 		"failed": 0,
-		"volumeL": 128
+		"volumeL": 192
 	},
 	"random200 combos=0 restarts=0": {
-		"hash": "5c5a4d45703a6f2741828b4819bbab51d5277738ccd35f288516ac5d43ee7766",
-		"boxes": 6,
+		"hash": "0fa747a216ad3dbeaaa1ad09093bd76782c45748471440c7ca2f0113aacff48c",
+		"boxes": 7,
 		"failed": 0,
-		"volumeL": 384
+		"volumeL": 448
 	},
 	"random200 combos=0 restarts=3": {
-		"hash": "2c806381b7682458ad1ea812a2855a3da6fc95136b6a77b06336342f24c90e01",
-		"boxes": 6,
+		"hash": "8e7883a18898bd4bacd91e4c9d3fbaae76627c7cee6b48a1808f556b42556ac8",
+		"boxes": 7,
 		"failed": 0,
-		"volumeL": 384
+		"volumeL": 448
 	},
 	"random200 combos=1 restarts=0": {
-		"hash": "cddb28fe35b0d9d88660d3090105f3b72ae751ec358d8dcb1e50a1bc12e0b8c1",
-		"boxes": 7,
+		"hash": "ac1d85029655e4ff6b41f97e88ad22bd42c7729c97ad46ada25e4f8f803c0c69",
+		"boxes": 10,
 		"failed": 0,
-		"volumeL": 448
+		"volumeL": 640
 	},
 	"random200 combos=1 restarts=3": {
-		"hash": "aaa8713e70707963b7b4ee99002eb6a39d405a1b854468fcdc62c05ba1c58cb8",
+		"hash": "ac1d85029655e4ff6b41f97e88ad22bd42c7729c97ad46ada25e4f8f803c0c69",
+		"boxes": 10,
+		"failed": 0,
+		"volumeL": 640
+	},
+	"random200 combos=2 restarts=0": {
+		"hash": "0fa747a216ad3dbeaaa1ad09093bd76782c45748471440c7ca2f0113aacff48c",
 		"boxes": 7,
 		"failed": 0,
 		"volumeL": 448
 	},
-	"random200 combos=2 restarts=0": {
-		"hash": "5c5a4d45703a6f2741828b4819bbab51d5277738ccd35f288516ac5d43ee7766",
-		"boxes": 6,
-		"failed": 0,
-		"volumeL": 384
-	},
 	"random200 combos=2 restarts=3": {
-		"hash": "2c806381b7682458ad1ea812a2855a3da6fc95136b6a77b06336342f24c90e01",
-		"boxes": 6,
+		"hash": "8e7883a18898bd4bacd91e4c9d3fbaae76627c7cee6b48a1808f556b42556ac8",
+		"boxes": 7,
 		"failed": 0,
-		"volumeL": 384
+		"volumeL": 448
 	},
 	"random500 combos=0 restarts=0": {
-		"hash": "782b985808f905d0973a4926226993229883eb54be7b0f91a1a34a5e46837ace",
-		"boxes": 13,
+		"hash": "ca4ae3e098eae59d98eaccbf67572838941845cbc4b81aec5aa2e111dbcb25c1",
+		"boxes": 17,
 		"failed": 0,
-		"volumeL": 832
+		"volumeL": 906.125
 	},
 	"random500 combos=0 restarts=3": {
-		"hash": "99a5811446baae0fed9ce78752a484be92310bb46da4e5005353862258ce1098",
-		"boxes": 13,
+		"hash": "ca4ae3e098eae59d98eaccbf67572838941845cbc4b81aec5aa2e111dbcb25c1",
+		"boxes": 17,
 		"failed": 0,
-		"volumeL": 832
+		"volumeL": 906.125
 	},
 	"random500 combos=1 restarts=0": {
-		"hash": "782b985808f905d0973a4926226993229883eb54be7b0f91a1a34a5e46837ace",
-		"boxes": 13,
+		"hash": "ca4ae3e098eae59d98eaccbf67572838941845cbc4b81aec5aa2e111dbcb25c1",
+		"boxes": 17,
 		"failed": 0,
-		"volumeL": 832
+		"volumeL": 906.125
 	},
 	"random500 combos=1 restarts=3": {
-		"hash": "99a5811446baae0fed9ce78752a484be92310bb46da4e5005353862258ce1098",
-		"boxes": 13,
+		"hash": "ca4ae3e098eae59d98eaccbf67572838941845cbc4b81aec5aa2e111dbcb25c1",
+		"boxes": 17,
 		"failed": 0,
-		"volumeL": 832
+		"volumeL": 906.125
 	},
 	"random500 combos=2 restarts=0": {
-		"hash": "782b985808f905d0973a4926226993229883eb54be7b0f91a1a34a5e46837ace",
-		"boxes": 13,
+		"hash": "ca4ae3e098eae59d98eaccbf67572838941845cbc4b81aec5aa2e111dbcb25c1",
+		"boxes": 17,
 		"failed": 0,
-		"volumeL": 832
+		"volumeL": 906.125
 	},
 	"random500 combos=2 restarts=3": {
-		"hash": "99a5811446baae0fed9ce78752a484be92310bb46da4e5005353862258ce1098",
-		"boxes": 13,
+		"hash": "ca4ae3e098eae59d98eaccbf67572838941845cbc4b81aec5aa2e111dbcb25c1",
+		"boxes": 17,
 		"failed": 0,
-		"volumeL": 832
+		"volumeL": 906.125
 	},
 	"random1000 combos=0 restarts=0": {
-		"hash": "94f35a42c0fcf8357424073855808e2b2096ab71576ec3dd62f3ec2e01b27c27",
-		"boxes": 27,
+		"hash": "868745e82c731b647349128b8a6a84fa7e12340b33c967ebef11720d6df66116",
+		"boxes": 29,
 		"failed": 0,
-		"volumeL": 1728
+		"volumeL": 1856
 	},
 	"random1000 combos=0 restarts=3": {
-		"hash": "016507fc6c887afdd844406155c58a2f05a4dfa82f59733694c9a53667028047",
-		"boxes": 26,
+		"hash": "f13213e0ec1049b4c1b479eb19a4a6cbd5073dbb08adaf784b307b0f493fe95f",
+		"boxes": 29,
 		"failed": 0,
-		"volumeL": 1664
+		"volumeL": 1795.375
 	},
 	"random1000 combos=1 restarts=0": {
-		"hash": "94f35a42c0fcf8357424073855808e2b2096ab71576ec3dd62f3ec2e01b27c27",
-		"boxes": 27,
+		"hash": "868745e82c731b647349128b8a6a84fa7e12340b33c967ebef11720d6df66116",
+		"boxes": 29,
 		"failed": 0,
-		"volumeL": 1728
+		"volumeL": 1856
 	},
 	"random1000 combos=1 restarts=3": {
-		"hash": "016507fc6c887afdd844406155c58a2f05a4dfa82f59733694c9a53667028047",
-		"boxes": 26,
+		"hash": "f13213e0ec1049b4c1b479eb19a4a6cbd5073dbb08adaf784b307b0f493fe95f",
+		"boxes": 29,
 		"failed": 0,
-		"volumeL": 1664
+		"volumeL": 1795.375
 	},
 	"random1000 combos=2 restarts=0": {
-		"hash": "94f35a42c0fcf8357424073855808e2b2096ab71576ec3dd62f3ec2e01b27c27",
-		"boxes": 27,
+		"hash": "868745e82c731b647349128b8a6a84fa7e12340b33c967ebef11720d6df66116",
+		"boxes": 29,
 		"failed": 0,
-		"volumeL": 1728
+		"volumeL": 1856
 	},
 	"random1000 combos=2 restarts=3": {
-		"hash": "016507fc6c887afdd844406155c58a2f05a4dfa82f59733694c9a53667028047",
-		"boxes": 26,
+		"hash": "f13213e0ec1049b4c1b479eb19a4a6cbd5073dbb08adaf784b307b0f493fe95f",
+		"boxes": 29,
 		"failed": 0,
-		"volumeL": 1664
+		"volumeL": 1795.375
 	},
 	"random1000x20sku combos=0 restarts=0": {
-		"hash": "603127e472ff7a4a8c3709d25c3152dae5603dee4cfb4a820a66f017b0f6cbaf",
-		"boxes": 29,
+		"hash": "5068a09a1f538741485cd27096c84cc6a3b029870555e04e6c6aa8358ea7d696",
+		"boxes": 30,
 		"failed": 0,
-		"volumeL": 1856
+		"volumeL": 1859.375
 	},
 	"random1000x20sku combos=0 restarts=3": {
-		"hash": "1abc9587290004ecc4916d74994f60bd2949d82b0f2a4b4648c92911c31cb9c4",
-		"boxes": 28,
+		"hash": "53cad8f73f291944d7a6802eb44a69cff88e25dcf7ccb12fa69917afaa6a9933",
+		"boxes": 29,
 		"failed": 0,
-		"volumeL": 1792
+		"volumeL": 1856
 	},
 	"random1000x20sku combos=1 restarts=0": {
-		"hash": "603127e472ff7a4a8c3709d25c3152dae5603dee4cfb4a820a66f017b0f6cbaf",
-		"boxes": 29,
+		"hash": "5068a09a1f538741485cd27096c84cc6a3b029870555e04e6c6aa8358ea7d696",
+		"boxes": 30,
 		"failed": 0,
-		"volumeL": 1856
+		"volumeL": 1859.375
 	},
 	"random1000x20sku combos=1 restarts=3": {
-		"hash": "1abc9587290004ecc4916d74994f60bd2949d82b0f2a4b4648c92911c31cb9c4",
-		"boxes": 28,
-		"failed": 0,
-		"volumeL": 1792
-	},
-	"random1000x20sku combos=2 restarts=0": {
-		"hash": "603127e472ff7a4a8c3709d25c3152dae5603dee4cfb4a820a66f017b0f6cbaf",
+		"hash": "53cad8f73f291944d7a6802eb44a69cff88e25dcf7ccb12fa69917afaa6a9933",
 		"boxes": 29,
 		"failed": 0,
 		"volumeL": 1856
 	},
-	"random1000x20sku combos=2 restarts=3": {
-		"hash": "1abc9587290004ecc4916d74994f60bd2949d82b0f2a4b4648c92911c31cb9c4",
-		"boxes": 28,
+	"random1000x20sku combos=2 restarts=0": {
+		"hash": "5068a09a1f538741485cd27096c84cc6a3b029870555e04e6c6aa8358ea7d696",
+		"boxes": 30,
 		"failed": 0,
-		"volumeL": 1792
+		"volumeL": 1859.375
+	},
+	"random1000x20sku combos=2 restarts=3": {
+		"hash": "53cad8f73f291944d7a6802eb44a69cff88e25dcf7ccb12fa69917afaa6a9933",
+		"boxes": 29,
+		"failed": 0,
+		"volumeL": 1856
 	}
 }

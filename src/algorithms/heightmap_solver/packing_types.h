@@ -52,9 +52,13 @@ struct ItemSpec {
 		uint32_t ox, oy, oz, w, l, d; // offset + oriented dims, combo frame
 	};
 	std::vector<Member> members;
+	double heaviestMember = 0.0; // combo only: its heaviest unit, kg
 
 	uint64_t volume() const { return uint64_t(width) * length * depth; }
 	bool combo() const { return !members.empty(); }
+	// Weight that must not rest on anything lighter: a combo's units sit side
+	// by side, so it is its heaviest unit, not the block's total.
+	double unitWeight() const { return combo() ? heaviestMember : weight; }
 };
 
 // Why an item could not be packed (step 3 pre-flight or step 5/8 packing).
@@ -74,6 +78,7 @@ struct Placement {
 	int itemIndex = -1;
 	uint32_t x = 0, y = 0, z = 0; // mm inside the box
 	uint32_t w = 0, l = 0, d = 0; // oriented width/length/depth, mm
+	double weight = 0.0;		  // the unit's weight, kg (Options::heavyOnBottom)
 };
 
 // One opened box in the final answer.
@@ -111,6 +116,11 @@ struct Options {
 		Both };
 	ComboMode combos = ComboMode::Both;
 	double comboThreshold = 0.90; // min filled share of a glued pair's bounding box
+
+	// Heavy items at the bottom: an item may only rest on items at least as
+	// heavy as itself (item_placement.h). Costs ~2% more boxes on the bench
+	// and ~1.8x time; see tasks/baseline.md.
+	bool heavyOnBottom = true;
 };
 
 // Integer ceil-division helper used across steps: how many `b`-sized units

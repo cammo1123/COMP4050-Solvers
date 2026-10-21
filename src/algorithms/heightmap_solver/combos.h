@@ -294,6 +294,7 @@ inline ComboPlan buildCombos(std::vector<ItemSpec> const& units, std::vector<int
 			uint32_t const step = best->alongX ? best->oa.dims[0] : best->oa.dims[1];
 			size_t const rows = a.copies.size() / best->k;
 			made.spec.weight = a.spec.weight * best->k;
+			made.spec.heaviestMember = a.spec.unitWeight();
 			for (size_t r = 0; r < rows; r++) {
 				std::vector<ItemSpec::Member> copy;
 				for (uint32_t j = 0; j < best->k; j++) {
@@ -308,6 +309,7 @@ inline ComboPlan buildCombos(std::vector<ItemSpec> const& units, std::vector<int
 			Kind& b = kinds[bb];
 			size_t const n = std::min(a.copies.size(), b.copies.size());
 			made.spec.weight = a.spec.weight + b.spec.weight;
+			made.spec.heaviestMember = std::max(a.spec.unitWeight(), b.spec.unitWeight());
 			for (size_t r = 0; r < n; r++) {
 				std::vector<ItemSpec::Member> copy;
 				place(copy, a, a.copies.back(), best->oa, 0, 0);

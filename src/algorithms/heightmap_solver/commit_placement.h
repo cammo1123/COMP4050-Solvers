@@ -27,7 +27,7 @@ inline void commit(OpenBox& box, ItemSpec const& item, int itemIndex,
 
 	box.cargoWeight += item.weight;
 	box.usedVolume += uint64_t(w) * l * d;
-	box.placements.push_back(Placement { itemIndex, c.x, c.y, c.z, w, l, d });
+	box.placements.push_back(Placement { itemIndex, c.x, c.y, c.z, w, l, d, item.weight });
 
 	// New candidate anchors: this item's far edges, in real millimetres —
 	// the next item can sit truly flush against them regardless of cell size.

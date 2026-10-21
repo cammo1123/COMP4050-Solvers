@@ -140,3 +140,46 @@ No setup fails any item. Golden snapshot re-recorded for these defaults.
 
 Open: the ranking never counts boxes (tare, then volume). If fewer boxes is the goal, rank box count
 first; that changes every answer and needs its own measurement.
+
+## Heavy items at the bottom: five variants tested (2026-10-21, not shipped)
+
+The solver ignores weight when placing: items go biggest base first, wherever the pile stays lowest.
+Measured on the 28-order set (3 fixtures + 25 random), default settings, optimized build, 16 threads.
+"Heavy-on-light" = share of directly stacked pairs where the top item is heavier than the one under it.
+
+| variant | boxes | volume | tare | time | heavy-on-light |
+|---|---|---|---|---|---|
+| 0 today (weight ignored) | 454 | 34271 L | 582.3 kg | 1.00× | 36% |
+| 1 heavier first within √2 base-area bands | 474 (+20) | −0.7% | +0.7 kg | 1.11× | 19% |
+| 2 score: least base on lighter items, after lowest top | 495 (+41) | −2.7% | +1.2 kg | 1.10× | 35% |
+| 3 hard rule: never rest on a lighter item | 464 (+10) | +1.7% | +6.8 kg | 1.82× | 0% |
+| 4 hard rule with 1.5× tolerance | 478 (+24) | −0.4% | +5.0 kg | 1.32× | 18% |
+| 5 variants 1 + 3 together | 486 (+32) | −0.2% | +7.0 kg | 2.02× | 0% |
+
+No variant failed any item. Client fixtures, boxes / volume for 0 | 3 | 5:
+SemiRealistic 3 / 189 L | 4 / 252 L | 3 / 189 L; Chaotic 84 / 2693 L | 91 / 2838 L | 89 / 2877 L.
+
+Notes:
+- Variant 2 barely moves stacking: "lowest top" decides almost every placement before weight is looked at.
+- Box-count jumps on single orders (e.g. 12 → 25) come from the ranking (tare, then volume), which
+  can prefer many small boxes; they are not caused by the weight rule directly.
+- Experiment code was reverted; the golden snapshot still matches.
+
+## Heavy on bottom, shipped (2026-10-21)
+
+Variant 3 above, built properly: an item may only rest on items at least as heavy as itself. A glued
+combo compares its heaviest unit. On by default; `heightmapSolverOptions.heavyOnBottom: false` turns it off.
+
+28-order set, default settings:
+
+| | boxes | volume | tare | time | heavy item on a lighter one |
+|---|---|---|---|---|---|
+| before | 454 | 34271 L | 582.3 kg | 448 ms | 2189 of 6036 stacked pairs |
+| heavy on bottom | 464 (+10) | 34854 L (+1.7%) | 589.1 kg | 695 ms | 0 of 5766 |
+
+Client fixtures: SemiRealistic 3 → 4 boxes (189 → 252 L), Chaotic 84 → 91 boxes (2693 → 2838 L).
+
+Golden corpus (48 requests) re-recorded: boxes 927 → 1016, volume +8.7%. The cost is larger there
+because its random orders use only two box sizes with low weight caps. Failed items rose only in
+Chaotic with `combos: 1` (32 → 36), the combos-only mode that already failed items; the default
+`combos: 2` fails nothing.
