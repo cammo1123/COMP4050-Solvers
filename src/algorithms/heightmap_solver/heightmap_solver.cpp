@@ -158,6 +158,10 @@ std::vector<::ItemSpec> to_pipeline_items(SolveRequest const& request, std::vect
 
 	for (std::size_t index = 0; index < request.items.size(); ++index) {
 		auto const& source = request.items[index];
+		// A zero extent would divide by zero in the fits matrix (fits_matrix.h).
+		if (source.width == 0 || source.length == 0 || source.depth == 0) {
+			throw std::invalid_argument("heightmap solver: item " + source.item_code + " has a zero dimension");
+		}
 		uint32_t const quantity = source.quantity.value_or(1);
 
 		for (uint32_t instance = 0; instance < quantity; ++instance) {
@@ -179,8 +183,7 @@ std::vector<::ItemSpec> to_pipeline_items(SolveRequest const& request, std::vect
 // --------------------------------------------------------------------------
 // SolveOptions -> pipeline Options.
 // --------------------------------------------------------------------------
-::Options to_pipeline_options(SolveOptions const& options, std::vector<::ItemSpec> const& items,
-	SolveRequest const& request, bool& strict_unsupported)
+::Options to_pipeline_options(SolveOptions const& options, SolveRequest const& request, bool& strict_unsupported)
 {
 	::Options result;
 
@@ -209,7 +212,11 @@ std::vector<::ItemSpec> to_pipeline_items(SolveRequest const& request, std::vect
 			result.allowRotation = false;
 		}
 		if (algo_opts.min_support.has_value()) {
-			result.minSupport = static_cast<double>(*algo_opts.min_support);
+			double const support = *algo_opts.min_support;
+			if (!(support >= 0.0 && support <= 1.0)) { // also rejects NaN
+				throw std::invalid_argument("heightmap solver: min_support must be in [0, 1]");
+			}
+			result.minSupport = support;
 		}
 		// cell_size is ignored: the heightmap is exact in mm (item_placement.h).
 		if (algo_opts.restarts.has_value()) {
@@ -221,16 +228,19 @@ std::vector<::ItemSpec> to_pipeline_items(SolveRequest const& request, std::vect
 		strict_unsupported = algo_opts.strict_unsupported.value_or(true);
 		if (algo_opts.combos.has_value()) {
 			if (*algo_opts.combos > 2) {
-				throw std::invalid_argument("hightmap solver: combos must be 0 (off), 1 (on) or 2 (both)");
+				throw std::invalid_argument("heightmap solver: combos must be 0 (off), 1 (on) or 2 (both)");
 			}
 			result.combos = static_cast<::Options::ComboMode>(*algo_opts.combos);
 		}
 		if (algo_opts.combo_threshold.has_value()) {
-			result.comboThreshold = *algo_opts.combo_threshold;
+			double const threshold = *algo_opts.combo_threshold;
+			if (!(threshold > 0.0 && threshold <= 1.0)) { // 0 would glue every pair
+				throw std::invalid_argument("heightmap solver: combo_threshold must be in (0, 1]");
+			}
+			result.comboThreshold = threshold;
 		}
 	}
 
-	(void)items;
 	return result;
 }
 
@@ -238,8 +248,7 @@ std::vector<::ItemSpec> to_pipeline_items(SolveRequest const& request, std::vect
 // Solution -> SolveResponse. Applies the y/z swap documented at the top.
 // --------------------------------------------------------------------------
 SolveResponse to_response(::Solution const& solution, ::NormalizedInput const& normalized,
-	std::vector<::ItemSpec> const& units, std::vector<UnitOrigin> const& origins,
-	SolveRequest const& request)
+	std::vector<UnitOrigin> const& origins, SolveRequest const& request)
 {
 	SolveResponse response;
 	response.results.reserve(solution.boxes.size());
@@ -267,22 +276,22 @@ SolveResponse to_response(::Solution const& solution, ::NormalizedInput const& n
 		result.placements.reserve(packed.placements.size());
 
 		for (auto const& placement : packed.placements) {
-			auto const& unit = units[static_cast<std::size_t>(placement.itemIndex)];
 			used_volume += static_cast<uint64_t>(placement.w) * placement.l * placement.d;
+
+			// The full request item (weight, group, rotation policy,
+			// constraint), with the dimensions AS ORIENTED. Combo members are
+			// committed as units, so itemIndex is always a unit index.
+			ItemType item = request.items[origins[static_cast<std::size_t>(placement.itemIndex)].request_index];
+			item.quantity = std::nullopt;
+			item.width = placement.w;
+			item.length = placement.l;
+			item.depth = placement.d;
 
 			result.placements.push_back(ItemPlacement {
 				.x = placement.x, // width axis
 				.y = placement.z, // VERTICAL axis (pipeline z)
 				.z = placement.y, // length axis (pipeline y)
-				.item = ItemType {
-					.item_code = unit.code,
-					.item_reference = unit.reference,
-					.width = placement.w,
-					.length = placement.l,
-					.depth = placement.d,
-					.weight = static_cast<float>(unit.weight),
-					.box_group = unit.boxGroup.empty() ? std::nullopt : std::optional<std::string>(unit.boxGroup),
-				},
+				.item = std::move(item),
 			});
 		}
 
@@ -316,17 +325,18 @@ auto solve_heightmap_solver(SolveRequest const& request, SolveOptions const& opt
 	auto const started = std::chrono::steady_clock::now();
 
 	bool strict_unsupported = true;
-	std::vector<::ItemSpec> units;
 	std::vector<UnitOrigin> origins;
 
-	::Options pipeline_options = to_pipeline_options(options, units, request, strict_unsupported);
+	::Options pipeline_options = to_pipeline_options(options, request, strict_unsupported);
 	if (strict_unsupported) {
 		reject_unsupported(request);
 	}
+	// One budget for the whole call: with combos=Both both solves share it.
+	auto const deadline = started + std::chrono::milliseconds(pipeline_options.timeoutMs);
 
 	// ---- STEP 1: normalise (floor float dims, drop inactive types) --------
 	::NormalizedInput normalized = normalizeBoxTypes(to_pipeline_boxes(request));
-	units = to_pipeline_items(request, origins);
+	std::vector<::ItemSpec> const units = to_pipeline_items(request, origins);
 
 	std::size_t const total_units = units.size();
 	if (on_progress) {
@@ -359,7 +369,7 @@ auto solve_heightmap_solver(SolveRequest const& request, SolveOptions const& opt
 
 		// ---- STEPS 5-10: group pack -> ungrouped backfill -> downsize, under
 		// the multi-start loop, all inside the timeout budget.
-		::Solution s = solveMultiStart(partition, items, normalized.types, fits, pipeline_options);
+		::Solution s = solveMultiStart(partition, items, normalized.types, fits, pipeline_options, deadline);
 
 		// Pre-flight rejects join the failed list so every unit is accounted
 		// for exactly once (placed XOR failed); a failed combo fails each unit.
@@ -412,7 +422,7 @@ auto solve_heightmap_solver(SolveRequest const& request, SolveOptions const& opt
 	}
 
 	// ---- STEP 11: emit ----------------------------------------------------
-	SolveResponse response = to_response(solution, normalized, units, origins, request);
+	SolveResponse response = to_response(solution, normalized, origins, request);
 	response.algorithm_us = static_cast<uint32_t>(
 		std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - started).count());
 	return response;

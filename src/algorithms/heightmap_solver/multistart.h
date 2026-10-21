@@ -132,7 +132,8 @@ inline bool better(Solution const& a, Solution const& b,
 inline Solution solveMultiStart(GroupPartition const& unsorted,
 	std::vector<ItemSpec> const& items,
 	std::vector<BoxTypeSpec> const& types,
-	FitsMatrix const& fm, Options const& opt)
+	FitsMatrix const& fm, Options const& opt,
+	std::chrono::steady_clock::time_point deadline)
 {
 	// Sort once; restarts swap neighbours in THIS order, so the perturbation
 	// actually reaches the packer (re-sorting later would undo it).
@@ -174,15 +175,17 @@ inline Solution solveMultiStart(GroupPartition const& unsorted,
 		}
 	}
 
-	// The budget covers pass 0 too. Pass 0 itself always completes (no
-	// deadline) so there is always an answer; restarts stop at the deadline.
-	auto const deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(opt.timeoutMs);
+	// `deadline` is the caller's budget for the whole solve. Pass 0 itself
+	// always completes (no deadline) so there is always an answer; restarts
+	// stop at the deadline.
 
 	// Pass 0: the deterministic baseline with the default policy.
 	Solution best = *pipelineOnce(part, items, types, fm, opt,
 		OpenPolicy::ShrinkingTail, res);
 
-	// Pre-generate every restart's perturbation from one sequential RNG.
+	// Each restart's perturbation comes from one sequential RNG, drawn in
+	// restart order one batch at a time (memory stays bounded by `lanes`
+	// however large `restarts` is).
 	std::mt19937_64 rng(opt.seed);
 	auto shuffleABit = [&](auto v) { // a few adjacent swaps
 		if (v.size() >= 2) {
@@ -197,8 +200,7 @@ inline Solution solveMultiStart(GroupPartition const& unsorted,
 		GroupPartition part;
 		OpenPolicy policy;
 	};
-	std::vector<Variant> variants;
-	for (uint32_t r = 0; r < opt.restarts; r++) {
+	auto makeVariant = [&](uint64_t r) {
 		Variant v;
 		for (auto const& [tag, order] : part.groups)
 			v.part.groups.emplace_back(tag, shuffleABit(order));
@@ -208,17 +210,21 @@ inline Solution solveMultiStart(GroupPartition const& unsorted,
 		v.part.groups = shuffleABit(std::move(v.part.groups));
 		// Cycle the box-opening policy so restarts explore all three.
 		v.policy = static_cast<OpenPolicy>(r % 3);
-		variants.push_back(std::move(v));
-	}
+		return v;
+	};
 
 	// Run in parallel batches; reduce IN ORDER for determinism.
-	unsigned const lanes = std::max(1u, std::thread::hardware_concurrency());
-	for (size_t base = 0; base < variants.size(); base += lanes) {
+	uint64_t const lanes = std::max(1u, std::thread::hardware_concurrency());
+	for (uint64_t base = 0; base < opt.restarts; base += lanes) {
 		if (std::chrono::steady_clock::now() >= deadline)
 			break; // safety cap (non-reproducible)
 
+		std::vector<Variant> variants;
+		for (uint64_t r = base; r < std::min<uint64_t>(base + lanes, opt.restarts); r++)
+			variants.push_back(makeVariant(r));
+
 		std::vector<std::future<std::optional<Solution>>> batch;
-		for (size_t k = base; k < std::min(base + lanes, variants.size()); k++)
+		for (size_t k = 0; k < variants.size(); k++)
 			batch.push_back(std::async(std::launch::async, [&, k] {
 				return pipelineOnce(variants[k].part, items, types, fm, opt,
 					variants[k].policy, res, deadline);

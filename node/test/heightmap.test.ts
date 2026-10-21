@@ -36,7 +36,7 @@ function randomOrder(count: number, seed: number): SolveRequest {
 const heightmap = (request: Omit<SolveRequest, "algorithm">): SolveRequest => ({ ...request, algorithm: SolveAlgorithm.HeightmapSolver });
 
 // combos: 0 off, 1 on, 2 both. restarts: 0 keeps small cases deterministic.
-const tuned = (heightmapSolverOptions: { combos?: number; restarts?: number }) => ({ options: { heightmapSolverOptions } });
+const tuned = (heightmapSolverOptions: { combos?: number; restarts?: number }) => ({ algorithm: SolveAlgorithm.HeightmapSolver as const, options: { heightmapSolverOptions } });
 
 function loadThomax(name: string): SolveRequest {
 	const dir = resolve(__dirname, "fixtures", "thomax", name);
@@ -56,12 +56,12 @@ function assertSupported(response: Awaited<ReturnType<typeof solve>>, minSupport
 			if (p.y === 0) continue;
 			let supported = 0;
 			for (const q of box.placements) {
-				if (q === p || q.y + q.depth !== p.y) continue;
-				const ox = Math.min(p.x + p.width, q.x + q.width) - Math.max(p.x, q.x);
-				const oz = Math.min(p.z + p.length, q.z + q.length) - Math.max(p.z, q.z);
+				if (q === p || q.y + q.item.depth !== p.y) continue;
+				const ox = Math.min(p.x + p.item.width, q.x + q.item.width) - Math.max(p.x, q.x);
+				const oz = Math.min(p.z + p.item.length, q.z + q.item.length) - Math.max(p.z, q.z);
 				if (ox > 0 && oz > 0) supported += ox * oz;
 			}
-			expect(supported / (p.width * p.length), `${p.itemCode} under-supported in ${box.boxReference}`).toBeGreaterThanOrEqual(minSupport - 1e-9);
+			expect(supported / (p.item.width * p.item.length), `${p.item.itemCode} under-supported in ${box.boxReference}`).toBeGreaterThanOrEqual(minSupport - 1e-9);
 		}
 	}
 }
@@ -246,7 +246,7 @@ describe("heightmap solver", () => {
 		assertValidSolution(request, response);
 		const groupOf = new Map(request.items.map((item) => [item.itemCode, item.boxGroup]));
 		for (const result of response.results) {
-			expect(new Set(result.placements.map((p) => groupOf.get(p.itemCode))).size).toBe(1);
+			expect(new Set(result.placements.map((p) => groupOf.get(p.item.itemCode))).size).toBe(1);
 		}
 	});
 
@@ -327,5 +327,47 @@ describe("heightmap solver", () => {
 				{ itemCode: "free", itemReference: "free", width: 5, length: 2, depth: 1, weight: 1, rotationPolicy: RotationPolicy.BestFit },
 			],
 		}))).rejects.toThrow("RotationPolicy");
+	});
+
+	it("rejects an item with a zero dimension instead of crashing", async () => {
+		await expect(solve(heightmap({
+			boxes: [{ reference: "box", width: 10, length: 10, depth: 10 }],
+			items: [{ itemCode: "flat", itemReference: "flat", width: 5, length: 0, depth: 1, weight: 1 }],
+		}))).rejects.toThrow("zero dimension");
+	});
+
+	it("rejects out-of-range support and combo options", async () => {
+		const request = heightmap({
+			boxes: [{ reference: "box", width: 10, length: 10, depth: 10 }],
+			items: [{ itemCode: "a", itemReference: "a", width: 5, length: 5, depth: 5, weight: 1 }],
+		});
+		await expect(solve({ ...request, algorithm: SolveAlgorithm.HeightmapSolver, options: { heightmapSolverOptions: { minSupport: 1.5 } } })).rejects.toThrow("min_support");
+		await expect(solve({ ...request, algorithm: SolveAlgorithm.HeightmapSolver, options: { heightmapSolverOptions: { comboThreshold: 0 } } })).rejects.toThrow("combo_threshold");
+	});
+
+	it("does not pre-allocate every restart for a huge restart count", async () => {
+		const request = randomOrder(40, 6);
+		const response = await solve({ ...request, algorithm: SolveAlgorithm.HeightmapSolver, options: { timeoutMs: 200, heightmapSolverOptions: { restarts: 4_000_000_000 } } });
+		assertValidSolution(request, response);
+	});
+
+	it("keeps the whole time budget when solving with and without combos", async () => {
+		const request = loadThomax("Chaotic");
+		const started = performance.now();
+		await solve({ ...request, algorithm: SolveAlgorithm.HeightmapSolver, options: { timeoutMs: 300, heightmapSolverOptions: { combos: 2, restarts: 1_000_000 } } });
+		// Pass 0 of each solve always finishes, so allow slack, but not a second full budget.
+		expect(performance.now() - started).toBeLessThan(1500);
+	});
+
+	it("reports the request item's rotation policy and group on each placement", async () => {
+		const response = await solve(heightmap({
+			boxes: [{ reference: "box", width: 10, length: 10, depth: 10 }],
+			items: [{ itemCode: "a", itemReference: "a", width: 5, length: 5, depth: 5, weight: 2, quantity: 2, boxGroup: "G", rotationPolicy: RotationPolicy.Never }],
+		}));
+		for (const placement of response.results.flatMap((result) => result.placements)) {
+			expect(placement.item.rotationPolicy).toBe(RotationPolicy.Never);
+			expect(placement.item.boxGroup).toBe("G");
+			expect(placement.item.weight).toBe(2);
+		}
 	});
 });
