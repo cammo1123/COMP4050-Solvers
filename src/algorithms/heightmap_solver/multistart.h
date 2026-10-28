@@ -173,6 +173,7 @@ inline Solution solveMultiStart(GroupPartition const& unsorted,
 			variants.push_back(makeVariant(r));
 
 		std::vector<std::future<std::optional<Solution>>> batch;
+		batch.reserve(variants.size());
 		for (size_t k = 0; k < variants.size(); k++)
 			batch.push_back(std::async(std::launch::async, [&, k] {
 				return pipelineOnce(variants[k].part, items, types, fm, opt,

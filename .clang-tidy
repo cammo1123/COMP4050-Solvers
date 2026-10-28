@@ -18,6 +18,7 @@ Checks: >
   readability-redundant-string-cstr,
   readability-suspicious-call-argument,
   -bugprone-easily-swappable-parameters,
+  -portability-avoid-pragma-once,
   -bugprone-macro-parentheses,
   -bugprone-reserved-identifier,
   -cert-dcl37-c,
@@ -37,7 +38,9 @@ Checks: >
   -readability-uppercase-literal-suffix
 
 WarningsAsErrors: ''
-HeaderFilterRegex: '[/\\]src[/\\](?!gen[/\\])'
+# No lookahead: clang-tidy's regex engine does not support (?!...), and an
+# invalid pattern matched no header at all. src/gen is excluded below instead.
+HeaderFilterRegex: '[/\\]src[/\\]'
 ExcludeHeaderFilterRegex: '[/\\]src[/\\]gen[/\\]'
 FormatStyle: file
 SystemHeaders: false

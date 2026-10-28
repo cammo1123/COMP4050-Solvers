@@ -33,6 +33,7 @@ inline void mergeSweep(std::vector<ItemSpec> const& items,
 	for (int a : byFill) {
 		OpenBox const& donor = st.boxes[a];
 		std::vector<int> residents;
+		residents.reserve(donor.placements.size());
 		for (auto const& p : donor.placements)
 			residents.push_back(p.itemIndex);
 		sortLargeFirst(residents, items);

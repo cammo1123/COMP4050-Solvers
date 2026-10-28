@@ -220,6 +220,7 @@ inline ComboPlan buildCombos(std::vector<ItemSpec> const& units, std::vector<int
 	// Forced units: fit exactly one box type, and its stock is limited.
 	{
 		std::vector<ItemSpec> reps;
+		reps.reserve(kinds.size());
 		for (auto const& k : kinds)
 			reps.push_back(k.spec);
 		FitsMatrix fm = buildFitsMatrix(reps, types, opt);

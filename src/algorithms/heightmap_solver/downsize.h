@@ -60,6 +60,7 @@ inline void downsizeSweep(std::vector<ItemSpec> const& items,
 			// Gate 2: actually try the re-pack with the placement engine —
 			// large-first order into one fresh box of type t.
 			std::vector<int> residents;
+			residents.reserve(box.placements.size());
 			for (auto const& p : box.placements)
 				residents.push_back(p.itemIndex);
 			sortLargeFirst(residents, items);

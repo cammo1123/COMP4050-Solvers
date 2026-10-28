@@ -158,7 +158,7 @@ struct Filler {
 		uint32_t const bw = b.bx * b.o[0], bl = b.by * b.o[1], bd = b.height();
 		uint64_t const rightA = uint64_t(s.w - bw) * s.l, frontA = uint64_t(bw) * (s.l - bl);
 		uint64_t const rightB = uint64_t(s.w - bw) * bl, frontB = uint64_t(s.w) * (s.l - bl);
-		bool const cutA = std::max(rightA, frontA) >= std::max(rightB, frontB);
+		bool const cutA = std::max(frontA, rightA) >= std::max(frontB, rightB);
 
 		Space right { s.x + bw, s.y, s.z, s.w - bw, cutA ? s.l : bl, s.d, s.maxUnit };
 		Space front { s.x, s.y + bl, s.z, cutA ? bw : s.w, s.l - bl, s.d, s.maxUnit };
@@ -216,15 +216,17 @@ inline void refillBox(BoxTypeSpec const& bt, SkuTable const& table, FillResult& 
 	base.free.clear();
 	Counts own = std::move(base.left); // the box's own table counts
 	base.left = left;				   // the filler works on the other table's
+	FillResult best;
 	bool first = true;
 	for (bool bestBlock : guillotine_detail::kBlockRules) {
 		FillResult out = base;
 		guillotine_detail::Filler f { table, bt, out, bestBlock };
 		for (auto const& s : spaces)
 			f.pack(s);
-		if (std::exchange(first, false) || guillotine_detail::packsMore(out, box))
-			box = std::move(out);
+		if (std::exchange(first, false) || guillotine_detail::packsMore(out, best))
+			best = std::move(out);
 	}
+	box = std::move(best);
 	left = std::move(box.left);
 	box.left = std::move(own);
 }
