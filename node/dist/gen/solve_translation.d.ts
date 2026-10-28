@@ -115,6 +115,9 @@ export type SolveRequest = {
         heightmapSolverOptions?: HeightmapSolverOptionsT;
     };
 } | {
+    algorithm?: typeof SolveAlgorithm.Guillotine;
+    options?: BaseOptions;
+} | {
     algorithm?: undefined;
     options?: BaseOptions & {
         extremePointOptions?: ExtremePointOptionsT;

@@ -317,3 +317,227 @@ See `tasks/plan.md` (Round 2) for decisions and risks. **Rule for every task:** 
 - [ ] `npm test` and `npm run lint:check` green
 - [ ] Before/after bench table in `tasks/baseline.md`
 - [ ] Review with the user; decide whether a quality-gated Phase C (pre-orientation, adaptive restarts) is wanted
+
+---
+
+# Round 3: Guillotine solver, recursion plus lookup tables
+
+Design, diagrams and risks: `tasks/plan.md`, Round 3.
+
+```
+ G13 skeleton ─► G14 recursion + T1 ─► G15 T2 memo ─► ✓C
+                                                       │
+           G16 beam + ranking ─► G17 T3 memo ─► G18 groups + stock ─► ✓D ─► G19 bench + docs
+```
+
+## Task 13: Register `Guillotine` end to end
+
+**Description:** Add `Guillotine = 4` to `SolveAlgorithm` and regenerate the bindings. Then add `src/algorithms/guillotine/guillotine_solver.cpp` with a registrar like the other solvers. The new solver turns the request into pipeline types by reusing `heightmap_adapter::to_pipeline_*`, runs `preflight`, and packs everything with a stub: one placement per item, side by side along the floor of the first type that fits, with a new box when the row is full. It answers through `to_response`. This proves the plumbing before any algorithm work.
+
+```
+ request ─► to_pipeline_boxes/items/options ─► preflight ─► [stub pack] ─► to_response
+              (heightmap_solver/api_adapter.h, reused)        ▲ replaced in Task 14
+```
+
+**Acceptance criteria:**
+- [ ] `solve({ algorithm: SolveAlgorithm.Guillotine, ... })` returns a valid answer for the Simple fixture
+- [ ] `node/enums.cjs` and the TS bindings list `Guillotine: 4`; the heightmap golden is unchanged
+
+**Verification:**
+- [ ] Tests pass: `npm test` (new `node/test/guillotine.test.ts` with `assertValidSolution`)
+- [ ] Golden check: `HEIGHTMAP_GOLDEN=check` shows no differences
+
+**Dependencies:** None
+
+**Files likely touched:**
+- `fbs/operations/solve.fbs`, plus regenerated `src/gen`, `node/src/gen`, `src/php/gen`, `node/enums.cjs`
+- `src/algorithms/guillotine/guillotine_solver.cpp`, `.h`
+- `CMakeLists.txt` (add to `solver_core`)
+- `node/test/guillotine.test.ts`
+
+**Estimated scope:** Medium
+
+---
+
+## Task 14: Guillotine recursion and the T1 SKU table
+
+**Description:** Replace the stub with the real fill for ONE box. `buildSkuTable(items)` collapses identical units (same dims and unit weight) into rows sorted heaviest first, then by volume, each with its unit list. `fill(type, counts)` recurses over free spaces:
+
+- Pick the best block (row, orientation, `nx × ny × nz`) for the corner, using `min(count, grid fit, weight left)`.
+- Place it, then recurse into TOP (weight limit = min(parent limit, block unit weight), found by binary search for the start row), RIGHT and FRONT (both inherit the parent's limit).
+- Respect `allowRotation`.
+
+For now the solver opens boxes greedily: largest openable type, fill, repeat.
+
+```
+ pack(S, limitRow):
+   row ← first row ≥ limitRow with count > 0 that fits S          (T1)
+   K   ← best block of row in S (volume filled, then lower, then heavier)
+   commit K's units, counts[row] −= |K|
+   pack(TOP(S,K),   lower_bound(weight ≤ unitWeight(row)))
+   pack(RIGHT(S,K), limitRow)
+   pack(FRONT(S,K), limitRow)
+```
+
+**Acceptance criteria:**
+- [ ] Every answer passes `assertValidSolution` (bounds, no overlap, support, weight cap)
+- [ ] 0 heavy-on-light stacks on all test orders (same check as `heightmap.test.ts` "never rests on lighter")
+- [ ] A one-SKU order (e.g. 24 identical cartons) lands as blocks, with far fewer recursion steps than units
+
+**Verification:**
+- [ ] Tests pass: `npm test`
+- [ ] Manual check: dump one SemiRealistic box and confirm the heavy SKUs sit on the floor
+
+**Dependencies:** Task 13
+
+**Files likely touched:**
+- `src/algorithms/guillotine/sku_table.h`, `guillotine_fill.h`, `guillotine_solver.cpp`
+- `node/test/guillotine.test.ts`
+
+**Estimated scope:** Medium
+
+---
+
+## Task 15: T2 space memo
+
+**Description:** Inside one `fill`, cache `(w, l, d, startRow) → block choice`. On a hit, re-check the choice against the live counts and the weight left; use it if it still fits, otherwise compute again and overwrite. Iterate the memo only for lookups, never in order, so the answer stays deterministic.
+
+**Acceptance criteria:**
+- [ ] Same orders, memo on vs off: both answers valid, with the same heavy-on-light result (0)
+- [ ] Recursion steps on r1000 drop measurably (count hits and misses with a temporary counter, removed afterwards)
+
+**Verification:**
+- [ ] Tests pass: `npm test`, including a memo-on/off comparison test that uses a compile-time switch
+- [ ] Bench: time per fill before and after
+
+**Dependencies:** Task 14
+
+**Files likely touched:**
+- `src/algorithms/guillotine/guillotine_fill.h`
+
+**Estimated scope:** Small
+
+---
+
+## Checkpoint C
+- [ ] `npm test` green; every Guillotine answer valid; 0 heavy-on-light
+- [ ] Heightmap golden unchanged
+- [ ] Review with the user: block placement looks right on SemiRealistic and Chaotic
+
+---
+
+## Task 16: Beam search over boxes, plus the ranking
+
+**Description:** Replace the greedy box loop with a beam:
+
+- A state is `(boxes so far, counts left, stock used)`.
+- Expand each state with `fill(t, counts)` for every openable type t.
+- Keep the W = 8 best states by failed items, then boxes plus `lowerBound(counts left)` (from `item_grouping.h`), then volume.
+- Ties go to insertion order.
+
+Check the deadline between levels. If it passes, take the best complete answer, or else finish the best state with W = 1. The final answer is ranked by failed ▸ boxes ▸ volume ▸ tare.
+
+**Acceptance criteria:**
+- [ ] Deterministic: same input gives the same answer (repeat test)
+- [ ] With W = 1 it reproduces the greedy result from Task 14; W = 8 is never worse on the test orders
+- [ ] r1000 stays within the 1 s default `timeoutMs`
+
+**Verification:**
+- [ ] Tests pass: `npm test`
+- [ ] Bench: boxes and time for W = 1, 4, 8, 16 on the 28 orders
+
+**Dependencies:** Task 15
+
+**Files likely touched:**
+- `src/algorithms/guillotine/box_beam.h`, `guillotine_solver.cpp`
+
+**Estimated scope:** Medium
+
+---
+
+## Task 17: T3 fill memo
+
+**Description:** Cache `(type, hash(counts)) → { placements, counts left }` for one beam search, so sibling states with the same counts share a fill. On a hit, compare the full counts, not just the hash.
+
+**Acceptance criteria:**
+- [ ] Answers identical with the memo on and off
+- [ ] Hit rate and time saving recorded on the 28 orders
+
+**Verification:**
+- [ ] Tests pass: `npm test`
+- [ ] Bench before and after
+
+**Dependencies:** Task 16
+
+**Files likely touched:**
+- `src/algorithms/guillotine/box_beam.h`
+
+**Estimated scope:** Small
+
+---
+
+## Task 18: Groups, stock limits, failed reasons, ungrouped backfill
+
+**Description:**
+- Run one beam per group, most constrained first (`partitionByGroup`, `orderGroupsByConstraint`).
+- Respect `maximumBoxes`, `maxBoxes` and `active` per state.
+- Items that no openable type can take fail with `BoxLimit`; `NoFit` comes from preflight.
+- Ungrouped items first fill the kept dead-space lists of the group boxes (same recursion, the box's own weight cap, and the limit of the space they land in), then get their own beam.
+
+**Acceptance criteria:**
+- [ ] Group purity holds (no box mixes two groups); the existing grouped fixtures pass
+- [ ] Stock tests: `maximumBoxes: 0` means no stock, and a limited type is never over-opened
+- [ ] Each input item is either placed exactly once or failed with the right reason
+
+**Verification:**
+- [ ] Tests pass: `npm test` (port the heightmap group and stock tests to Guillotine)
+
+**Dependencies:** Task 17
+
+**Files likely touched:**
+- `src/algorithms/guillotine/guillotine_solver.cpp`, `box_beam.h`, `guillotine_fill.h`
+- `node/test/guillotine.test.ts`
+
+**Estimated scope:** Medium
+
+---
+
+## Checkpoint D
+- [ ] `npm test` green; heightmap golden unchanged
+- [ ] 28-order bench: Guillotine vs Heightmap on boxes, volume, tare, time and heavy-on-light
+- [ ] Target: fewer than 464 boxes, 0 failed, 0 heavy-on-light, r1000 < 1 s
+- [ ] Review with the user: keep W = 8 or tune; decide whether the layer table is needed
+
+---
+
+## Task 19: Bench script, golden snapshot for Guillotine, docs
+
+**Description:** Add Guillotine to `node/test/heightmap.bench.ts` (or a sibling bench) and add a `GUILLOTINE_GOLDEN=write|check` snapshot like the heightmap one. Document the algorithm in `src/algorithms/guillotine/README.md`, with the diagrams from `tasks/plan.md`, and record the numbers in `tasks/baseline.md`.
+
+**Acceptance criteria:**
+- [ ] The golden snapshot is recorded and the check passes
+- [ ] The README explains T1, T2, T3, the split and the beam, with diagrams
+
+**Verification:**
+- [ ] Tests pass: `npm test`; golden check passes
+
+**Dependencies:** Checkpoint D
+
+**Files likely touched:**
+- `node/test/guillotine.golden.test.ts`, `node/test/fixtures/guillotine-golden.json`
+- `src/algorithms/guillotine/README.md`, `tasks/baseline.md`
+
+**Estimated scope:** Small
+
+## Round 3 status (2026-10-28)
+
+- [x] Task 13: `Guillotine = 4` registered end to end
+- [x] Task 14: guillotine recursion + T1 SKU table, plus stock reservation (forced and limited-only units)
+- [ ] Task 15: T2 space memo — skipped: the slowest bench order takes 81 ms, nothing to gain
+- [x] Task 16: box loop with an optional beam; beam width 1 (wider beams packed worse, tasks/baseline.md)
+- [ ] Task 17: T3 fill memo — skipped with Task 15 (only useful for a wide beam)
+- [x] Task 18: groups, stock limits, failed reasons, ungrouped backfill of group dead spaces
+- [x] Task 19: golden snapshot (`GUILLOTINE_GOLDEN`), README with diagrams, numbers in tasks/baseline.md
+- Added beyond the plan: two block rules per box (heaviest first, best block), shrink step
+- Tried and removed: top merging, three cut rules per box
+- Result: 428 boxes vs heightmap 464 on the 28 orders, 628 ms vs 1,310 ms, 0 failed, 0 heavy-on-light

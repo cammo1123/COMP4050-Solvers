@@ -206,33 +206,36 @@ enum SolveAlgorithm : int8_t {
   SolveAlgorithm_StackBased = 1,
   SolveAlgorithm_PHPSolver = 2,
   SolveAlgorithm_HeightmapSolver = 3,
+  SolveAlgorithm_Guillotine = 4,
   SolveAlgorithm_MIN = SolveAlgorithm_ExtremePoint,
-  SolveAlgorithm_MAX = SolveAlgorithm_HeightmapSolver
+  SolveAlgorithm_MAX = SolveAlgorithm_Guillotine
 };
 
-inline const SolveAlgorithm (&EnumValuesSolveAlgorithm())[4] {
+inline const SolveAlgorithm (&EnumValuesSolveAlgorithm())[5] {
   static const SolveAlgorithm values[] = {
     SolveAlgorithm_ExtremePoint,
     SolveAlgorithm_StackBased,
     SolveAlgorithm_PHPSolver,
-    SolveAlgorithm_HeightmapSolver
+    SolveAlgorithm_HeightmapSolver,
+    SolveAlgorithm_Guillotine
   };
   return values;
 }
 
 inline const char * const *EnumNamesSolveAlgorithm() {
-  static const char * const names[5] = {
+  static const char * const names[6] = {
     "ExtremePoint",
     "StackBased",
     "PHPSolver",
     "HeightmapSolver",
+    "Guillotine",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameSolveAlgorithm(SolveAlgorithm e) {
-  if (::flatbuffers::IsOutRange(e, SolveAlgorithm_ExtremePoint, SolveAlgorithm_HeightmapSolver)) return "";
+  if (::flatbuffers::IsOutRange(e, SolveAlgorithm_ExtremePoint, SolveAlgorithm_Guillotine)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesSolveAlgorithm()[index];
 }

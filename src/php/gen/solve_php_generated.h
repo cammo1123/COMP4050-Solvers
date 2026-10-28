@@ -31,6 +31,7 @@ inline char const* solveAlgorithmName(fbs::domain::SolveAlgorithm value)
 	case fbs::domain::SolveAlgorithm::StackBased: return "StackBased";
 	case fbs::domain::SolveAlgorithm::PHPSolver: return "PHPSolver";
 	case fbs::domain::SolveAlgorithm::HeightmapSolver: return "HeightmapSolver";
+	case fbs::domain::SolveAlgorithm::Guillotine: return "Guillotine";
 	default: return "ExtremePoint";
 	}
 }
@@ -51,7 +52,9 @@ inline fbs::domain::SolveAlgorithm readSolveAlgorithm(zval* value, std::string c
 			return fbs::domain::SolveAlgorithm::PHPSolver;
 		if (length == sizeof("HeightmapSolver") - 1 && std::memcmp(text, "HeightmapSolver", length) == 0)
 			return fbs::domain::SolveAlgorithm::HeightmapSolver;
-		fail(path + " must be one of ExtremePoint, StackBased, PHPSolver, HeightmapSolver");
+		if (length == sizeof("Guillotine") - 1 && std::memcmp(text, "Guillotine", length) == 0)
+			return fbs::domain::SolveAlgorithm::Guillotine;
+		fail(path + " must be one of ExtremePoint, StackBased, PHPSolver, HeightmapSolver, Guillotine");
 	}
 
 	if (Z_TYPE_P(value) != IS_LONG)
@@ -62,6 +65,7 @@ inline fbs::domain::SolveAlgorithm readSolveAlgorithm(zval* value, std::string c
 	case 1: return fbs::domain::SolveAlgorithm::StackBased;
 	case 2: return fbs::domain::SolveAlgorithm::PHPSolver;
 	case 3: return fbs::domain::SolveAlgorithm::HeightmapSolver;
+	case 4: return fbs::domain::SolveAlgorithm::Guillotine;
 	default: fail(path + " is not a valid SolveAlgorithm");
 	}
 }
@@ -73,6 +77,7 @@ inline std::vector<SolveAlgorithmConstant> solveAlgorithmConstants()
 		{ "STACK_BASED", sizeof("STACK_BASED") - 1, 1 },
 		{ "PHP_SOLVER", sizeof("PHP_SOLVER") - 1, 2 },
 		{ "HEIGHTMAP_SOLVER", sizeof("HEIGHTMAP_SOLVER") - 1, 3 },
+		{ "GUILLOTINE", sizeof("GUILLOTINE") - 1, 4 },
 	};
 }
 

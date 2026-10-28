@@ -19,7 +19,8 @@ enum class SolveAlgorithm : int8_t {
 	ExtremePoint = 0,
 	StackBased = 1,
 	PHPSolver = 2,
-	HeightmapSolver = 3
+	HeightmapSolver = 3,
+	Guillotine = 4
 };
 
 inline SolveAlgorithm toDomain(::fbs::SolveAlgorithm value)
@@ -29,6 +30,7 @@ inline SolveAlgorithm toDomain(::fbs::SolveAlgorithm value)
 	case ::fbs::SolveAlgorithm_StackBased: return SolveAlgorithm::StackBased;
 	case ::fbs::SolveAlgorithm_PHPSolver: return SolveAlgorithm::PHPSolver;
 	case ::fbs::SolveAlgorithm_HeightmapSolver: return SolveAlgorithm::HeightmapSolver;
+	case ::fbs::SolveAlgorithm_Guillotine: return SolveAlgorithm::Guillotine;
 	default: throw std::invalid_argument("invalid SolveAlgorithm value");
 	}
 }
@@ -40,6 +42,7 @@ inline ::fbs::SolveAlgorithm fromDomain(SolveAlgorithm value)
 	case SolveAlgorithm::StackBased: return ::fbs::SolveAlgorithm_StackBased;
 	case SolveAlgorithm::PHPSolver: return ::fbs::SolveAlgorithm_PHPSolver;
 	case SolveAlgorithm::HeightmapSolver: return ::fbs::SolveAlgorithm_HeightmapSolver;
+	case SolveAlgorithm::Guillotine: return ::fbs::SolveAlgorithm_Guillotine;
 	default: throw std::invalid_argument("invalid SolveAlgorithm value");
 	}
 }

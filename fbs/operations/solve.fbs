@@ -45,6 +45,7 @@ enum SolveAlgorithm : byte {
 	StackBased = 1,
   PHPSolver = 2,
   HeightmapSolver = 3,
+  Guillotine = 4,
 }
 
 table SolveRequest {

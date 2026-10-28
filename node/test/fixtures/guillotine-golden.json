@@ -1,0 +1,98 @@
+{
+	"Simple rotation=on": {
+		"hash": "411ff245e45c656f6da81f29a5d60b0cc3d908967c6b668659d565333b0555f1",
+		"boxes": 2,
+		"failed": 0,
+		"volumeL": 67.375
+	},
+	"Simple rotation=off": {
+		"hash": "207e953675fcf580e51af3e9986ea440cd3fa73b4d2eda11ca004c2ee9362781",
+		"boxes": 2,
+		"failed": 0,
+		"volumeL": 67.375
+	},
+	"SemiRealistic rotation=on": {
+		"hash": "88f57ff286bfd67176e38afcf60e184ff93c09ddd95ea535fbc9b80ddfd1341a",
+		"boxes": 3,
+		"failed": 0,
+		"volumeL": 189
+	},
+	"SemiRealistic rotation=off": {
+		"hash": "429d9390402a6b7c14833032bc037013cc35b2065c6e85dc9160b12826ea35c2",
+		"boxes": 4,
+		"failed": 0,
+		"volumeL": 252
+	},
+	"Chaotic rotation=on": {
+		"hash": "c10ec41450c2371873089fdf781fe522eeae33b109bb85018552bde8afc9b5ab",
+		"boxes": 63,
+		"failed": 0,
+		"volumeL": 4432.9
+	},
+	"Chaotic rotation=off": {
+		"hash": "4b06d862099cdb166f5f37542676fd3477b1f11fc364da3ca3f2e27dca76cc9d",
+		"boxes": 59,
+		"failed": 1,
+		"volumeL": 5068.832
+	},
+	"random60 rotation=on": {
+		"hash": "a75f876a84c35245d852ca43761bf2bbec1105b8c1297d188a188fe9f45588f9",
+		"boxes": 3,
+		"failed": 0,
+		"volumeL": 192
+	},
+	"random60 rotation=off": {
+		"hash": "91d7cf04b38e1f4289451f05edc4bfb94cba088e55c2cc84b1d0933617ee6078",
+		"boxes": 4,
+		"failed": 0,
+		"volumeL": 256
+	},
+	"random200 rotation=on": {
+		"hash": "ad94530e39fbbd8ffd74b27723aa7b613d8fccc3d8c99e497d5b8f05a8298f6a",
+		"boxes": 7,
+		"failed": 0,
+		"volumeL": 448
+	},
+	"random200 rotation=off": {
+		"hash": "426615f27881f83793a812bfdc0e58b18808826b8bcde94636be2f88a6e345df",
+		"boxes": 10,
+		"failed": 0,
+		"volumeL": 640
+	},
+	"random500 rotation=on": {
+		"hash": "259011f3a74fbe97cf0bc44aef4bbccf8f1e612b9d9f20e630ed5d922df62293",
+		"boxes": 16,
+		"failed": 0,
+		"volumeL": 1024
+	},
+	"random500 rotation=off": {
+		"hash": "1e0c2988bb04c731a243efaee3b0f45471400616f3356066f29591c2e439333a",
+		"boxes": 20,
+		"failed": 0,
+		"volumeL": 1280
+	},
+	"random1000 rotation=on": {
+		"hash": "6f4069307132c0ebff4503114be0deb547d7b6b1f9bc72b79d3d5d68fd1984a2",
+		"boxes": 33,
+		"failed": 0,
+		"volumeL": 1990.75
+	},
+	"random1000 rotation=off": {
+		"hash": "fa2a94fce832694b5667eae5bd4809d077fcf4ac88ca5769b088a17da9267c2c",
+		"boxes": 37,
+		"failed": 0,
+		"volumeL": 2368
+	},
+	"random1000x20sku rotation=on": {
+		"hash": "a6e5a75853eec5f782a67e8dcb49e1e0acc05af9337b059732f166e9574f7886",
+		"boxes": 31,
+		"failed": 0,
+		"volumeL": 1923.375
+	},
+	"random1000x20sku rotation=off": {
+		"hash": "4d73caf794c0c367318698cb41679d448b8b0bd5ab31f8ff6d934562ee1fa24c",
+		"boxes": 31,
+		"failed": 0,
+		"volumeL": 1984
+	}
+}

@@ -138,6 +138,7 @@ export type SolveRequest = {
 	| { algorithm: typeof SolveAlgorithm.StackBased; options?: BaseOptions & { stackBasedOptions?: StackBasedOptionsT } }
 	| { algorithm: typeof SolveAlgorithm.PHPSolver; options?: BaseOptions & { phpSolverOptions?: PHPSolverOptionsT } }
 	| { algorithm: typeof SolveAlgorithm.HeightmapSolver; options?: BaseOptions & { heightmapSolverOptions?: HeightmapSolverOptionsT } }
+	| { algorithm?: typeof SolveAlgorithm.Guillotine; options?: BaseOptions }
 	| { algorithm?: undefined; options?: BaseOptions & { extremePointOptions?: ExtremePointOptionsT } }
 );
 
