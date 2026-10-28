@@ -99,9 +99,11 @@ const response = await solve({
 ```
 
 The default algorithm is `SolveAlgorithm.PHPSolver`. The available algorithms
-are `ExtremePoint`, `StackBased`, `PHPSolver`, and `HeightmapSolver`. `StackBased` is the
+are `ExtremePoint`, `StackBased`, `PHPSolver`, `HeightmapSolver`, and `Guillotine`. `StackBased` is the
 current stacking implementation and `ExtremePoint` is a full extreme-point
-solver. `HeightmapSolver` is a heightmap-based multi-start packer.
+solver. `HeightmapSolver` is a heightmap-based multi-start packer. `Guillotine`
+packs boxes by guillotine recursion over free spaces with weight-sorted SKU
+tables (see `src/algorithms/guillotine/README.md`).
 
 ### ExtremePoint
 
