@@ -27,6 +27,7 @@
 #include "../heightmap_solver/packing_types.h"
 #include "../heightmap_solver/pre_validation.h"
 #include "box_beam.h"
+#include "merge_boxes.h"
 #include "shrink_boxes.h"
 #include "sku_table.h"
 
@@ -99,7 +100,7 @@ auto solve_guillotine(SolveRequest const& request, SolveOptions const& options, 
 	state = beamPack(std::move(state), std::move(left), "", loose, units, rules, width, deadline);
 
 	::Solution solution;
-	solution.boxes = collectBoxes(state);
+	solution.boxes = mergeBoxes(state, units, normalized.types, fits, state.stock.opened);
 	shrinkBoxes(solution.boxes, units, normalized.types, fits, state.stock.opened);
 	solution.failed = validation.rejected;
 	solution.failed.insert(solution.failed.end(), state.failed.begin(), state.failed.end());

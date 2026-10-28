@@ -543,6 +543,6 @@ A task is ticked here when its core work is done. Each unchecked criterion above
 - [ ] Task 17: T3 fill memo — skipped with Task 15 (only useful for a wide beam)
 - [x] Task 18: groups, stock limits, failed reasons, ungrouped backfill of group dead spaces (`maxBoxes` is pending: Guillotine has no options of its own, so it cannot be set)
 - [x] Task 19: golden snapshot (`GUILLOTINE_GOLDEN`), README with diagrams, numbers in tasks/baseline.md (adding Guillotine to `heightmap.bench.ts` is pending; the bench runs from scratch scripts)
-- Added beyond the plan: two block rules per box (heaviest first, best block), shrink step
+- Added beyond the plan: two block rules per box (heaviest first, best block), merge step, shrink step
 - Tried and removed: top merging, three cut rules per box
-- Result: 428 boxes vs heightmap 464 on the 28 orders, 628 ms vs 1,310 ms, 0 failed, 0 heavy-on-light
+- Result: 420 boxes vs heightmap 464 on the 28 orders, 832 ms vs 1,427 ms, 0 failed, 0 heavy-on-light (428 before the merge step, tasks/baseline.md)

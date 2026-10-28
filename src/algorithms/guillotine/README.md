@@ -5,8 +5,9 @@ Its goals, in order: no failed items, fewest boxes, heaviest items at the bottom
 Request translation, validation, grouping, the fits pre-check and stock reservation are shared with
 the heightmap solver (`../heightmap_solver/`). The packing is the guillotine solver's own.
 
-On the 28-order bench (`tasks/baseline.md`) it uses **428 boxes against the heightmap solver's 464**
-and runs **2.1× faster**, with 0 failed items and 0 heavy-on-light stacks.
+On the 28-order bench (`tasks/baseline.md`) it uses **420 boxes against the heightmap solver's 464**
+and runs **1.7× faster**, with 0 failed items, 0 heavy-on-light stacks and every stacked item fully
+supported.
 
 ## Pipeline
 
@@ -23,12 +24,13 @@ and runs **2.1× faster**, with 0 failed items and 0 heavy-on-light stacks.
  backfill the groups' dead spaces ─► box loop for the rest
    │
    ▼
- shrinkBoxes (shrink_boxes.h) ─► to_response (y-up axes) ─► SolveResponse
+ mergeBoxes (merge_boxes.h) ─► shrinkBoxes (shrink_boxes.h) ─► to_response (y-up axes) ─► SolveResponse
 ```
 
 | file | what it does |
 |---|---|
-| `guillotine_solver.cpp` | entry point; groups, backfill, shrink |
+| `guillotine_solver.cpp` | entry point; groups, backfill, merge, shrink |
+| `merge_boxes.h` | empty the least-filled boxes into the other boxes' dead spaces |
 | `sku_table.h` | T1: identical units collapsed into weight-sorted rows with counts |
 | `guillotine_fill.h` | one box: guillotine recursion, block rules, refill of dead spaces |
 | `box_beam.h` | which box to open next; per-state stock rules |
@@ -99,6 +101,19 @@ current ranking (`tasks/baseline.md`).
 Groups never share a box. Ungrouped units may ride in any box, so after the groups are packed they first fill
 the groups' dead spaces, using the same recursion and each space's weight limit. Only the rest opens new
 boxes. This took the bench from 488 to 468 boxes, before the block rules.
+
+## Merge
+
+```
+ boxes, least filled first ──► donor D
+   └─ SKU table of D's units ─► refill the other boxes' dead spaces, fullest first
+        everything placed?  yes ─► D is gone      no ─► undo, next donor
+```
+
+The refill is the backfill above, so moved units keep 100% support, the weight limits and each box's
+cap. A donor of group T only goes into boxes of T or untagged boxes, which then join T. This is how
+group units reach the ungrouped boxes; the backfill only goes the other way. It took the bench from
+428 to 420 boxes: four 30-unit orders 3 → 2, Chaotic 63 → 59.
 
 ## Tried and removed
 

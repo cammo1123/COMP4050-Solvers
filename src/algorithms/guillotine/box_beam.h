@@ -231,13 +231,3 @@ inline BeamState beamPack(BeamState start, Counts left, std::string const& tag, 
 	}
 	return std::move(beam.front());
 }
-
-// The boxes of a finished state, oldest first.
-inline std::vector<PackedBox> collectBoxes(BeamState const& s)
-{
-	std::vector<PackedBox> boxes;
-	for (auto n = s.last; n; n = n->parent)
-		boxes.push_back({ n->type, n->tag, n->fill.cargo, n->fill.placements });
-	std::reverse(boxes.begin(), boxes.end());
-	return boxes;
-}

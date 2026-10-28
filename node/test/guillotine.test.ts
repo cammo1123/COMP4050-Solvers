@@ -249,6 +249,25 @@ describe("Guillotine solver", () => {
 		expect(response.failed).toEqual([]);
 	});
 
+	it("merges a lightly filled box into another box's free space", async () => {
+		// The group's light board gets a box of its own first. The loose cubes
+		// are heavier, so they cannot ride on the board and open box 2; the
+		// merge then moves the board onto the cubes: one box, heavy below light.
+		const request = guillotine({
+			boxes: [{ reference: "box", width: 400, length: 100, depth: 150 }],
+			items: [
+				{ itemCode: "board", itemReference: "board", width: 400, length: 100, depth: 50, weight: 1, boxGroup: "G" },
+				...Array.from({ length: 4 }, (_, k) => ({ itemCode: `cube${k}`, itemReference: "cube", width: 100, length: 100, depth: 100, weight: 2 })),
+			],
+		});
+		const response = await solve(request);
+		assertValidSolution(request, response);
+		assertHeavyOnBottom(response);
+		assertFullySupported(response);
+		expect(response.results).toHaveLength(1);
+		expect(response.results[0].placements.find((p) => p.item.itemCode === "board")?.y).toBe(100);
+	});
+
 	it("moves a box into a smaller type when its contents fit", async () => {
 		const request = guillotine({
 			boxes: [

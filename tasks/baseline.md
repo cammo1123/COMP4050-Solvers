@@ -263,3 +263,15 @@ With both block rules in place, the extra cut rules stopped paying off (per-box 
 | **0 only (kept)** | **2** | **428** | 36,683 L | **629 ms** | **81 ms** |
 
 Fixtures unchanged (SemiRealistic 3, Chaotic 63); 0 failed, 0 heavy-on-light. The cut-rule code was removed.
+
+### Merge step (kept)
+
+After packing, the least-filled boxes are emptied into the other boxes' dead spaces (`merge_boxes.h`, the same refill as the ungrouped backfill), undone if any unit is left over. Group units may move into untagged boxes, which join the group.
+
+| | boxes | volume | tare | time | slowest order | vs heightmap (fewer / same / more) |
+|---|---|---|---|---|---|---|
+| Heightmap (committed) | 464 | 34,854 L | 589.2 kg | 1,427 ms | 143 ms | – |
+| Guillotine, no merge | 428 | 36,683 L | 603.9 kg | 617 ms | 82 ms | 9 / 14 / 5 |
+| **Guillotine + merge** | **420** | 35,999 L | 596.7 kg | 832 ms | 108 ms | 11 / 14 / 3 |
+
+Changed orders: r30#1, r30#2, r30#4, r30#5 3 → 2 boxes; Chaotic 63 → 59 boxes (4,433 → 3,767 L). 0 failed, 0 heavy-on-light, 100% support. Guillotine golden re-recorded: 5 of 16 entries changed, all to fewer boxes and less volume.
