@@ -56,12 +56,31 @@ function assertHeavyOnBottom(response: Response): void {
 	}
 }
 
+// Gravity: every unit off the floor rests its WHOLE base on units whose top
+// is exactly its bottom (guillotine spaces give 100%; y is vertical).
+function assertFullySupported(response: Response): void {
+	for (const box of response.results) {
+		for (const p of box.placements) {
+			if (p.y === 0) continue;
+			let area = 0;
+			for (const q of box.placements) {
+				if (q === p || q.y + q.item.depth !== p.y) continue;
+				const ox = Math.min(p.x + p.item.width, q.x + q.item.width) - Math.max(p.x, q.x);
+				const oz = Math.min(p.z + p.item.length, q.z + q.item.length) - Math.max(p.z, q.z);
+				if (ox > 0 && oz > 0) area += ox * oz;
+			}
+			expect(area, `${p.item.itemCode} at y=${p.y} is not fully supported`).toBe(p.item.width * p.item.length);
+		}
+	}
+}
+
 describe("Guillotine solver", () => {
 	it.each(["Simple", "SemiRealistic", "Chaotic"])("packs the %s fixture validly, heavy items below light ones", async (name) => {
 		const request = loadThomax(name);
 		const response = await solve(request);
 		assertValidSolution(request, response);
 		assertHeavyOnBottom(response);
+		assertFullySupported(response);
 		expect(response.failed).toEqual([]);
 	});
 
@@ -71,6 +90,7 @@ describe("Guillotine solver", () => {
 			const response = await solve(request);
 			assertValidSolution(request, response);
 			assertHeavyOnBottom(response);
+			assertFullySupported(response);
 		}
 	});
 
@@ -254,6 +274,7 @@ describe("Guillotine solver", () => {
 		const response = await solve(request);
 		assertValidSolution(request, response);
 		assertHeavyOnBottom(response);
+		assertFullySupported(response);
 		expect(response.results).toHaveLength(1);
 		const board = response.results[0].placements.find((p) => p.item.itemCode === "board");
 		expect(board?.y).toBe(50); // on top of the four blocks
