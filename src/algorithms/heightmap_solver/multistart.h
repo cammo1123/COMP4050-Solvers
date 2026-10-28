@@ -104,12 +104,15 @@ inline Solution solveMultiStart(GroupPartition const& unsorted,
 		pass0.push_back(std::async(std::launch::async, [&, policy] {
 			return pipelineOnce(part, items, types, fm, opt, policy, res);
 		}));
-	Solution best = *pass0[0].get();
-	for (size_t k = 1; k < pass0.size(); k++) {
-		Solution cand = *pass0[k].get();
-		if (better(cand, best, types))
-			best = std::move(cand);
+	// Pass 0 runs without a deadline, so pipelineOnce never aborts here and
+	// every result holds a value; the check only makes that explicit.
+	std::optional<Solution> pass0Best;
+	for (auto& f : pass0) {
+		std::optional<Solution> cand = f.get();
+		if (cand && (!pass0Best || better(*cand, *pass0Best, types)))
+			pass0Best = std::move(cand);
 	}
+	Solution best = pass0Best ? std::move(*pass0Best) : Solution { };
 
 	// Early stop. (a) No failures at the box-count lower bound: no restart
 	// can open fewer boxes. A speed trade-off, not optimality: the objective
