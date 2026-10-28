@@ -419,6 +419,24 @@ describe("heightmap solver", () => {
 		expect(response.failed).toEqual([]);
 	});
 
+	it("prefers two light-tare boxes over one heavier-tare box that takes everything", async () => {
+		// One "big" holds both cubes, but two "small" weigh 0.6 kg against 1.0 kg:
+		// the one-box shortcut must leave this to pass 0 (tare is ranked first).
+		const request = {
+			...heightmap({
+				boxes: [
+					{ reference: "small", width: 100, length: 100, depth: 100, boxWeight: 0.3 },
+					{ reference: "big", width: 200, length: 100, depth: 100, boxWeight: 1.0 },
+				],
+				items: ["c1", "c2"].map((itemCode) => ({ itemCode, itemReference: "cube", width: 100, length: 100, depth: 100, weight: 1 })),
+			}),
+			...tuned({ restarts: 0 }),
+		};
+		const response = await solve(request);
+		assertValidSolution(request, response);
+		expect(response.results.map((r) => r.boxReference)).toEqual(["small", "small"]);
+	});
+
 	it("puts a whole order in one box when one box can take it", async () => {
 		const request = {
 			...heightmap({

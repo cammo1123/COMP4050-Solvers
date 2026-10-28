@@ -22,8 +22,10 @@
 // ============================================================================
 #pragma once
 
+#include <algorithm>
 #include <chrono>
 #include <future>
+#include <limits>
 #include <numeric>
 #include <random>
 #include <thread>
@@ -52,9 +54,16 @@ inline Solution solveMultiStart(GroupPartition const& unsorted,
 
 	// Whole order in ONE box (impossible with 2+ groups: they never share).
 	// Cheapest type first (tare, then volume); the first that takes
-	// everything is one box at the least cost any one box can have, so it is
-	// returned without any restarts.
-	if (part.groups.size() <= 1 && !all.empty()) {
+	// everything is one box at the least cost any one box can have. It is
+	// returned without pass 0 only while it provably beats every answer with
+	// 2+ boxes: those cost at least 2 x the minimum tare, so its tare must be
+	// strictly below that (a tie, or zero tares, falls to volume, which a few
+	// smaller boxes can win). Otherwise pass 0 decides.
+	uint64_t minTare = std::numeric_limits<uint64_t>::max();
+	for (auto const& bt : types)
+		if (bt.maximumBoxes > 0)
+			minTare = std::min(minTare, bt.tareGrams());
+	if (part.groups.size() <= 1 && !all.empty() && minTare != std::numeric_limits<uint64_t>::max()) {
 		uint64_t vol = 0;
 		double wgt = 0;
 		for (int i : all) {
@@ -69,6 +78,8 @@ inline Solution solveMultiStart(GroupPartition const& unsorted,
 		Options one = opt;
 		one.maxBoxes = 1;
 		for (int t : bySize) {
+			if (types[t].tareGrams() >= 2 * minTare)
+				break; // sorted by tare: no later type can be proven best either
 			if (types[t].maximumBoxes == 0 || vol > types[t].volume() || wgt > types[t].maxWeight)
 				continue;
 			bool allFit = true;
@@ -101,7 +112,9 @@ inline Solution solveMultiStart(GroupPartition const& unsorted,
 	}
 
 	// Early stop. (a) No failures at the box-count lower bound: no restart
-	// can open fewer boxes. (b) kStall restarts in a row without improving.
+	// can open fewer boxes. A speed trade-off, not optimality: the objective
+	// ranks tare and volume, which a restart could still lower at the same
+	// box count. (b) kStall restarts in a row without improving.
 	// Both are decided by restart index, never by batch, so the answer stays
 	// independent of the core count.
 	// ponytail: kStall is a constant; promote to HeightmapSolverOptions if

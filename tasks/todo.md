@@ -12,7 +12,7 @@ See `tasks/plan.md` for decisions and risks.
 
 **Verification:**
 - [x] Bench runs: `npm run bench` (builds optimized), or `npx vitest bench --run --root node test/heightmap.bench.ts`
-- [x] Manual check: the numbers are stable across two runs (same seed means same boxes and volume)
+- [x] Manual check: the numbers are stable across two runs (same seed means same boxes and volume). This holds only for runs where every configured restart batch completes: the bench uses `timeoutMs: 600000` and every recorded run finished in milliseconds, so none was capped. A run that hits `timeoutMs` depends on machine speed and core count (`multistart.h`), so it is excluded from this comparison and recorded separately.
 
 **Dependencies:** None
 
@@ -69,8 +69,8 @@ See `tasks/plan.md` for decisions and risks.
 
 ## Task 4: Early stop (lower-bound hit, stalled restarts)
 
-**Description:** Stop the restart loop when it can't usefully improve:
-- (a) **Bound hit:** no failures and the box count equals `lowerBound` over all packable items.
+**Description:** Stop the restart loop early:
+- (a) **Bound hit:** no failures and the box count equals `lowerBound` over all packable items. This is a speed/quality trade-off, not an optimality guarantee: it only proves that no restart can open *fewer boxes*, while the objective ranks tare and then opened volume (box count is not one of its measures), so a restart could still find a lighter or smaller set of the same number of boxes.
 - (b) **Stall:** `K` consecutive restarts with no improvement, counted in restart order after the in-order reduction, never by batch.
 
 Start `K` as a constant (e.g. 8) with a `ponytail:` comment.
@@ -78,7 +78,10 @@ Start `K` as a constant (e.g. 8) with a `ponytail:` comment.
 **Acceptance criteria:**
 - [x] The loop exits on (a) or (b); later results in the same batch are ignored past the stop index
 - [x] The result depends only on (input, seed, restarts), not on thread count
-- [x] The bench shows no fixture opening more boxes or more volume than baseline
+- [x] The bench shows no fixture opening more boxes or more volume than baseline, except Chaotic, accepted at the checkpoint review (tasks/baseline.md):
+  - `restarts: 0` trades boxes for volume: 68 boxes / 3.788 m³ → 86 boxes / 2.703 m³ (the objective ranks volume before box count)
+  - `restarts: 24`: same 86 boxes, volume 2.695 → 2.703 m³ (+0.3%)
+  - Simple, SemiRealistic and random#1–3 are unchanged
 
 **Verification:**
 - [x] Tests pass: `npm test`, including `is repeatable for the same input and seed`
@@ -340,12 +343,12 @@ Design, diagrams and risks: `tasks/plan.md`, Round 3.
 ```
 
 **Acceptance criteria:**
-- [ ] `solve({ algorithm: SolveAlgorithm.Guillotine, ... })` returns a valid answer for the Simple fixture
-- [ ] `node/enums.cjs` and the TS bindings list `Guillotine: 4`; the heightmap golden is unchanged
+- [x] `solve({ algorithm: SolveAlgorithm.Guillotine, ... })` returns a valid answer for the Simple fixture
+- [x] `node/enums.cjs` and the TS bindings list `Guillotine: 4`; the heightmap golden is unchanged
 
 **Verification:**
-- [ ] Tests pass: `npm test` (new `node/test/guillotine.test.ts` with `assertValidSolution`)
-- [ ] Golden check: `HEIGHTMAP_GOLDEN=check` shows no differences
+- [x] Tests pass: `npm test` (new `node/test/guillotine.test.ts` with `assertValidSolution`)
+- [x] Golden check: `HEIGHTMAP_GOLDEN=check` shows no differences
 
 **Dependencies:** None
 
@@ -380,13 +383,13 @@ For now the solver opens boxes greedily: largest openable type, fill, repeat.
 ```
 
 **Acceptance criteria:**
-- [ ] Every answer passes `assertValidSolution` (bounds, no overlap, support, weight cap)
-- [ ] 0 heavy-on-light stacks on all test orders (same check as `heightmap.test.ts` "never rests on lighter")
-- [ ] A one-SKU order (e.g. 24 identical cartons) lands as blocks, with far fewer recursion steps than units
+- [x] Every answer passes `assertValidSolution` (bounds, no overlap, weight cap); support is checked separately by `assertFullySupported` (100% on every test order)
+- [x] 0 heavy-on-light stacks on all test orders (same check as `heightmap.test.ts` "never rests on lighter")
+- [ ] A one-SKU order (e.g. 24 identical cartons) lands as blocks, with far fewer recursion steps than units — *pending:* the block layout is tested (24 cartons, one box, 100% fill); the recursion step count was never measured
 
 **Verification:**
-- [ ] Tests pass: `npm test`
-- [ ] Manual check: dump one SemiRealistic box and confirm the heavy SKUs sit on the floor
+- [x] Tests pass: `npm test`
+- [ ] Manual check: dump one SemiRealistic box and confirm the heavy SKUs sit on the floor — *pending:* no manual dump was done; `assertHeavyOnBottom` checks the fixture automatically, but it checks heavier-never-on-lighter, not that the heaviest SKUs are on the floor
 
 **Dependencies:** Task 13
 
@@ -403,12 +406,12 @@ For now the solver opens boxes greedily: largest openable type, fill, repeat.
 **Description:** Inside one `fill`, cache `(w, l, d, startRow) → block choice`. On a hit, re-check the choice against the live counts and the weight left; use it if it still fits, otherwise compute again and overwrite. Iterate the memo only for lookups, never in order, so the answer stays deterministic.
 
 **Acceptance criteria:**
-- [ ] Same orders, memo on vs off: both answers valid, with the same heavy-on-light result (0)
-- [ ] Recursion steps on r1000 drop measurably (count hits and misses with a temporary counter, removed afterwards)
+- [ ] Same orders, memo on vs off: both answers valid, with the same heavy-on-light result (0) — *not required:* task skipped
+- [ ] Recursion steps on r1000 drop measurably (count hits and misses with a temporary counter, removed afterwards) — *not required:* task skipped
 
 **Verification:**
-- [ ] Tests pass: `npm test`, including a memo-on/off comparison test that uses a compile-time switch
-- [ ] Bench: time per fill before and after
+- [ ] Tests pass: `npm test`, including a memo-on/off comparison test that uses a compile-time switch — *not required:* task skipped
+- [ ] Bench: time per fill before and after — *not required:* task skipped
 
 **Dependencies:** Task 14
 
@@ -420,9 +423,9 @@ For now the solver opens boxes greedily: largest openable type, fill, repeat.
 ---
 
 ## Checkpoint C
-- [ ] `npm test` green; every Guillotine answer valid; 0 heavy-on-light
-- [ ] Heightmap golden unchanged
-- [ ] Review with the user: block placement looks right on SemiRealistic and Chaotic
+- [x] `npm test` green; every Guillotine answer valid; 0 heavy-on-light
+- [x] Heightmap golden unchanged
+- [ ] Review with the user: block placement looks right on SemiRealistic and Chaotic — *pending:* reviewed by numbers only (box counts, support, heavy-on-light); nobody has looked at a packed box
 
 ---
 
@@ -438,13 +441,13 @@ For now the solver opens boxes greedily: largest openable type, fill, repeat.
 Check the deadline between levels. If it passes, take the best complete answer, or else finish the best state with W = 1. The final answer is ranked by failed ▸ boxes ▸ volume ▸ tare.
 
 **Acceptance criteria:**
-- [ ] Deterministic: same input gives the same answer (repeat test)
-- [ ] With W = 1 it reproduces the greedy result from Task 14; W = 8 is never worse on the test orders
-- [ ] r1000 stays within the 1 s default `timeoutMs`
+- [x] Deterministic: same input gives the same answer (repeat test)
+- [ ] With W = 1 it reproduces the greedy result from Task 14; W = 8 is never worse on the test orders — *superseded:* the beam ranks states differently from the Task 14 greedy rule, and W = 8 was worse (474 vs 468 boxes), so the default is W = 1 (tasks/baseline.md)
+- [x] r1000 stays within the 1 s default `timeoutMs` (slowest bench order 79 ms)
 
 **Verification:**
-- [ ] Tests pass: `npm test`
-- [ ] Bench: boxes and time for W = 1, 4, 8, 16 on the 28 orders
+- [x] Tests pass: `npm test`
+- [x] Bench: boxes and time for W = 1, 4, 8, 16 on the 28 orders (W = 4 measured before backfill only)
 
 **Dependencies:** Task 15
 
@@ -460,12 +463,12 @@ Check the deadline between levels. If it passes, take the best complete answer, 
 **Description:** Cache `(type, hash(counts)) → { placements, counts left }` for one beam search, so sibling states with the same counts share a fill. On a hit, compare the full counts, not just the hash.
 
 **Acceptance criteria:**
-- [ ] Answers identical with the memo on and off
-- [ ] Hit rate and time saving recorded on the 28 orders
+- [ ] Answers identical with the memo on and off — *not required:* task skipped
+- [ ] Hit rate and time saving recorded on the 28 orders — *not required:* task skipped
 
 **Verification:**
-- [ ] Tests pass: `npm test`
-- [ ] Bench before and after
+- [ ] Tests pass: `npm test` — *not required:* task skipped
+- [ ] Bench before and after — *not required:* task skipped
 
 **Dependencies:** Task 16
 
@@ -485,12 +488,12 @@ Check the deadline between levels. If it passes, take the best complete answer, 
 - Ungrouped items first fill the kept dead-space lists of the group boxes (same recursion, the box's own weight cap, and the limit of the space they land in), then get their own beam.
 
 **Acceptance criteria:**
-- [ ] Group purity holds (no box mixes two groups); the existing grouped fixtures pass
-- [ ] Stock tests: `maximumBoxes: 0` means no stock, and a limited type is never over-opened
-- [ ] Each input item is either placed exactly once or failed with the right reason
+- [x] Group purity holds (no box mixes two groups); the existing grouped fixtures pass
+- [x] Stock tests: `maximumBoxes: 0` means no stock, and a limited type is never over-opened
+- [ ] Each input item is either placed exactly once or failed with the right reason — *pending:* placed-XOR-failed is checked by `assertValidSolution`; the reason (NoFit / BoxLimit) is not in the response, so it is not verified
 
 **Verification:**
-- [ ] Tests pass: `npm test` (port the heightmap group and stock tests to Guillotine)
+- [x] Tests pass: `npm test` (port the heightmap group and stock tests to Guillotine)
 
 **Dependencies:** Task 17
 
@@ -503,10 +506,10 @@ Check the deadline between levels. If it passes, take the best complete answer, 
 ---
 
 ## Checkpoint D
-- [ ] `npm test` green; heightmap golden unchanged
-- [ ] 28-order bench: Guillotine vs Heightmap on boxes, volume, tare, time and heavy-on-light
-- [ ] Target: fewer than 464 boxes, 0 failed, 0 heavy-on-light, r1000 < 1 s
-- [ ] Review with the user: keep W = 8 or tune; decide whether the layer table is needed
+- [x] `npm test` green; heightmap golden unchanged
+- [x] 28-order bench: Guillotine vs Heightmap on boxes, volume, tare, time and heavy-on-light
+- [x] Target: fewer than 464 boxes, 0 failed, 0 heavy-on-light, r1000 < 1 s (428 boxes, 0, 0, 79 ms)
+- [ ] Review with the user: keep W = 8 or tune; decide whether the layer table is needed — *pending:* W = 1 was chosen from the bench; the layer table decision is still open
 
 ---
 
@@ -515,11 +518,11 @@ Check the deadline between levels. If it passes, take the best complete answer, 
 **Description:** Add Guillotine to `node/test/heightmap.bench.ts` (or a sibling bench) and add a `GUILLOTINE_GOLDEN=write|check` snapshot like the heightmap one. Document the algorithm in `src/algorithms/guillotine/README.md`, with the diagrams from `tasks/plan.md`, and record the numbers in `tasks/baseline.md`.
 
 **Acceptance criteria:**
-- [ ] The golden snapshot is recorded and the check passes
-- [ ] The README explains T1, T2, T3, the split and the beam, with diagrams
+- [x] The golden snapshot is recorded and the check passes
+- [ ] The README explains T1, T2, T3, the split and the beam, with diagrams — *superseded:* T2 and T3 were not built; the README covers T1, the split, the block rules and the beam, with diagrams
 
 **Verification:**
-- [ ] Tests pass: `npm test`; golden check passes
+- [x] Tests pass: `npm test`; golden check passes
 
 **Dependencies:** Checkpoint D
 
@@ -531,13 +534,15 @@ Check the deadline between levels. If it passes, take the best complete answer, 
 
 ## Round 3 status (2026-10-28)
 
+A task is ticked here when its core work is done. Each unchecked criterion above says whether it is *pending*, *superseded* or *not required*; nothing is ticked without a test or measurement behind it.
+
 - [x] Task 13: `Guillotine = 4` registered end to end
 - [x] Task 14: guillotine recursion + T1 SKU table, plus stock reservation (forced and limited-only units)
 - [ ] Task 15: T2 space memo — skipped: the slowest bench order takes 81 ms, nothing to gain
 - [x] Task 16: box loop with an optional beam; beam width 1 (wider beams packed worse, tasks/baseline.md)
 - [ ] Task 17: T3 fill memo — skipped with Task 15 (only useful for a wide beam)
-- [x] Task 18: groups, stock limits, failed reasons, ungrouped backfill of group dead spaces
-- [x] Task 19: golden snapshot (`GUILLOTINE_GOLDEN`), README with diagrams, numbers in tasks/baseline.md
+- [x] Task 18: groups, stock limits, failed reasons, ungrouped backfill of group dead spaces (`maxBoxes` is pending: Guillotine has no options of its own, so it cannot be set)
+- [x] Task 19: golden snapshot (`GUILLOTINE_GOLDEN`), README with diagrams, numbers in tasks/baseline.md (adding Guillotine to `heightmap.bench.ts` is pending; the bench runs from scratch scripts)
 - Added beyond the plan: two block rules per box (heaviest first, best block), shrink step
 - Tried and removed: top merging, three cut rules per box
 - Result: 428 boxes vs heightmap 464 on the 28 orders, 628 ms vs 1,310 ms, 0 failed, 0 heavy-on-light
