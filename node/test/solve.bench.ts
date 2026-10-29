@@ -89,94 +89,58 @@ function loadFixture(name: string, algorithm: SolveAlgorithm): SolveInput {
 	};
 }
 
+const algorithms = [
+	["extreme-point", SolveAlgorithm.ExtremePoint],
+	["php-solver", SolveAlgorithm.PHPSolver],
+	["guillotine", SolveAlgorithm.Guillotine],
+] as const;
+
+// The bench table has fixed columns, so the box count rides in the name. It
+// takes one solve up front, and describe callbacks can't await, hence top level.
+async function labelled(name: string, request: SolveInput) {
+	const { results, failed } = await solve(request);
+	return `${name} (${results.length} boxes${failed.length ? `, ${failed.length} failed` : ""})`;
+}
+
+function addBench(label: string, request: SolveInput) {
+	bench(
+		label,
+		async () => {
+			await solve(request);
+		},
+		{ iterations: 3, time: 500 },
+	);
+}
+
 for (const itemCount of [100, 1_000, 10_000]) {
+	// The algorithm must be named explicitly: an omitted algorithm decodes as
+	// PHPSolver (solve_translation.ts), so this bench measured PHPSolver under
+	// a stack-based label, and at 10,000 items that does not finish.
+	const cases = await Promise.all(
+		algorithms.map(async ([name, algorithm]) => {
+			const request = createRequest(itemCount, algorithm);
+			const tooSlow = algorithm === SolveAlgorithm.PHPSolver && itemCount >= 10000;
+			return { request, tooSlow, label: tooSlow ? "php-solver (too slow)" : await labelled(name, request) };
+		}),
+	);
+
 	describe(`${itemCount.toLocaleString()}-item end-to-end workload`, () => {
-		// The algorithm must be named explicitly: an omitted algorithm decodes as
-		// PHPSolver (solve_translation.ts), so this bench measured PHPSolver under
-		// a stack-based label, and at 10,000 items that does not finish.
-		const extremePointRequest = createRequest(
-			itemCount,
-			SolveAlgorithm.ExtremePoint,
-		);
-		const phpSolverRequest = createRequest(
-			itemCount,
-			SolveAlgorithm.PHPSolver,
-		);
-		const guillotineRequest = createRequest(
-			itemCount,
-			SolveAlgorithm.Guillotine,
-		);
-
-		if (itemCount >= 10000) {
-			bench.skip(
-				"php-solver (too slow)",
-				async () => {
-					await solve(phpSolverRequest);
-				},
-				{ iterations: 3, time: 500 },
-			);
-		} else {
-			bench(
-				"php-solver",
-				async () => {
-					await solve(phpSolverRequest);
-				},
-				{ iterations: 3, time: 500 },
-			);
+		for (const { label, request, tooSlow } of cases) {
+			if (tooSlow) bench.skip(label, async () => void (await solve(request)));
+			else addBench(label, request);
 		}
-
-		bench(
-			"guillotine",
-			async () => {
-				await solve(guillotineRequest);
-			},
-			{ iterations: 3, time: 500 },
-		);
-
-		bench(
-			"extreme-point",
-			async () => {
-				await solve(extremePointRequest);
-			},
-			{ iterations: 3, time: 500 },
-		);
 	});
 }
 
 for (const fixture of ["Simple", "SemiRealistic", "Chaotic"] as const) {
+	const cases = await Promise.all(
+		algorithms.map(async ([name, algorithm]) => {
+			const request = loadFixture(fixture, algorithm);
+			return { request, label: await labelled(name, request) };
+		}),
+	);
+
 	describe(`${fixture} client fixture`, () => {
-		const extremePointRequest = loadFixture(
-			fixture,
-			SolveAlgorithm.ExtremePoint,
-		);
-		const guillotineRequest = loadFixture(
-			fixture,
-			SolveAlgorithm.Guillotine,
-		);
-		const phpSolverRequest = loadFixture(fixture, SolveAlgorithm.PHPSolver);
-
-		bench(
-			"php-solver",
-			async () => {
-				await solve(phpSolverRequest);
-			},
-			{ iterations: 3, time: 500 },
-		);
-
-		bench(
-			"guillotine",
-			async () => {
-				await solve(guillotineRequest);
-			},
-			{ iterations: 3, time: 500 },
-		);
-
-		bench(
-			"extreme-point",
-			async () => {
-				await solve(extremePointRequest);
-			},
-			{ iterations: 3, time: 500 },
-		);
+		for (const { label, request } of cases) addBench(label, request);
 	});
 }
