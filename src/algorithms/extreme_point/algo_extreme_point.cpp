@@ -4,7 +4,6 @@
 #include "algorithms/extreme_point/ep_types.h"
 #include "algorithms/extreme_point/policies.h"
 
-#include "algorithms/php_solver/model.h"
 #include "algorithms/php_solver/orientation.h"
 #include "solve_domain_generated.h"
 #include "types_domain_generated.h"
@@ -42,6 +41,7 @@ constexpr auto kMaxPoints = std::size_t { 4096 };
 constexpr auto kFailStreak = u32 { 32 };
 constexpr auto kSweepStride = u32 { 8 };
 constexpr auto kDeadlineStride = u32 { 64 };
+constexpr auto kThreadedFrom = std::size_t { 20 };
 constexpr auto kPrefixMin = std::size_t { 32 };
 constexpr auto kPrefixMax = std::size_t { 512 };
 constexpr auto kEvalsPerInstance = u64 { 4096 };
@@ -111,7 +111,7 @@ constexpr auto by_yzx = [](Point const& a, Point const& b) noexcept { return std
 
 // engine
 
-template<OrderPolicy Order, SupportPolicy Support, GroupPolicy Grouping, extreme_point::SearchPolicy Search>
+template<OrderPolicy Order, SelectPolicy Select, PlacePolicy Place, SupportPolicy Support, GroupPolicy Grouping, extreme_point::SearchPolicy Search>
 struct Engine {
 	World const& world;
 	Clock::time_point deadline;
@@ -130,17 +130,22 @@ struct Engine {
 	}
 
 	std::vector<Bin> bins;
-	std::vector<u32> order, full, prefix, members;
+	std::vector<u32> order, full, prefix;
 	std::vector<std::uint8_t> state; // 0 remaining, 1 placed, 2 failed
 	std::vector<u32> taken_gen, class_left, fill_left;
-	std::vector<std::uint8_t> group_state, link_seen;
 	std::vector<Shape> shapes;
 	std::vector<Point> merge;
 	Shape shape_min { };
 	u64 shape_min_volume = 0;
 	bool shapes_dirty = true;
 	u32 gen = 0;
-	Fill fill, snap;
+	Fill fill, kept; // kept: the chosen trial's fill, see adopt()
+	struct Kept {
+		std::size_t bin = 0, size = 0;
+		u64 spent = 0;
+		bool valid = false, ran_out = false;
+	} kept_info;
+	bool ran_out = false; // the last run_fill reached the end of its candidates
 	std::size_t base = 0; // instances committed in already-closed boxes
 	Outcome out;
 
@@ -148,7 +153,8 @@ struct Engine {
 	auto type_of(u32 instance_idx) const noexcept -> Type const& { return world.types[world.inst_type[instance_idx]]; }
 	auto class_of(u32 instance_idx) const noexcept -> u32 { return world.type_class[world.inst_type[instance_idx]]; }
 	auto is_top(u32 y) const noexcept -> bool { return std::ranges::binary_search(fill.tops, y); }
-	auto free_volume(Bin const& bin) const noexcept -> u64 { return bin.volume > fill.volume ? bin.volume - fill.volume : 0; }
+	// a saturated bin volume says nothing about the room left
+	auto free_volume(Bin const& bin) const noexcept -> u64 { return bin.volume == kU64Max ? kU64Max : bin.volume - std::min(bin.volume, fill.volume); }
 
 	// projection of residual space along each axis from this point
 	auto rays(Bin const& bin, u32 x, u32 y, u32 z) const noexcept -> Point
@@ -168,15 +174,15 @@ struct Engine {
 		return point;
 	}
 
-	// projection of residual space along each axis from this point
+	// no overlap with anything placed, and the base centre rests on the floor or a top face
 	auto legal(u32 x, u32 y, u32 z, Shape shape) const noexcept -> bool
 	{
 		auto supported = y == 0;
-		auto const x2 = x + shape.width, y2 = y + shape.depth, z2 = z + shape.length;
+		auto const x2 = u64 { x } + shape.width, y2 = u64 { y } + shape.depth, z2 = u64 { z } + shape.length;
 		for (auto const& placed_item : fill.placed) {
-			if (placed_item.x < x2 && x < placed_item.x + placed_item.width && placed_item.y < y2 && y < placed_item.y + placed_item.depth && placed_item.z < z2 && z < placed_item.z + placed_item.length)
+			if (placed_item.x < x2 && x < u64 { placed_item.x } + placed_item.width && placed_item.y < y2 && y < u64 { placed_item.y } + placed_item.depth && placed_item.z < z2 && z < u64 { placed_item.z } + placed_item.length)
 				return false;
-			if (!supported && placed_item.y + placed_item.depth == y && Support::carries(placed_item, x, z, shape))
+			if (!supported && u64 { placed_item.y } + placed_item.depth == y && Support::carries(placed_item, x, z, shape))
 				supported = true;
 		}
 		return supported;
@@ -189,19 +195,17 @@ struct Engine {
 	void rebuild_shapes()
 	{
 		shapes.clear();
-		shape_min_volume = kU64Max;
-		for (auto ci = std::size_t { 0 }; ci < world.classes.size(); ++ci) {
-			if (fill_left[ci] == 0)
-				continue;
-			auto const& k = world.classes[ci];
-			shape_min_volume = std::min(shape_min_volume, k.volume);
-			shapes.insert(shapes.end(), world.pool.begin() + static_cast<std::ptrdiff_t>(k.ori0), world.pool.begin() + static_cast<std::ptrdiff_t>(k.ori1));
-		}
-		std::ranges::sort(shapes);
-		shapes.erase(std::ranges::unique(shapes).begin(), shapes.end());
 		shape_min = { kU32Max, kU32Max, kU32Max };
-		for (auto shape : shapes)
-			shape_min = { std::min(shape_min.width, shape.width), std::min(shape_min.depth, shape.depth), std::min(shape_min.length, shape.length) };
+		shape_min_volume = kU64Max;
+		for (auto ci = std::size_t { 0 }; ci < world.classes.size(); ++ci)
+			if (fill_left[ci] != 0)
+				shape_min_volume = std::min(shape_min_volume, world.classes[ci].volume);
+		// presorted, so filtering the live classes keeps it sorted and twins adjacent: no sort per rebuild
+		for (auto const& [shape, ci] : world.class_shapes)
+			if (fill_left[ci] != 0 && (shapes.empty() || shapes.back() != shape)) {
+				shapes.push_back(shape);
+				shape_min = { std::min(shape_min.width, shape.width), std::min(shape_min.depth, shape.depth), std::min(shape_min.length, shape.length) };
+			}
 		shapes_dirty = false;
 	}
 
@@ -217,7 +221,7 @@ struct Engine {
 		});
 	}
 
-	// projection of residual space along each axis from this point
+	// merge new points into the (y, z, x) sorted frontier, dropping dead and duplicate ones
 	void insert_points(std::span<Point> new_points)
 	{
 		if (new_points.empty())
@@ -250,10 +254,10 @@ struct Engine {
 		fill.frontier.swap(merge);
 	}
 
-	// projection of residual space along each axis from this point
+	// place the item, shrink the residuals it blocks and project up to 6 new points from its corners
 	void commit(Bin const& bin, u32 instance_idx, u32 x, u32 y, u32 z, Shape shape)
 	{
-		auto const max_x = x + shape.width, max_y = y + shape.depth, max_z = z + shape.length;
+		auto const max_x = x + shape.width, max_y = y + shape.depth, max_z = z + shape.length; // in_bounds held, so these fit a u32
 		auto proj_y0 = u32 { 0 }, proj_z0 = u32 { 0 }, proj_x1 = u32 { 0 }, proj_z1 = u32 { 0 }, proj_x2 = u32 { 0 }, proj_y2 = u32 { 0 };
 		for (auto const& placed_item : fill.placed) {
 			auto const q_max_x = placed_item.x + placed_item.width, q_max_y = placed_item.y + placed_item.depth, q_max_z = placed_item.z + placed_item.length;
@@ -309,7 +313,12 @@ struct Engine {
 		Shape shape { };
 		bool found = false;
 
-		auto beats(u64 w, u32 next_y, u32 next_z, u32 next_x, u32 no) const noexcept -> bool { return !found || std::tie(w, next_y, next_z, next_x, no) < std::tie(waste, y, z, x, ori); }
+		auto beats(u64 w, u32 next_y, u32 next_z, u32 next_x, u32 no) const noexcept -> bool
+		{
+			if constexpr (Place::lowest)
+				return !found || std::tie(next_y, next_z, next_x, w, no) < std::tie(y, z, x, waste, ori);
+			return !found || std::tie(w, next_y, next_z, next_x, no) < std::tie(waste, y, z, x, ori);
+		}
 
 		void set(u64 w, u32 next_y, u32 next_z, u32 next_x, u32 no, Shape shape) { *this = { w, next_y, next_z, next_x, no, shape, true }; }
 	};
@@ -318,96 +327,42 @@ struct Engine {
 	auto search(Bin const& bin, Type const& item_type) -> Best
 	{
 		auto best = Best { };
-		if constexpr (Search::rescue_evaluations == 0) {
-			auto budget = Search::base_evaluations;
-			for (auto const& point : fill.frontier) {
-				// skip if no top face here yet
-				if (point.y != 0 && item_type.min_y <= point.y && !is_top(point.y))
-					continue;
-				for (auto orientation_idx = item_type.ori0; orientation_idx < item_type.ori1 && budget != 0; ++orientation_idx) {
-					auto const shape = world.pool[orientation_idx];
-					auto const slot = orientation_idx - item_type.ori0;
-					if (shape.width <= point.residual_x && shape.depth <= point.residual_y && shape.length <= point.residual_z && in_bounds(bin, point.x, point.y, point.z, shape) && allowed(item_type, point.x, point.y, point.z))
-						if (auto const waste = u64 { point.residual_x - shape.width } + (point.residual_y - shape.depth) + (point.residual_z - shape.length); best.beats(waste, point.y, point.z, point.x, slot)) {
-							--budget;
-							if (legal(point.x, point.y, point.z, shape))
-								best.set(waste, point.y, point.z, point.x, slot, shape);
-						}
-					if (!item_type.clamped || budget == 0)
-						continue;
-					// projection of residual space along each axis from this point
-					auto const constraint_x = std::max(point.x, item_type.min_x), constraint_y = std::max(point.y, item_type.min_y), constraint_z = std::max(point.z, item_type.min_z);
-					if ((constraint_x == point.x && constraint_y == point.y && constraint_z == point.z) || constraint_x - point.x >= point.residual_x || constraint_y - point.y >= point.residual_y || constraint_z - point.z >= point.residual_z)
-						continue;
-					if (!in_bounds(bin, constraint_x, constraint_y, constraint_z, shape) || !allowed(item_type, constraint_x, constraint_y, constraint_z))
-						continue;
-					--budget;
-					if (!legal(constraint_x, constraint_y, constraint_z, shape))
-						continue;
-					auto const ray_result = rays(bin, constraint_x, constraint_y, constraint_z);
-					if (shape.width <= ray_result.residual_x && shape.depth <= ray_result.residual_y && shape.length <= ray_result.residual_z)
-						if (auto const waste = u64 { ray_result.residual_x - shape.width } + (ray_result.residual_y - shape.depth) + (ray_result.residual_z - shape.length); best.beats(waste, constraint_y, constraint_z, constraint_x, slot))
-							best.set(waste, constraint_y, constraint_z, constraint_x, slot, shape);
-				}
-				// zero-waste hit is optimal unless clamped
-				if (budget == 0 || (best.found && best.waste == 0 && !item_type.clamped))
-					break;
-			}
-			evals -= std::min<u64>(evals, Search::base_evaluations - budget);
-			return best;
-		} else {
-			auto cursor = fill.frontier.begin();
-			auto scan = [&](u32& budget) {
-				for (; cursor != fill.frontier.end(); ++cursor) {
-					auto const& point = *cursor;
-					// skip if no top face here yet
-					if (point.y != 0 && item_type.min_y <= point.y && !is_top(point.y))
-						continue;
-					for (auto orientation_idx = item_type.ori0; orientation_idx < item_type.ori1 && budget != 0; ++orientation_idx) {
-						auto const shape = world.pool[orientation_idx];
-						auto const slot = orientation_idx - item_type.ori0;
-						if (shape.width <= point.residual_x && shape.depth <= point.residual_y && shape.length <= point.residual_z && in_bounds(bin, point.x, point.y, point.z, shape) && allowed(item_type, point.x, point.y, point.z))
-							if (auto const waste = u64 { point.residual_x - shape.width } + (point.residual_y - shape.depth) + (point.residual_z - shape.length); best.beats(waste, point.y, point.z, point.x, slot)) {
-								--budget;
-								if (legal(point.x, point.y, point.z, shape))
-									best.set(waste, point.y, point.z, point.x, slot, shape);
-							}
-						if (!item_type.clamped || budget == 0)
-							continue;
-						// projection of residual space along each axis from this point
-						auto const constraint_x = std::max(point.x, item_type.min_x), constraint_y = std::max(point.y, item_type.min_y), constraint_z = std::max(point.z, item_type.min_z);
-						if ((constraint_x == point.x && constraint_y == point.y && constraint_z == point.z) || constraint_x - point.x >= point.residual_x || constraint_y - point.y >= point.residual_y || constraint_z - point.z >= point.residual_z)
-							continue;
-						if (!in_bounds(bin, constraint_x, constraint_y, constraint_z, shape) || !allowed(item_type, constraint_x, constraint_y, constraint_z))
-							continue;
+		auto budget = Search::base_evaluations;
+		for (auto const& point : fill.frontier) {
+			// skip if no top face here yet
+			if (point.y != 0 && item_type.min_y <= point.y && !is_top(point.y))
+				continue;
+			for (auto orientation_idx = item_type.ori0; orientation_idx < item_type.ori1 && budget != 0; ++orientation_idx) {
+				auto const shape = world.pool[orientation_idx];
+				auto const slot = orientation_idx - item_type.ori0;
+				if (shape.width <= point.residual_x && shape.depth <= point.residual_y && shape.length <= point.residual_z && in_bounds(bin, point.x, point.y, point.z, shape) && allowed(item_type, point.x, point.y, point.z))
+					if (auto const waste = u64 { point.residual_x - shape.width } + (point.residual_y - shape.depth) + (point.residual_z - shape.length); best.beats(waste, point.y, point.z, point.x, slot)) {
 						--budget;
-						if (!legal(constraint_x, constraint_y, constraint_z, shape))
-							continue;
-						auto const ray_result = rays(bin, constraint_x, constraint_y, constraint_z);
-						if (shape.width <= ray_result.residual_x && shape.depth <= ray_result.residual_y && shape.length <= ray_result.residual_z)
-							if (auto const waste = u64 { ray_result.residual_x - shape.width } + (ray_result.residual_y - shape.depth) + (ray_result.residual_z - shape.length); best.beats(waste, constraint_y, constraint_z, constraint_x, slot))
-								best.set(waste, constraint_y, constraint_z, constraint_x, slot, shape);
+						if (legal(point.x, point.y, point.z, shape))
+							best.set(waste, point.y, point.z, point.x, slot, shape);
 					}
-					// zero-waste hit is optimal unless clamped
-					if (budget == 0 || (best.found && best.waste == 0 && !item_type.clamped))
-						return;
-				}
-			};
-
-			auto base = Search::base_evaluations;
-			scan(base);
-			auto spent = Search::base_evaluations - base;
-			if (!best.found && base == 0 && cursor != fill.frontier.end() && Search::rescue_evaluations != 0) {
-				++cursor; // The baseline budget was spent at this point; resume at the next one.
-				auto const available = evals > spent ? evals - spent : u64 { 0 };
-				auto rescue = static_cast<u32>(std::min<u64>(Search::rescue_evaluations, available));
-				auto const initial_rescue = rescue;
-				scan(rescue);
-				spent += initial_rescue - rescue;
+				if (!item_type.clamped || budget == 0)
+					continue;
+				// min_* clamp: retry at the point lifted to the constraint floor
+				auto const constraint_x = std::max(point.x, item_type.min_x), constraint_y = std::max(point.y, item_type.min_y), constraint_z = std::max(point.z, item_type.min_z);
+				if ((constraint_x == point.x && constraint_y == point.y && constraint_z == point.z) || constraint_x - point.x >= point.residual_x || constraint_y - point.y >= point.residual_y || constraint_z - point.z >= point.residual_z)
+					continue;
+				if (!in_bounds(bin, constraint_x, constraint_y, constraint_z, shape) || !allowed(item_type, constraint_x, constraint_y, constraint_z))
+					continue;
+				--budget;
+				if (!legal(constraint_x, constraint_y, constraint_z, shape))
+					continue;
+				auto const ray_result = rays(bin, constraint_x, constraint_y, constraint_z);
+				if (shape.width <= ray_result.residual_x && shape.depth <= ray_result.residual_y && shape.length <= ray_result.residual_z)
+					if (auto const waste = u64 { ray_result.residual_x - shape.width } + (ray_result.residual_y - shape.depth) + (ray_result.residual_z - shape.length); best.beats(waste, constraint_y, constraint_z, constraint_x, slot))
+						best.set(waste, constraint_y, constraint_z, constraint_x, slot, shape);
 			}
-			evals -= std::min<u64>(evals, spent);
-			return best;
+			// unless clamped, a zero-waste hit is optimal, and for LowestFirst so is any hit: the frontier is sorted (y, z, x)
+			if (budget == 0 || (best.found && (Place::lowest || best.waste == 0) && !item_type.clamped))
+				break;
 		}
+		evals -= std::min<u64>(evals, Search::base_evaluations - budget);
+		return best;
 	}
 
 	auto place(Bin const& bin, u32 instance_idx) -> bool
@@ -438,9 +393,9 @@ struct Engine {
 		fill_left = class_left;
 		shapes_dirty = true;
 		++gen;
-		std::ranges::fill(group_state, std::uint8_t { 0 });
 		auto misses = u32 { 0 }, since_sweep = u32 { 0 }, seen = u32 { 0 };
-		for (auto k = std::size_t { 0 }; k < candidates.size() && misses < kFailStreak && evals >= Search::base_evaluations; ++k) {
+		auto k = std::size_t { 0 };
+		for (; k < candidates.size() && misses < kFailStreak && evals >= Search::base_evaluations; ++k) {
 			auto const instance_idx = candidates[k];
 			if (state[instance_idx] != 0 || taken_gen[instance_idx] == gen)
 				continue;
@@ -451,46 +406,37 @@ struct Engine {
 			if (free_volume(bin) < shape_min_volume)
 				break;
 
-			auto const link = type_of(instance_idx).link;
-			auto hit = false;
-			if (link < 0) {
-				hit = place(bin, instance_idx);
-			} else {
-				auto const g = static_cast<std::size_t>(link);
-				if (group_state[g] != 0)
-					continue;
-				members.clear();
-				for (auto j = k; j < candidates.size(); ++j)
-					if (auto const m = candidates[j]; state[m] == 0 && taken_gen[m] != gen && type_of(m).link == link)
-						members.push_back(m);
-				auto const before = fill.placed.size();
-				if (members.size() > 1)
-					snap = fill; // rollback needs placed, frontier, tops, weight, volume and the group binding
-				hit = std::ranges::all_of(members, [&](u32 m) { return place(bin, m); });
-				if (!hit) {
-					for (auto idx = before; idx < fill.placed.size(); ++idx) {
-						taken_gen[fill.placed[idx].instance] = 0;
-						++fill_left[class_of(fill.placed[idx].instance)];
-					}
-					if (fill.placed.size() != before) {
-						fill = snap;
-						shapes_dirty = true;
-					}
-				}
-				group_state[g] = hit ? 1 : 2;
-			}
-
-			if (hit) {
+			if (place(bin, instance_idx)) {
 				misses = 0;
 				if (emit && progress)
 					progress->tick(base + fill.placed.size());
-			} else
+			} else {
 				++misses;
+				// a type's instances are one contiguous run (see run()), and its twins would miss this unchanged box too
+				if constexpr (Select::skip_twins)
+					k = static_cast<std::size_t>(std::ranges::partition_point(candidates.subspan(k), [&, type_idx = world.inst_type[instance_idx]](u32 twin) { return world.inst_type[twin] == type_idx; }) - candidates.begin()) - 1;
+			}
 			if (++since_sweep >= kSweepStride) {
 				since_sweep = 0;
 				sweep();
 			}
 		}
+		ran_out = k >= candidates.size();
+		return fill.placed.size();
+	}
+
+	// The real fill of the chosen box would replay its trial step for step (same state, same order) unless the
+	// trial ran out of a shorter candidate list or the eval budget could cut the replay short. Then just take it.
+	auto adopt(std::size_t chosen) -> std::size_t
+	{
+		if (!kept_info.valid || kept_info.bin != chosen || (kept_info.ran_out && kept_info.size != full.size()) || evals < sat_add(kept_info.spent, Search::base_evaluations))
+			return run_fill(bins[chosen], full, true);
+		kept_info.valid = false;
+		std::swap(fill, kept);
+		evals -= kept_info.spent;
+		if (progress) // the same ticks the replay would have sent
+			for (auto idx = std::size_t { 1 }; idx <= fill.placed.size(); ++idx)
+				progress->tick(base + idx);
 		return fill.placed.size();
 	}
 
@@ -513,12 +459,16 @@ struct Engine {
 	struct Trial {
 		std::size_t n = 0;
 		u64 volume = 0, capacity = 1;
+		// share of the candidates' volume plus share of their weight, ByMass only
+		double mass = 0;
 		bool unsaturated = false; // the trial ran out of candidates, not of room
 	};
 
-	// most items first, then utilization via exact cross product
+	// ByMass: most of the remaining load first. Then most items, then utilization via exact cross product
 	static auto better_trial(Trial const& trial_a, Trial const& trial_b, bool truncated) noexcept -> bool
 	{
+		if (Select::mass && trial_a.mass != trial_b.mass) // constant per strategy, folded away for ByCount
+			return trial_a.mass > trial_b.mass;
 		if (trial_a.n != trial_b.n)
 			return trial_a.n > trial_b.n;
 		if (truncated && trial_a.unsaturated && trial_b.unsaturated)
@@ -527,21 +477,32 @@ struct Engine {
 		return order != 0 ? order > 0 : trial_a.capacity < trial_b.capacity;
 	}
 
-	// Trials select, they never commit.
+	// trials select, they never commit.
 	auto select(std::span<u32 const> candidates, bool truncated) -> std::size_t
 	{
 		auto chosen = bins.size();
 		auto best = Trial { };
+		auto load_volume = 0.0, load_weight = 0.0;
+		auto const share = [](double part, double whole) { return whole > 0 ? part / whole : 0.0; };
+		if constexpr (Select::mass)
+			for (auto instance_idx : candidates) {
+				load_volume += static_cast<double>(type_of(instance_idx).volume);
+				load_weight += static_cast<double>(type_of(instance_idx).weight);
+			}
+		kept_info.valid = false;
 		for (auto idx = std::size_t { 0 }; idx < bins.size(); ++idx) {
 			if (bins[idx].budget == 0)
 				continue;
+			auto const before = evals;
 			auto const n = run_fill(bins[idx], candidates, false);
 			if (n == 0)
 				continue;
-			auto const trial = Trial { n, fill.volume, std::max<u64>(bins[idx].volume, 1), n == candidates.size() };
+			auto const trial = Trial { n, fill.volume, std::max<u64>(bins[idx].volume, 1), share(static_cast<double>(fill.volume), load_volume) + share(fill.weight, load_weight), n == candidates.size() };
 			if (chosen == bins.size() || better_trial(trial, best, truncated)) {
 				chosen = idx;
 				best = trial;
+				std::swap(fill, kept);
+				kept_info = { idx, candidates.size(), before - evals, true, ran_out };
 			}
 		}
 		return chosen;
@@ -562,16 +523,6 @@ struct Engine {
 		}
 		m = std::clamp(m, std::min(kPrefixMin, full.size()), std::min(kPrefixMax, full.size()));
 		prefix.assign(full.begin(), full.begin() + static_cast<std::ptrdiff_t>(m));
-		if (world.links == 0)
-			return;
-		// extend to group closure
-		std::ranges::fill(link_seen, std::uint8_t { 0 });
-		for (auto instance_idx : prefix)
-			if (auto const link = type_of(instance_idx).link; link >= 0)
-				link_seen[static_cast<std::size_t>(link)] = 1;
-		for (auto j = m; j < full.size(); ++j)
-			if (auto const link = type_of(full[j]).link; link >= 0 && link_seen[static_cast<std::size_t>(link)] != 0)
-				prefix.push_back(full[j]);
 	}
 
 	auto run() -> Outcome
@@ -581,15 +532,13 @@ struct Engine {
 		state.assign(world.total, std::uint8_t { 0 });
 		taken_gen.assign(world.total, u32 { 0 });
 		class_left.assign(world.classes.size(), u32 { 0 });
-		group_state.assign(world.links, std::uint8_t { 0 });
-		link_seen.assign(world.links, std::uint8_t { 0 });
 
 		auto sorted = std::vector<u32>(types);
 		for (auto idx = std::size_t { 0 }; idx < types; ++idx)
 			sorted[idx] = static_cast<u32>(idx);
 		std::ranges::sort(sorted, [&](u32 a, u32 b) { return Order::less(world.types[a], world.types[b]); });
 		order.reserve(world.total);
-		for (auto ti : sorted) {
+		for (auto ti : sorted) { // each type's instances land as one contiguous run, which run_fill relies on
 			auto const& item_type = world.types[ti];
 			if (world.type_dead[ti] != 0) {
 				for (auto idx = u32 { 0 }; idx < item_type.count; ++idx)
@@ -602,15 +551,12 @@ struct Engine {
 		}
 
 		auto remaining = order.size();
-		full.reserve(order.size());
+		full = order;
 		while (remaining != 0 && !expired() && evals >= Search::base_evaluations) {
 			auto const live = std::ranges::count_if(bins, [](Bin const& bin) { return bin.budget != 0; });
 			if (live == 0)
 				break;
-			full.clear();
-			for (auto instance_idx : order)
-				if (state[instance_idx] == 0)
-					full.push_back(instance_idx);
+			std::erase_if(full, [&](u32 instance_idx) { return state[instance_idx] != 0; }); // same order, minus what the last box took
 
 			auto chosen = bins.size();
 			if (live == 1)
@@ -624,12 +570,12 @@ struct Engine {
 			if (chosen == bins.size())
 				break;
 
-			auto placed = run_fill(bins[chosen], full, true);
+			auto placed = adopt(chosen);
 			if (placed == 0) {
 				chosen = select(full, false);
 				if (chosen == bins.size())
 					break;
-				placed = run_fill(bins[chosen], full, true);
+				placed = adopt(chosen);
 				if (placed == 0)
 					break;
 			}
@@ -663,22 +609,18 @@ auto build_world(SolveRequest const& request) -> World
 		auto const budget = b.maximum_boxes.value_or(kU32Max); // absent is unlimited, zero is none
 		if (!b.active.value_or(true) || b.width == 0 || b.length == 0 || b.depth == 0 || budget == 0)
 			continue;
-		world.bins.push_back({ b.width, b.depth, b.length, sat_volume(b.width, b.depth, b.length), static_cast<double>(b.max_weight.value_or(0.0f)), budget, static_cast<u32>(idx) });
+		// weights arrive as float, so allow float rounding: ten 0.1 items must fit a 1.0 box
+		world.bins.push_back({ b.width, b.depth, b.length, sat_volume(b.width, b.depth, b.length), static_cast<double>(b.max_weight.value_or(0.0f)) * (1 + std::numeric_limits<float>::epsilon()), budget, static_cast<u32>(idx) });
 	}
 
 	// Sorted vector plus lower_bound, so no decision can depend on hash order.
-	auto groups = std::vector<std::string_view> { }, links = std::vector<std::string_view> { };
+	auto groups = std::vector<std::string_view> { };
 	for (auto const& item_request : request.items) {
 		if (item_request.box_group && !item_request.box_group->empty())
 			groups.emplace_back(*item_request.box_group);
 	}
-	auto densify = [](std::vector<std::string_view>& v) {
-		std::ranges::sort(v);
-		v.erase(std::ranges::unique(v).begin(), v.end());
-	};
-	densify(groups);
-	densify(links);
-	world.links = links.size();
+	std::ranges::sort(groups);
+	groups.erase(std::ranges::unique(groups).begin(), groups.end());
 
 	world.types.reserve(request.items.size());
 	for (auto idx = std::size_t { 0 }; idx < request.items.size(); ++idx) {
@@ -733,6 +675,10 @@ auto build_world(SolveRequest const& request) -> World
 			world.classes.push_back({ world.types[by_geometry[idx]].ori0, world.types[by_geometry[idx]].ori1, world.types[by_geometry[idx]].volume });
 		world.type_class[by_geometry[idx]] = static_cast<u32>(world.classes.size() - 1);
 	}
+	for (auto ci = u32 { 0 }; ci < world.classes.size(); ++ci)
+		for (auto oi = world.classes[ci].ori0; oi < world.classes[ci].ori1; ++oi)
+			world.class_shapes.emplace_back(world.pool[oi], ci);
+	std::ranges::sort(world.class_shapes);
 
 	// upfront feasibility checks
 	world.type_dead.assign(world.types.size(), std::uint8_t { 0 });
@@ -754,36 +700,14 @@ auto build_world(SolveRequest const& request) -> World
 		world.type_dead[ti] = fits ? 0 : 1;
 	}
 
-	// group atomicity checks
-	if (world.links != 0) {
-		auto bad = std::vector<std::uint8_t>(world.links, std::uint8_t { 0 });
-		auto seen = std::vector<std::int32_t>(world.links, -2);
-		for (auto ti = std::size_t { 0 }; ti < world.types.size(); ++ti) {
-			auto const& item_type = world.types[ti];
-			if (item_type.link < 0)
-				continue;
-			auto const g = static_cast<std::size_t>(item_type.link);
-			if (world.type_dead[ti] != 0)
-				bad[g] = 1;
-			if (item_type.group >= 0) {
-				if (seen[g] == -2)
-					seen[g] = item_type.group;
-				else if (seen[g] != item_type.group)
-					bad[g] = 1;
-			}
-		}
-		for (auto ti = std::size_t { 0 }; ti < world.types.size(); ++ti)
-			if (auto const link = world.types[ti].link; link >= 0 && bad[static_cast<std::size_t>(link)] != 0)
-				world.type_dead[ti] = 1;
-	}
-
 	return world;
 }
 
 template<std::size_t I>
 auto run_strategy(World const& world, Clock::time_point deadline, bool timed, u64 evals, Progress* progress) -> Outcome
 {
-	auto engine = Engine<std::tuple_element_t<I, Portfolio>, CentreSupport, SingleGroupPerBox, extreme_point::BaselineSearchPolicy> { world, deadline, timed, evals, progress };
+	using Picked = std::tuple_element_t<I, Portfolio>;
+	auto engine = Engine<typename Picked::Order, typename Picked::Select, typename Picked::Place, CentreSupport, SingleGroupPerBox, extreme_point::BaselineSearchPolicy> { world, deadline, timed, evals, progress };
 	return engine.run();
 }
 
@@ -809,12 +733,12 @@ auto solve_extreme_point(SolveRequest const& request, SolveOptions const& option
 
 	auto const timed = options.timeout_ms.has_value();
 	auto const deadline = start + std::chrono::milliseconds(options.timeout_ms.value_or(0));
-	// deterministic budget instead of wall clock
-	auto const evals = std::clamp(sat_mul(kEvalsPerInstance, world.total), kEvalFloor, kEvalCeiling);
+	// deterministic budget instead of wall clock. Every box opened runs a trial per box type, so it scales with those too
+	auto const evals = std::clamp(sat_mul(sat_mul(kEvalsPerInstance, world.total), world.bins.size() + 1), kEvalFloor, kEvalCeiling);
 
 	auto outcomes = std::array<Outcome, kStrategies> { };
 	auto errors = std::array<std::exception_ptr, kStrategies> { };
-	auto const serial = std::thread::hardware_concurrency() == 1;
+	auto const serial = std::thread::hardware_concurrency() == 1 || world.total < kThreadedFrom; // tiny jobs pack faster than a thread starts
 	{
 		auto workers = std::vector<std::jthread> { };
 		workers.reserve(kStrategies - 1);
@@ -866,8 +790,8 @@ auto solve_extreme_point(SolveRequest const& request, SolveOptions const& option
 			result.placements.push_back({ point.x, point.y, point.z, { item.item_code, item.item_reference, point.width, point.length, point.depth, item.weight, std::nullopt, item.box_group, item.rotation_policy, item.constraint } });
 		}
 		result.total_weight = static_cast<float>(bin.weight); // content only, matching StackBased
-		auto const volume = world.bins[bin.bin].volume;
-		result.utilization = volume == 0 ? 0.0f : static_cast<float>(static_cast<double>(bin.volume) / static_cast<double>(volume));
+		// from the dims, a saturated volume would skew it. Zero dims never reach world.bins
+		result.utilization = static_cast<float>(static_cast<double>(bin.volume) / (static_cast<double>(box.width) * box.depth * box.length));
 		if (box.outer_width && box.outer_length && box.outer_depth) {
 			result.outer_width = box.outer_width;
 			result.outer_length = box.outer_length;
