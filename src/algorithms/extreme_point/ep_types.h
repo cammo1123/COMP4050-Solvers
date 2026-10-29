@@ -34,7 +34,7 @@ struct Type {
 	u64 volume = 0;
 	u64 key_max_dim = 0, key_base_area = 0;
 	float weight = 0.0f;
-	std::int32_t group = -1, link = -1;
+	std::int32_t group = -1;
 	u32 min_x = 0, min_y = 0, min_z = 0;
 	u32 max_x = kU32Max, max_y = kU32Max, max_z = kU32Max;
 	bool no_stacking = false;
@@ -52,10 +52,10 @@ struct World {
 	std::vector<Shape> pool;
 	std::vector<u32> inst_type;
 	std::vector<Klass> classes;
+	std::vector<std::pair<Shape, u32>> class_shapes; // every class's orientations, sorted by shape
 	std::vector<u32> type_class;
 	std::vector<std::uint8_t> type_dead;
 	std::size_t total = 0;
-	std::size_t links = 0;
 };
 
 }

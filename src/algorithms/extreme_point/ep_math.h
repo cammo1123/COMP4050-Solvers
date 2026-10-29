@@ -12,12 +12,12 @@ using u64 = std::uint64_t;
 constexpr auto kU32Max = std::numeric_limits<u32>::max();
 constexpr auto kU64Max = std::numeric_limits<u64>::max();
 
-// saturated arithmetic to stop overflow attacks
+// stop overflows
 constexpr auto sat_add(u64 num1, u64 num2) noexcept -> u64 { return num1 > kU64Max - num2 ? kU64Max : num1 + num2; }
 constexpr auto sat_mul(u64 num1, u64 num2) noexcept -> u64 { return num1 == 0 || num2 == 0 ? 0 : (num1 > kU64Max / num2 ? kU64Max : num1 * num2); }
 constexpr auto sat_volume(u32 width, u32 depth, u32 length) noexcept -> u64 { return sat_mul(sat_mul(width, depth), length); }
 
-// handmade 65x64->128bit multiplier cause msvc doesn't have __int128 and floats are garbage
+// ai generated 64x64->128bit multiplier cause msvc doesn't have __int128 and floats were broken for the algo allegedly
 constexpr auto wide_mul(u64 num1, u64 num2) noexcept -> std::pair<u64, u64>
 {
 	constexpr auto mask = u64 { 0xFFFFFFFF };
