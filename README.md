@@ -43,9 +43,10 @@ One C++ core serves three front ends:
   one for each request.
 - **Deterministic output.** The same request on the same build gives the same
   response, unless a timeout fires.
-- **Real-world constraints:** content weight limits, box tare weight, per-type
-  box quotas, inactive box types, `boxGroup` separation, per-item rotation
-  policies, no-stacking, and positional bounds.
+- **Real-world constraints:** content weight limits, per-type box quotas,
+  inactive box types, `boxGroup` separation, per-item rotation policies,
+  no-stacking, and positional bounds. Box tare weight (`boxWeight`) is used by
+  `Guillotine` and `PHPSolver` only.
 - **Bounded run time.** `timeoutMs` makes a solve return its best valid
   partial result instead of throwing.
 - **Progress reporting** through an optional `onProgress(done, total)`
@@ -144,7 +145,8 @@ See [PHP](#php) for how the extension behaves.
 
 Pick an algorithm with `algorithm`. Its options go under the matching key in
 `options`. The TypeScript types only accept the key that matches the chosen
-algorithm. `options.timeoutMs` applies to every algorithm.
+algorithm. `options.timeoutMs` applies to every algorithm except `StackBased`,
+which ignores it and never returns a partial result.
 
 | Algorithm      | Options key               | Best for                                                             |
 | -------------- | ------------------------- | -------------------------------------------------------------------- |
@@ -348,11 +350,12 @@ unpack the matching development package from
 PHP_INCLUDE_DIR=/c/php-devel/include pnpm build:php
 ```
 
-Set `PHP_ZTS=1` for a thread-safe PHP and `PHP_DEBUG=1` for a debug PHP. The
-PHP target does not need Node.js. Without Node (or with
-`-DCOMP4050_CODEGEN=OFF`) it compiles against the committed generated headers,
-so run `pnpm build` (or `node scripts/generate.mjs`) first after changing a
-schema.
+Set `PHP_ZTS=1` for a thread-safe PHP and `PHP_DEBUG=1` for a debug PHP.
+`pnpm build:php` runs Node scripts, so it needs Node.js. To build without Node,
+invoke CMake directly with code generation disabled (`-DCOMP4050_CODEGEN=OFF`,
+which is also the default when CMake finds no `node`); it then compiles against
+the committed generated headers, so run `node scripts/generate.mjs` first
+after changing a schema.
 
 ### Prebuilds
 
