@@ -15,7 +15,7 @@ set -euo pipefail
 
 IMAGE="${1:-quay.io/pypa/manylinux_2_28_x86_64}"
 NODE_VERSION="${NODE_VERSION:-22.20.0}"
-PNPM_VERSION="${PNPM_VERSION:-11.21.0}"
+PNPM_VERSION="${PNPM_VERSION:-12.16.1}" # keep in step with packageManager in package.json
 CMAKE_VERSION="${CMAKE_VERSION:-3.31.6}"
 GCC_TOOLSET_VERSION="${GCC_TOOLSET_VERSION:-12}"
 

@@ -75,7 +75,12 @@ merge, rebase stale feature branches rather than merging `dev` into them.
   braces). `pnpm lint:fix` applies it; `pnpm lint:check` validates it.
 - **Debugging** — **Run > Start Debugging (F5)** rebuilds the standalone binary
   (`build:core`) and points the debugger at `build/solver.exe`.
-- **Dependencies** — Use Node.js 22 and pnpm 11. Run `pnpm install` from the
+- **Pre-commit hook** — `pnpm hooks:install` points git at `.githooks/`,
+  whose `pre-commit` runs `pnpm precommit` (`lint:check`, `build:ts`, and
+  `typecheck`).
+- **Dependencies** — Use Node.js 22.12+ and pnpm 12 (the exact version is
+  pinned in `packageManager` in `package.json`; Corepack or pnpm itself will
+  switch to it). Run `pnpm install` from the
   repository root before building or testing.
 - **Build outputs** — `pnpm build` generates bindings, builds the addon, and
   compiles the TypeScript package. The addon is copied to
@@ -92,7 +97,8 @@ pnpm typecheck     # TypeScript checker over src/ and tests
 ```
 
 The suite covers native addon loading, `info()`, the public typed API, algorithm
-dispatch, progress callbacks, and the `solve()` binary boundary. It also tests
+dispatch (including `Auto`), per-algorithm behaviour and fixture packings
+(`ExtremePoint`, `Guillotine` with golden outputs), progress callbacks, and the `solve()` binary boundary. It also tests
 FlatBuffers marshalling, malformed-payload errors at the native layer, and
 wrapper-side TypeScript checks.
 
@@ -104,7 +110,11 @@ how to point `pnpm test:php` at a `php` binary and a `run-tests.php`.
 The `test` workflow (`.github/workflows/test.yml`) installs deps, materialises
 `flatc` (cached under `.flatc/`), builds the addon with CMake/Ninja, and
 runs `pnpm test` on every pull request into `dev` or `main` and every push to
-`dev`. The `prebuild` workflow snapshots the built binaries; the Linux prebuild
+`dev`. The `CI` workflow (`.github/workflows/ci.yml`) runs on every push and
+pull request with Clang 22 and additionally enforces `clang-format` and
+`clang-tidy` (warnings as errors, `src/php/` excluded), so run
+`pnpm lint:check` before pushing. The `prebuild` workflow snapshots the built
+binaries and commits them back on pushes to `dev`; the Linux prebuild
 is built in the `manylinux_2_28` container so that it stays loadable on older
 hosts. The `php` workflow builds the extension and runs the `.phpt` suite across
 PHP versions without going through node.
@@ -145,7 +155,7 @@ That is why the PHP extension needs no FlatBuffers at runtime and why
 `src/php/bionic_solver.cpp` contains only module wiring.
 
 Note that a field which is `optional` but not `nullable` — for example
-`algorithm: SolveAlgorithm = ExtremePoint` — has a default rather than an
+`algorithm: SolveAlgorithm = Auto` — has a default rather than an
 optional domain representation. The generated reader must treat its key as
 absent-able and leave the domain default alone, rather than clearing it.
 

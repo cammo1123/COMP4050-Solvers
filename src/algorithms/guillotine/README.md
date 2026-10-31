@@ -2,12 +2,13 @@
 
 Packs an order into boxes by **recursion over free spaces**, driven by **lookup tables**.
 Its goals, in order: no failed items, fewest boxes, heaviest items at the bottom.
-Request translation (`api_adapter.h`), validation (`pre_validation.h`), grouping (`item_grouping.h`)
-and the fits pre-check (`fits_matrix.h`) live in this directory too. The packing is the guillotine
-solver's own.
+`SolveAlgorithm.Auto` routes small requests here (see the top-level README).
 
-On the 28-order bench (`tasks/baseline.md`) it uses **420 boxes**, with 0 failed items, 0
-heavy-on-light stacks and every stacked item fully supported.
+It does not implement `PlacementConstraint`, `RotationPolicy::KeepFlat`, or mixed rotation
+policies, and rejects such requests unless `strictUnsupported` is `false`. Of
+`GuillotineSolverOptions` only `allowRotation`, `maxBoxes` and `strictUnsupported` are
+implemented; the others reject the request. `timeoutMs` (default 1000) narrows the beam once it
+passes but never stops the solve.
 
 ## Pipeline
 
@@ -100,7 +101,7 @@ current ranking (`tasks/baseline.md`).
 
 Groups never share a box. Ungrouped units may ride in any box, so after the groups are packed they first fill
 the groups' dead spaces, using the same recursion and each space's weight limit. Only the rest opens new
-boxes. This took the bench from 488 to 468 boxes, before the block rules.
+boxes.
 
 ## Merge
 
@@ -112,20 +113,4 @@ boxes. This took the bench from 488 to 468 boxes, before the block rules.
 
 The refill is the backfill above, so moved units keep 100% support, the weight limits and each box's
 cap. A donor of group T only goes into boxes of T or untagged boxes, which then join T. This is how
-group units reach the ungrouped boxes; the backfill only goes the other way. It took the bench from
-428 to 420 boxes: four 30-unit orders 3 → 2, Chaotic 63 → 59.
-
-## Tried and removed
-
-| idea | result |
-|---|---|
-| Beam width 8 / 16 | 474 boxes vs 468 at W=1, 5–9× slower |
-| Merging equal-height TOP spaces | no box change; the level order it needs cost 2 |
-| Three cut rules per box | 431 vs 428 boxes with one rule, 2.5× slower |
-
-## Tests
-
-- `node/test/guillotine.test.ts`: validity, heavy on bottom, blocks, groups, stock, rotation, backfill and shrink.
-- `node/test/guillotine.golden.test.ts`: the exact output of 16 requests.
-  - `GUILLOTINE_GOLDEN=write` records the current output.
-  - `GUILLOTINE_GOLDEN=check` fails on any difference.
+group units reach the ungrouped boxes; the backfill only goes the other way.
