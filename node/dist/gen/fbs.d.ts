@@ -1,3 +1,4 @@
+export { AutoOptions, AutoOptionsT } from './fbs/auto-options.js';
 export { BoxResult, BoxResultT } from './fbs/box-result.js';
 export { BoxType, BoxTypeT } from './fbs/box-type.js';
 export { ExtremePointOptions, ExtremePointOptionsT } from './fbs/extreme-point-options.js';

@@ -1,4 +1,7 @@
 import { SolveAlgorithm, RotationPolicy } from "./fbs.js";
+export type AutoOptionsT = {
+    extremePointThreshold?: number;
+};
 export type BoxResultT = {
     boxReference: string;
     width: number;
@@ -79,6 +82,7 @@ export type SolveOptionsT = {
     stackBasedOptions?: StackBasedOptionsT | null;
     phpSolverOptions?: PHPSolverOptionsT | null;
     guillotineSolverOptions?: GuillotineSolverOptionsT | null;
+    autoOptions?: AutoOptionsT | null;
 };
 export type StackBasedOptionsT = {};
 export type BaseOptions = {
@@ -112,9 +116,14 @@ export type SolveRequest = {
     algorithm?: typeof SolveAlgorithm.Guillotine;
     options?: BaseOptions;
 } | {
+    algorithm: typeof SolveAlgorithm.Auto;
+    options?: BaseOptions & {
+        autoOptions?: AutoOptionsT;
+    };
+} | {
     algorithm?: undefined;
     options?: BaseOptions & {
-        extremePointOptions?: ExtremePointOptionsT;
+        autoOptions?: AutoOptionsT;
     };
 });
 export declare function encodeRequest(request: SolveRequest): Uint8Array;

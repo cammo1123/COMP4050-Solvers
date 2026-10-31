@@ -28,12 +28,24 @@ InfoResponse info()
 
 SolveResponse solve(SolveRequest const& request, ProgressCallback const& on_progress)
 {
-	auto const options = request.options.value_or(SolveOptions { });
+	auto options = request.options.value_or(SolveOptions { });
 
 	SolveResponse response;
 	auto const start = std::chrono::steady_clock::now();
 
-	auto const algorithm = request.algorithm;
+	// TODO: We could add more heuristics here, but this seems to be a good start
+	auto algorithm = request.algorithm;
+	if (algorithm == SolveAlgorithm::Auto) {
+		auto const auto_options = options.auto_options.value_or(AutoOptions { });
+		if (request.items.size() >= auto_options.extreme_point_threshold) {
+			algorithm = SolveAlgorithm::ExtremePoint;
+			options.extreme_point_options = ExtremePointOptions { };
+		} else {
+			algorithm = SolveAlgorithm::Guillotine;
+			options.guillotine_solver_options = GuillotineSolverOptions { };
+		}
+	}
+
 	auto const* info = algo::get_algo(algorithm);
 	if (!info) {
 		throw std::logic_error("invalid SolveAlgorithm value");

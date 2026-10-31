@@ -93,6 +93,7 @@ const algorithms = [
 	["extreme-point", SolveAlgorithm.ExtremePoint],
 	["php-solver", SolveAlgorithm.PHPSolver],
 	["guillotine", SolveAlgorithm.Guillotine],
+	["auto", SolveAlgorithm.Auto],
 ] as const;
 
 // The bench table has fixed columns, so the box count rides in the name. It
@@ -119,14 +120,22 @@ for (const itemCount of [100, 1_000, 10_000]) {
 	const cases = await Promise.all(
 		algorithms.map(async ([name, algorithm]) => {
 			const request = createRequest(itemCount, algorithm);
-			const tooSlow = algorithm === SolveAlgorithm.PHPSolver && itemCount >= 10000;
-			return { request, tooSlow, label: tooSlow ? "php-solver (too slow)" : await labelled(name, request) };
+			const tooSlow =
+				algorithm === SolveAlgorithm.PHPSolver && itemCount >= 10000;
+			return {
+				request,
+				tooSlow,
+				label: tooSlow
+					? "php-solver (too slow)"
+					: await labelled(name, request),
+			};
 		}),
 	);
 
 	describe(`${itemCount.toLocaleString()}-item end-to-end workload`, () => {
 		for (const { label, request, tooSlow } of cases) {
-			if (tooSlow) bench.skip(label, async () => void (await solve(request)));
+			if (tooSlow)
+				bench.skip(label, async () => void (await solve(request)));
 			else addBench(label, request);
 		}
 	});

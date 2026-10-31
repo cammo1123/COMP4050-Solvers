@@ -1,4 +1,5 @@
 import * as flatbuffers from 'flatbuffers';
+import { AutoOptionsT } from '../fbs/auto-options.js';
 import { ExtremePointOptionsT } from '../fbs/extreme-point-options.js';
 import { GuillotineSolverOptionsT } from '../fbs/guillotine-solver-options.js';
 import { PHPSolverOptionsT } from '../fbs/phpsolver-options.js';
@@ -25,8 +26,8 @@ export declare class SolveOptions implements flatbuffers.IUnpackableObject<Solve
 export declare class SolveOptionsT implements flatbuffers.IGeneratedObject {
     timeoutMs: number | null;
     algoOptionsType: SolveStrategyOptions;
-    algoOptions: ExtremePointOptionsT | GuillotineSolverOptionsT | PHPSolverOptionsT | StackBasedOptionsT | null;
-    constructor(timeoutMs?: number | null, algoOptionsType?: SolveStrategyOptions, algoOptions?: ExtremePointOptionsT | GuillotineSolverOptionsT | PHPSolverOptionsT | StackBasedOptionsT | null);
+    algoOptions: AutoOptionsT | ExtremePointOptionsT | GuillotineSolverOptionsT | PHPSolverOptionsT | StackBasedOptionsT | null;
+    constructor(timeoutMs?: number | null, algoOptionsType?: SolveStrategyOptions, algoOptions?: AutoOptionsT | ExtremePointOptionsT | GuillotineSolverOptionsT | PHPSolverOptionsT | StackBasedOptionsT | null);
     pack(builder: flatbuffers.Builder): flatbuffers.Offset;
 }
 //# sourceMappingURL=solve-options.d.ts.map

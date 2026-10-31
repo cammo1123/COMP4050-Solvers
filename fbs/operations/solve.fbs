@@ -31,11 +31,16 @@ table PHPSolverOptions {
   allow_rotation: bool = true;
 }
 
+table AutoOptions {
+  extreme_point_threshold: uint = 700;
+}
+
 union SolveStrategyOptions {
   ExtremePointOptions,
   StackBasedOptions,
   PHPSolverOptions,
-  GuillotineSolverOptions
+  GuillotineSolverOptions,
+  AutoOptions,
 }
 
 enum SolveAlgorithm: byte {
@@ -43,12 +48,13 @@ enum SolveAlgorithm: byte {
 	StackBased = 1,
   PHPSolver = 2,
   Guillotine = 3,
+  Auto = 4,
 }
 
 table SolveRequest {
   boxes: [BoxType] (required);
   items: [ItemType] (required);
-  algorithm: SolveAlgorithm = ExtremePoint;
+  algorithm: SolveAlgorithm = Auto;
   options: SolveOptions (optional);
 }
 
