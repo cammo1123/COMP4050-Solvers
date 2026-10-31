@@ -352,10 +352,19 @@ PHP_INCLUDE_DIR=/c/php-devel/include pnpm build:php
 
 Set `PHP_ZTS=1` for a thread-safe PHP and `PHP_DEBUG=1` for a debug PHP.
 `pnpm build:php` runs Node scripts, so it needs Node.js. To build without Node,
-invoke CMake directly with code generation disabled (`-DCOMP4050_CODEGEN=OFF`,
-which is also the default when CMake finds no `node`); it then compiles against
-the committed generated headers, so run `node scripts/generate.mjs` first
-after changing a schema.
+invoke CMake directly with the Node addon disabled, the PHP target enabled, and
+code generation disabled, as the `php` CI workflow does:
+
+```sh
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+  -DCOMP4050_BUILD_ADDON=OFF -DCOMP4050_BUILD_PHP=ON -DCOMP4050_CODEGEN=OFF
+cmake --build build --target bionic_solver
+```
+
+Add `-DCOMP4050_PHP_INCLUDE_DIR=...` on Windows, and `-DCOMP4050_PHP_ZTS=ON`
+or `-DCOMP4050_PHP_DEBUG=ON` as needed. This compiles against the committed
+generated headers, so run `node scripts/generate.mjs` first after changing a
+schema.
 
 ### Prebuilds
 
