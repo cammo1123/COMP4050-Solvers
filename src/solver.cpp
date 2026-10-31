@@ -5,6 +5,7 @@
 #include "solve_domain_generated.h"
 
 #include <chrono>
+#include <cmath>
 #include <cstdint>
 #include <stdexcept>
 
@@ -45,6 +46,9 @@ SolveResponse solve(SolveRequest const& request, ProgressCallback const& on_prog
 			// absent is one instance, zero is none
 			instances += item.quantity.value_or(1);
 
+			if (item.width == 0 || item.length == 0 || item.depth == 0)
+				guillotine_supports = false;
+
 			if (item.rotation_policy.value_or(RotationPolicy::BestFit) != policy || policy == RotationPolicy::KeepFlat)
 				guillotine_supports = false;
 
@@ -57,6 +61,11 @@ SolveResponse solve(SolveRequest const& request, ProgressCallback const& on_prog
 					|| c.max_z.value_or(UINT32_MAX) != UINT32_MAX)
 					guillotine_supports = false;
 			}
+		}
+
+		for (auto const& box : request.boxes) {
+			if (box.box_weight.has_value() && !(*box.box_weight >= 0.0f && std::isfinite(*box.box_weight)))
+				guillotine_supports = false;
 		}
 
 		// Guillotine cannot cancel at a deadline or honour these request features

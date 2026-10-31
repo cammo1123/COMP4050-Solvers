@@ -1,11 +1,10 @@
 // ============================================================================
 // guillotine_solver.cpp — registry entry for the guillotine packer.
 //
-// A separate algorithm from the heightmap solver (tasks/plan.md, Round 3):
-// boxes are filled by guillotine recursion over free spaces, driven by
+// Boxes are filled by guillotine recursion over free spaces, driven by
 // lookup tables. Request/response translation, validation, grouping and the
-// fits pre-check are REUSED from heightmap_solver (read the AXIS CONVENTION
-// note in heightmap_solver/api_adapter.h before touching coordinates).
+// fits pre-check live alongside it (read the AXIS CONVENTION note in
+// api_adapter.h before touching coordinates).
 //
 //   request ─► adapter + preflight ─► per group: SKU table (T1)
 //           ─► beam over boxes (box_beam.h) ─► guillotine fill (guillotine_fill.h)
@@ -70,7 +69,7 @@ auto solve_guillotine(SolveRequest const& request, SolveOptions const& options, 
 	// stock of the groups before it.
 	::GroupPartition partition = partitionByGroup(units, validation.packable);
 	orderGroupsByConstraint(partition, units, normalized.types, fits);
-	auto [rules, stock] = buildStock(validation.packable, units, normalized.types, fits);
+	auto [rules, stock] = buildStock(validation.packable, units, normalized.types, fits, opt.maxBoxes);
 	BeamState state;
 	state.stock = std::move(stock);
 	std::size_t const width = kBeamWidth;

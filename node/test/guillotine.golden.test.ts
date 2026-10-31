@@ -12,7 +12,7 @@ import type { SolveRequest } from "../src/gen/solve_translation";
 //   GUILLOTINE_GOLDEN=check  fail on any difference
 // Skipped otherwise, so `npm test` stays fast.
 const mode = process.env.GUILLOTINE_GOLDEN;
-const goldenPath = resolve(__dirname, "fixtures", "guillotine-golden.json");
+const goldenPath = resolve(__dirname, "fixtures", "guillotine", "golden.json");
 
 function fixture(name: string): Omit<SolveRequest, "algorithm"> {
 	const dir = resolve(__dirname, "fixtures", "thomax", name);
