@@ -1,9 +1,14 @@
 import { createRequire } from "node:module";
 import { describe, expect, it } from "vitest";
+import * as enums from "../src/enums";
 
 const require = createRequire(import.meta.url);
 
 describe("CommonJS entry (node/index.cjs)", () => {
+	it("exports the same forward and reverse enum mappings as TypeScript", () => {
+		expect(require("../enums.cjs")).toEqual({ ...enums });
+	});
+
 	it("provides enums synchronously right after require()", () => {
 		const entry = require("../index.cjs");
 		expect(entry.SolveAlgorithm.ExtremePoint).toBeTypeOf("number");
@@ -19,8 +24,26 @@ describe("CommonJS entry (node/index.cjs)", () => {
 	it("delegates solve() to the addon", async () => {
 		const entry = require("../index.cjs");
 		const result = await entry.solve({
-			boxes: [{ reference: "box", width: 10, length: 10, depth: 10, maxWeight: 100 }],
-			items: [{ itemCode: "item", itemReference: "item", width: 2, length: 2, depth: 2, weight: 1, rotationPolicy: 0 }],
+			boxes: [
+				{
+					reference: "box",
+					width: 10,
+					length: 10,
+					depth: 10,
+					maxWeight: 100,
+				},
+			],
+			items: [
+				{
+					itemCode: "item",
+					itemReference: "item",
+					width: 2,
+					length: 2,
+					depth: 2,
+					weight: 1,
+					rotationPolicy: 0,
+				},
+			],
 			algorithm: entry.SolveAlgorithm.StackBased,
 		});
 		expect(result.results.length).toBe(1);

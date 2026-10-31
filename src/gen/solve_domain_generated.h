@@ -19,7 +19,7 @@ enum class SolveAlgorithm : int8_t {
 	ExtremePoint = 0,
 	StackBased = 1,
 	PHPSolver = 2,
-	HeightmapSolver = 3
+	Guillotine = 3
 };
 
 inline SolveAlgorithm toDomain(::fbs::SolveAlgorithm value)
@@ -28,7 +28,7 @@ inline SolveAlgorithm toDomain(::fbs::SolveAlgorithm value)
 	case ::fbs::SolveAlgorithm_ExtremePoint: return SolveAlgorithm::ExtremePoint;
 	case ::fbs::SolveAlgorithm_StackBased: return SolveAlgorithm::StackBased;
 	case ::fbs::SolveAlgorithm_PHPSolver: return SolveAlgorithm::PHPSolver;
-	case ::fbs::SolveAlgorithm_HeightmapSolver: return SolveAlgorithm::HeightmapSolver;
+	case ::fbs::SolveAlgorithm_Guillotine: return SolveAlgorithm::Guillotine;
 	default: throw std::invalid_argument("invalid SolveAlgorithm value");
 	}
 }
@@ -39,7 +39,7 @@ inline ::fbs::SolveAlgorithm fromDomain(SolveAlgorithm value)
 	case SolveAlgorithm::ExtremePoint: return ::fbs::SolveAlgorithm_ExtremePoint;
 	case SolveAlgorithm::StackBased: return ::fbs::SolveAlgorithm_StackBased;
 	case SolveAlgorithm::PHPSolver: return ::fbs::SolveAlgorithm_PHPSolver;
-	case SolveAlgorithm::HeightmapSolver: return ::fbs::SolveAlgorithm_HeightmapSolver;
+	case SolveAlgorithm::Guillotine: return ::fbs::SolveAlgorithm_Guillotine;
 	default: throw std::invalid_argument("invalid SolveAlgorithm value");
 	}
 }
@@ -52,11 +52,13 @@ struct StackBasedOptions {
 
 };
 
-struct HeightmapSolverOptions {
-	std::optional<uint32_t> max_boxes = std::nullopt;
+struct GuillotineSolverOptions {
 	bool allow_rotation = true;
+	std::optional<double> combo_threshold = std::nullopt;
+	std::optional<uint8_t> combos = std::nullopt;
+	std::optional<bool> heavy_on_bottom = std::nullopt;
+	std::optional<uint32_t> max_boxes = std::nullopt;
 	std::optional<double> min_support = std::nullopt;
-	std::optional<uint32_t> cell_size = std::nullopt;
 	std::optional<uint32_t> restarts = std::nullopt;
 	std::optional<uint32_t> seed = std::nullopt;
 	std::optional<bool> strict_unsupported = std::nullopt;
@@ -77,7 +79,7 @@ struct SolveOptions {
 	std::optional<ExtremePointOptions> extreme_point_options = std::nullopt;
 	std::optional<StackBasedOptions> stack_based_options = std::nullopt;
 	std::optional<PHPSolverOptions> php_solver_options = std::nullopt;
-	std::optional<HeightmapSolverOptions> heightmap_solver_options = std::nullopt;
+	std::optional<GuillotineSolverOptions> guillotine_solver_options = std::nullopt;
 };
 
 struct SolveRequest {
@@ -142,22 +144,30 @@ inline fbs::StackBasedOptionsT fromDomain([[maybe_unused]] StackBasedOptions con
 	return out;
 }
 
-inline HeightmapSolverOptions toDomain([[maybe_unused]] fbs::HeightmapSolverOptionsT const& value)
+inline GuillotineSolverOptions toDomain([[maybe_unused]] fbs::GuillotineSolverOptionsT const& value)
 {
-	HeightmapSolverOptions out;
+	GuillotineSolverOptions out;
+
+	out.allow_rotation = value.allow_rotation;
+
+	if (value.combo_threshold.has_value()) {
+		out.combo_threshold = *value.combo_threshold;
+	}
+
+	if (value.combos.has_value()) {
+		out.combos = *value.combos;
+	}
+
+	if (value.heavy_on_bottom.has_value()) {
+		out.heavy_on_bottom = *value.heavy_on_bottom;
+	}
 
 	if (value.max_boxes.has_value()) {
 		out.max_boxes = *value.max_boxes;
 	}
 
-	out.allow_rotation = value.allow_rotation;
-
 	if (value.min_support.has_value()) {
 		out.min_support = *value.min_support;
-	}
-
-	if (value.cell_size.has_value()) {
-		out.cell_size = *value.cell_size;
 	}
 
 	if (value.restarts.has_value()) {
@@ -175,22 +185,30 @@ inline HeightmapSolverOptions toDomain([[maybe_unused]] fbs::HeightmapSolverOpti
 	return out;
 }
 
-inline fbs::HeightmapSolverOptionsT fromDomain([[maybe_unused]] HeightmapSolverOptions const& value)
+inline fbs::GuillotineSolverOptionsT fromDomain([[maybe_unused]] GuillotineSolverOptions const& value)
 {
-	fbs::HeightmapSolverOptionsT out;
+	fbs::GuillotineSolverOptionsT out;
+
+	out.allow_rotation = value.allow_rotation;
+
+	if (value.combo_threshold.has_value()) {
+		out.combo_threshold = *value.combo_threshold;
+	}
+
+	if (value.combos.has_value()) {
+		out.combos = *value.combos;
+	}
+
+	if (value.heavy_on_bottom.has_value()) {
+		out.heavy_on_bottom = *value.heavy_on_bottom;
+	}
 
 	if (value.max_boxes.has_value()) {
 		out.max_boxes = *value.max_boxes;
 	}
 
-	out.allow_rotation = value.allow_rotation;
-
 	if (value.min_support.has_value()) {
 		out.min_support = *value.min_support;
-	}
-
-	if (value.cell_size.has_value()) {
-		out.cell_size = *value.cell_size;
 	}
 
 	if (value.restarts.has_value()) {
@@ -294,8 +312,8 @@ inline SolveOptions toDomain([[maybe_unused]] fbs::SolveOptionsT const& value)
 		out.php_solver_options = toDomain(*value.algo_options.AsPHPSolverOptions());
 	}
 
-	if (value.algo_options.type == ::fbs::SolveStrategyOptions_HeightmapSolverOptions) {
-		out.heightmap_solver_options = toDomain(*value.algo_options.AsHeightmapSolverOptions());
+	if (value.algo_options.type == ::fbs::SolveStrategyOptions_GuillotineSolverOptions) {
+		out.guillotine_solver_options = toDomain(*value.algo_options.AsGuillotineSolverOptions());
 	}
 
 	return out;
@@ -321,8 +339,8 @@ inline fbs::SolveOptionsT fromDomain([[maybe_unused]] SolveOptions const& value)
 		out.algo_options.Set(fromDomain(*value.php_solver_options));
 	}
 
-	if (value.heightmap_solver_options.has_value()) {
-		out.algo_options.Set(fromDomain(*value.heightmap_solver_options));
+	if (value.guillotine_solver_options.has_value()) {
+		out.algo_options.Set(fromDomain(*value.guillotine_solver_options));
 	}
 
 	return out;

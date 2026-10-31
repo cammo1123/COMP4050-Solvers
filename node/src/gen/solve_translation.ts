@@ -6,7 +6,7 @@ import {
 	BoxResultT as BoxResultObject,
 	BoxTypeT as BoxTypeObject,
 	ExtremePointOptionsT as ExtremePointOptionsObject,
-	HeightmapSolverOptionsT as HeightmapSolverOptionsObject,
+	GuillotineSolverOptionsT as GuillotineSolverOptionsObject,
 	ItemPlacementT as ItemPlacementObject,
 	ItemTypeT as ItemTypeObject,
 	PHPSolverOptionsT as PHPSolverOptionsObject,
@@ -53,11 +53,13 @@ export type ExtremePointOptionsT = {
 
 };
 
-export type HeightmapSolverOptionsT = {
-	maxBoxes?: number;
+export type GuillotineSolverOptionsT = {
 	allowRotation?: boolean;
+	comboThreshold?: number;
+	combos?: number;
+	heavyOnBottom?: boolean;
+	maxBoxes?: number;
 	minSupport?: number;
-	cellSize?: number;
 	restarts?: number;
 	seed?: number;
 	strictUnsupported?: boolean;
@@ -109,7 +111,7 @@ export type SolveOptionsT = {
 	extremePointOptions?: ExtremePointOptionsT | null;
 	stackBasedOptions?: StackBasedOptionsT | null;
 	phpSolverOptions?: PHPSolverOptionsT | null;
-	heightmapSolverOptions?: HeightmapSolverOptionsT | null;
+	guillotineSolverOptions?: GuillotineSolverOptionsT | null;
 };
 
 export type StackBasedOptionsT = {
@@ -134,7 +136,7 @@ export type SolveRequest = {
 	| { algorithm: typeof SolveAlgorithm.ExtremePoint; options?: BaseOptions & { extremePointOptions?: ExtremePointOptionsT } }
 	| { algorithm: typeof SolveAlgorithm.StackBased; options?: BaseOptions & { stackBasedOptions?: StackBasedOptionsT } }
 	| { algorithm: typeof SolveAlgorithm.PHPSolver; options?: BaseOptions & { phpSolverOptions?: PHPSolverOptionsT } }
-	| { algorithm: typeof SolveAlgorithm.HeightmapSolver; options?: BaseOptions & { heightmapSolverOptions?: HeightmapSolverOptionsT } }
+	| { algorithm?: typeof SolveAlgorithm.Guillotine; options?: BaseOptions }
 	| { algorithm?: undefined; options?: BaseOptions & { extremePointOptions?: ExtremePointOptionsT } }
 );
 
@@ -152,9 +154,9 @@ function toAlgoOptionsT(options: any): { type: SolveStrategyOptions; value: any 
 		const value = options.phpSolverOptions;
 		return { type: SolveStrategyOptions.PHPSolverOptions, value: new PHPSolverOptionsObject(value.balanceWeight ?? null, value.allPermutations ?? null, value.singleBox ?? null, value.strictItemOrder ?? null, value.bestSubset ?? null, value.maxBoxes ?? null, value.allowRotation ?? true) };
 	}
-	if (options?.heightmapSolverOptions) {
-		const value = options.heightmapSolverOptions;
-		return { type: SolveStrategyOptions.HeightmapSolverOptions, value: new HeightmapSolverOptionsObject(value.maxBoxes ?? null, value.allowRotation ?? true, value.minSupport ?? null, value.cellSize ?? null, value.restarts ?? null, value.seed ?? null, value.strictUnsupported ?? null) };
+	if (options?.guillotineSolverOptions) {
+		const value = options.guillotineSolverOptions;
+		return { type: SolveStrategyOptions.GuillotineSolverOptions, value: new GuillotineSolverOptionsObject(value.allowRotation ?? true, value.comboThreshold ?? null, value.combos ?? null, value.heavyOnBottom ?? null, value.maxBoxes ?? null, value.minSupport ?? null, value.restarts ?? null, value.seed ?? null, value.strictUnsupported ?? null) };
 	}
 	return { type: SolveStrategyOptions.NONE, value: null };
 }

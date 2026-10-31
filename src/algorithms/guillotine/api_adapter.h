@@ -1,12 +1,8 @@
 // ============================================================================
-// heightmap_solver.cpp — FlatBuffers adapter + registry entry for the
-// heightmap / layer-matrix packing pipeline.
-//
-// Mirrors src/php_solver/php_solver.cpp: it converts a SolveRequest into the
-// pipeline's own structs, runs steps 1-10, and converts the Solution back
-// into a SolveResponse. All packing logic stays in the heightmap_solver/*.h
-// headers — this file is pure translation, so the pipeline never learns
-// anything about FlatBuffers.
+// api_adapter.h — translation between the solver API (fbs::domain types) and
+// the guillotine pipeline's own structs, plus the request checks this solver
+// needs. guillotine_solver.cpp runs the pipeline; this file is pure
+// translation, so the pipeline never learns anything about FlatBuffers.
 //
 // ---------------------------------------------------------------------------
 // AXIS CONVENTION (the easiest thing to get wrong — read before editing)
@@ -37,42 +33,28 @@
 // WRONG answer, so by default the adapter rejects such requests instead
 // (set strict_unsupported = false to pack anyway and ignore them).
 // ============================================================================
+#pragma once
 
-#include "../algo_registry.h"
-
-#include <chrono>
-
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <utility>
-#include <vector>
-
 #include <limits>
 #include <stdexcept>
 #include <string>
+#include <utility>
+#include <vector>
 
-// Pipeline headers. These declare BoxTypeSpec / ItemSpec / Options / Solution
-// in the GLOBAL namespace, so everything from them is written with a leading
-// "::" below to keep it visually distinct from the fbs::domain types.
-// (Worth doing later: wrap them in `namespace heightmap { ... }`.)
-#include "commit_placement.h"
+// Pipeline headers declare their types in the GLOBAL namespace, so they are
+// written with a leading "::" below to keep them apart from fbs::domain.
 #include "data_normalization.h"
-#include "downsize.h"
-#include "fits_matrix.h"
-#include "group_pack.h"
-#include "item_grouping.h"
-#include "item_placement.h"
-#include "multistart.h"
 #include "packing_types.h"
-#include "pre_validation.h"
 
 #include "solve_domain_generated.h"
 #include "types_domain_generated.h"
 
-using namespace fbs::domain;
+namespace solver::algo::guillotine_adapter {
 
-namespace solver::algo {
-namespace {
+using namespace fbs::domain;
 
 // One packing unit, plus the index of the request item it was expanded from,
 // so failures can be reported against the ORIGINAL ItemType (keeping its
@@ -84,7 +66,7 @@ struct UnitOrigin {
 // --------------------------------------------------------------------------
 // Guard: refuse requests that use features this algorithm cannot honour.
 // --------------------------------------------------------------------------
-void reject_unsupported(SolveRequest const& request)
+inline void reject_unsupported(SolveRequest const& request)
 {
 	for (auto const& item : request.items) {
 		if (item.constraint.has_value()) {
@@ -95,12 +77,12 @@ void reject_unsupported(SolveRequest const& request)
 				|| c.max_y.value_or(UINT32_MAX) != UINT32_MAX
 				|| c.max_z.value_or(UINT32_MAX) != UINT32_MAX;
 			if (used) {
-				throw std::logic_error("heightmap solver: PlacementConstraint is not implemented; use PHPSolver or clear the field");
+				throw std::logic_error("guillotine solver: PlacementConstraint is not implemented; use PHPSolver or clear the field");
 			}
 		}
 
 		if (item.rotation_policy.value_or(RotationPolicy::BestFit) == RotationPolicy::KeepFlat) {
-			throw std::logic_error("heightmap solver: RotationPolicy::KeepFlat is not implemented; use Never or BestFit");
+			throw std::logic_error("guillotine solver: RotationPolicy::KeepFlat is not implemented; use Never or BestFit");
 		}
 	}
 
@@ -108,7 +90,7 @@ void reject_unsupported(SolveRequest const& request)
 	// only be honoured when every item agrees on it.
 	for (auto const& item : request.items) {
 		if (item.rotation_policy.value_or(RotationPolicy::BestFit) != request.items.front().rotation_policy.value_or(RotationPolicy::BestFit)) {
-			throw std::logic_error("heightmap solver: mixed RotationPolicy values are not implemented; give every item the same policy");
+			throw std::logic_error("guillotine solver: mixed RotationPolicy values are not implemented; give every item the same policy");
 		}
 	}
 }
@@ -116,7 +98,7 @@ void reject_unsupported(SolveRequest const& request)
 // --------------------------------------------------------------------------
 // Step 1 input: BoxType -> RawBoxType (normalizeBoxTypes floors and filters).
 // --------------------------------------------------------------------------
-std::vector<::RawBoxType> to_pipeline_boxes(SolveRequest const& request)
+inline std::vector<::RawBoxType> to_pipeline_boxes(SolveRequest const& request)
 {
 	std::vector<::RawBoxType> boxes;
 	boxes.reserve(request.boxes.size());
@@ -129,17 +111,20 @@ std::vector<::RawBoxType> to_pipeline_boxes(SolveRequest const& request)
 		box.depth = static_cast<double>(source.depth);
 
 		// MaxWeight is CARGO capacity per the API ("the weight the box can
-		// hold"); BoxWeight is reported separately as part of the gross and
-		// is deliberately NOT counted against the cap.
+		// hold"); BoxWeight is deliberately NOT counted against the cap.
 		float const max_weight = source.max_weight.value_or(0.0f);
 		box.maxWeight = max_weight > 0.0f ? static_cast<double>(max_weight)
 										  : std::numeric_limits<double>::infinity();
 
-		box.boxWeight = static_cast<double>(source.box_weight.value_or(0.0f));
+		// BoxWeight (tare) is the box's cost in the objective, so it must order.
+		float const box_weight = source.box_weight.value_or(0.0f);
+		if (!(box_weight >= 0.0f && std::isfinite(box_weight))) { // also rejects NaN
+			throw std::invalid_argument("guillotine solver: box_weight must be a finite value >= 0");
+		}
+		box.boxWeight = static_cast<double>(box_weight);
 		box.active = source.active.value_or(true);
 
-		uint32_t const maximum = source.maximum_boxes.value_or(0);
-		box.maximumBoxes = maximum > 0 ? maximum : std::numeric_limits<uint32_t>::max();
+		box.maximumBoxes = source.maximum_boxes.value_or(std::numeric_limits<uint32_t>::max());
 
 		boxes.push_back(std::move(box));
 	}
@@ -149,14 +134,21 @@ std::vector<::RawBoxType> to_pipeline_boxes(SolveRequest const& request)
 // --------------------------------------------------------------------------
 // Step 1 input: ItemType -> ItemSpec, expanding Quantity into single units.
 // --------------------------------------------------------------------------
-std::vector<::ItemSpec> to_pipeline_items(SolveRequest const& request, std::vector<UnitOrigin>& origins)
+inline std::vector<::ItemSpec> to_pipeline_items(SolveRequest const& request, std::vector<UnitOrigin>& origins)
 {
 	std::vector<::ItemSpec> items;
 	origins.clear();
 
 	for (std::size_t index = 0; index < request.items.size(); ++index) {
 		auto const& source = request.items[index];
+		// A zero extent would divide by zero in the fits matrix (fits_matrix.h).
+		if (source.width == 0 || source.length == 0 || source.depth == 0) {
+			throw std::invalid_argument("guillotine solver: item " + source.item_code + " has a zero dimension");
+		}
 		uint32_t const quantity = source.quantity.value_or(1);
+		if (quantity > std::size_t { 1'000'000 } - items.size()) {
+			throw std::length_error("guillotine solver: expanded item count exceeds 1000000 instances");
+		}
 
 		for (uint32_t instance = 0; instance < quantity; ++instance) {
 			::ItemSpec item;
@@ -177,8 +169,7 @@ std::vector<::ItemSpec> to_pipeline_items(SolveRequest const& request, std::vect
 // --------------------------------------------------------------------------
 // SolveOptions -> pipeline Options.
 // --------------------------------------------------------------------------
-::Options to_pipeline_options(SolveOptions const& options, std::vector<::ItemSpec> const& items,
-	SolveRequest const& request, bool& strict_unsupported)
+inline ::Options to_pipeline_options(SolveOptions const& options, SolveRequest const& request, bool& strict_unsupported)
 {
 	::Options result;
 
@@ -197,8 +188,8 @@ std::vector<::ItemSpec> to_pipeline_items(SolveRequest const& request, std::vect
 	}
 	result.allowRotation = !all_never;
 
-	if (options.heightmap_solver_options.has_value()) {
-		auto const& algo_opts = *options.heightmap_solver_options;
+	if (options.guillotine_solver_options.has_value()) {
+		auto const& algo_opts = *options.guillotine_solver_options;
 
 		if (algo_opts.max_boxes.has_value()) {
 			result.maxBoxes = *algo_opts.max_boxes;
@@ -207,9 +198,13 @@ std::vector<::ItemSpec> to_pipeline_items(SolveRequest const& request, std::vect
 			result.allowRotation = false;
 		}
 		if (algo_opts.min_support.has_value()) {
-			result.minSupport = static_cast<double>(*algo_opts.min_support);
+			double const support = *algo_opts.min_support;
+			if (!(support >= 0.0 && support <= 1.0)) { // also rejects NaN
+				throw std::invalid_argument("guillotine solver: min_support must be in [0, 1]");
+			}
+			result.minSupport = support;
 		}
-		// cell_size is ignored: the heightmap is exact in mm (item_placement.h).
+		// cell_size is ignored: the guillotine is exact in mm (item_placement.h).
 		if (algo_opts.restarts.has_value()) {
 			result.restarts = *algo_opts.restarts;
 		}
@@ -217,18 +212,30 @@ std::vector<::ItemSpec> to_pipeline_items(SolveRequest const& request, std::vect
 			result.seed = *algo_opts.seed;
 		}
 		strict_unsupported = algo_opts.strict_unsupported.value_or(true);
+		result.heavyOnBottom = algo_opts.heavy_on_bottom.value_or(true);
+		if (algo_opts.combos.has_value()) {
+			if (*algo_opts.combos > 2) {
+				throw std::invalid_argument("guillotine solver: combos must be 0 (off), 1 (on) or 2 (both)");
+			}
+			result.combos = static_cast<::Options::ComboMode>(*algo_opts.combos);
+		}
+		if (algo_opts.combo_threshold.has_value()) {
+			double const threshold = *algo_opts.combo_threshold;
+			if (!(threshold > 0.0 && threshold <= 1.0)) { // 0 would glue every pair
+				throw std::invalid_argument("guillotine solver: combo_threshold must be in (0, 1]");
+			}
+			result.comboThreshold = threshold;
+		}
 	}
 
-	(void)items;
 	return result;
 }
 
 // --------------------------------------------------------------------------
 // Solution -> SolveResponse. Applies the y/z swap documented at the top.
 // --------------------------------------------------------------------------
-SolveResponse to_response(::Solution const& solution, ::NormalizedInput const& normalized,
-	std::vector<::ItemSpec> const& units, std::vector<UnitOrigin> const& origins,
-	SolveRequest const& request)
+inline SolveResponse to_response(::Solution const& solution, ::NormalizedInput const& normalized,
+	std::vector<UnitOrigin> const& origins, SolveRequest const& request)
 {
 	SolveResponse response;
 	response.results.reserve(solution.boxes.size());
@@ -243,8 +250,8 @@ SolveResponse to_response(::Solution const& solution, ::NormalizedInput const& n
 		result.length = type.length;
 		result.depth = type.depth;
 
-		// Gross weight: the empty box plus its cargo.
-		result.total_weight = static_cast<float>(type.boxWeight + packed.cargoWeight);
+		// Content weight, excluding the empty box.
+		result.total_weight = static_cast<float>(packed.cargoWeight);
 
 		if (source.outer_width.has_value() && source.outer_length.has_value() && source.outer_depth.has_value()) {
 			result.outer_width = source.outer_width;
@@ -256,22 +263,22 @@ SolveResponse to_response(::Solution const& solution, ::NormalizedInput const& n
 		result.placements.reserve(packed.placements.size());
 
 		for (auto const& placement : packed.placements) {
-			auto const& unit = units[static_cast<std::size_t>(placement.itemIndex)];
 			used_volume += static_cast<uint64_t>(placement.w) * placement.l * placement.d;
+
+			// The full request item (weight, group, rotation policy,
+			// constraint), with the dimensions AS ORIENTED. Combo members are
+			// committed as units, so itemIndex is always a unit index.
+			ItemType item = request.items[origins[static_cast<std::size_t>(placement.itemIndex)].request_index];
+			item.quantity = std::nullopt;
+			item.width = placement.w;
+			item.length = placement.l;
+			item.depth = placement.d;
 
 			result.placements.push_back(ItemPlacement {
 				.x = placement.x, // width axis
 				.y = placement.z, // VERTICAL axis (pipeline z)
 				.z = placement.y, // length axis (pipeline y)
-				.item = ItemType {
-					.item_code = unit.code,
-					.item_reference = unit.reference,
-					.width = placement.w,
-					.length = placement.l,
-					.depth = placement.d,
-					.weight = static_cast<float>(unit.weight),
-					.box_group = unit.boxGroup.empty() ? std::nullopt : std::optional<std::string>(unit.boxGroup),
-				},
+				.item = std::move(item),
 			});
 		}
 
@@ -288,72 +295,11 @@ SolveResponse to_response(::Solution const& solution, ::NormalizedInput const& n
 	for (auto const& failure : solution.failed) {
 		auto const origin = origins[static_cast<std::size_t>(failure.itemIndex)];
 		ItemType failed = request.items[origin.request_index];
-		failed.quantity = 1;
+		failed.quantity = std::nullopt;
 		response.failed.push_back(std::move(failed));
 	}
 
 	return response;
 }
 
-} // namespace
-
-// --------------------------------------------------------------------------
-// Entry point: runs pipeline steps 1-11 for one solve call.
-// --------------------------------------------------------------------------
-auto solve_heightmap_solver(SolveRequest const& request, SolveOptions const& options, solver::ProgressCallback const& on_progress) -> SolveResponse
-{
-	auto const started = std::chrono::steady_clock::now();
-
-	bool strict_unsupported = true;
-	std::vector<::ItemSpec> units;
-	std::vector<UnitOrigin> origins;
-
-	::Options pipeline_options = to_pipeline_options(options, units, request, strict_unsupported);
-	if (strict_unsupported) {
-		reject_unsupported(request);
-	}
-
-	// ---- STEP 1: normalise (floor float dims, drop inactive types) --------
-	::NormalizedInput normalized = normalizeBoxTypes(to_pipeline_boxes(request));
-	units = to_pipeline_items(request, origins);
-
-	std::size_t const total_units = units.size();
-	if (on_progress) {
-		on_progress(0, total_units);
-	}
-
-	// ---- STEP 2: fits matrix (fit + tiling capacity per unit x type) ------
-	::FitsMatrix fits = buildFitsMatrix(units, normalized.types, pipeline_options);
-
-	// ---- STEP 3: pre-flight (reject units no active box can ever hold) ----
-	::ValidationResult validation = preflight(units, fits);
-
-	// ---- STEP 4: partition by BoxGroup ------------------------------------
-	::GroupPartition partition = partitionByGroup(units, validation.packable);
-
-	// ---- STEPS 5-10: group pack -> ungrouped backfill -> downsize, under
-	// the multi-start loop, all inside the timeout budget.
-	::Solution solution = solveMultiStart(partition, units, normalized.types, fits, pipeline_options);
-
-	// Pre-flight rejects join the failed list so every unit is accounted for
-	// exactly once (placed XOR failed) — the invariant verify.h checks.
-	for (auto const& rejected : validation.rejected) {
-		solution.failed.push_back(rejected);
-	}
-
-	if (on_progress) {
-		on_progress(total_units - solution.failed.size(), total_units);
-	}
-
-	// ---- STEP 11: emit ----------------------------------------------------
-	SolveResponse response = to_response(solution, normalized, units, origins, request);
-	response.algorithm_us = static_cast<uint32_t>(
-		std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - started).count());
-	return response;
-}
-
-static struct HeightmapSolverRegistrar {
-	HeightmapSolverRegistrar() { register_algo(fbs::domain::SolveAlgorithm::HeightmapSolver, { solve_heightmap_solver }); }
-} registrar;
-
-}
+} // namespace solver::algo::guillotine_adapter

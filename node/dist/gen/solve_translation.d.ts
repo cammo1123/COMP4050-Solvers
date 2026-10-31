@@ -25,11 +25,13 @@ export type BoxTypeT = {
     outerDepth?: number;
 };
 export type ExtremePointOptionsT = {};
-export type HeightmapSolverOptionsT = {
-    maxBoxes?: number;
+export type GuillotineSolverOptionsT = {
     allowRotation?: boolean;
+    comboThreshold?: number;
+    combos?: number;
+    heavyOnBottom?: boolean;
+    maxBoxes?: number;
     minSupport?: number;
-    cellSize?: number;
     restarts?: number;
     seed?: number;
     strictUnsupported?: boolean;
@@ -76,7 +78,7 @@ export type SolveOptionsT = {
     extremePointOptions?: ExtremePointOptionsT | null;
     stackBasedOptions?: StackBasedOptionsT | null;
     phpSolverOptions?: PHPSolverOptionsT | null;
-    heightmapSolverOptions?: HeightmapSolverOptionsT | null;
+    guillotineSolverOptions?: GuillotineSolverOptionsT | null;
 };
 export type StackBasedOptionsT = {};
 export type BaseOptions = {
@@ -107,10 +109,8 @@ export type SolveRequest = {
         phpSolverOptions?: PHPSolverOptionsT;
     };
 } | {
-    algorithm: typeof SolveAlgorithm.HeightmapSolver;
-    options?: BaseOptions & {
-        heightmapSolverOptions?: HeightmapSolverOptionsT;
-    };
+    algorithm?: typeof SolveAlgorithm.Guillotine;
+    options?: BaseOptions;
 } | {
     algorithm?: undefined;
     options?: BaseOptions & {
