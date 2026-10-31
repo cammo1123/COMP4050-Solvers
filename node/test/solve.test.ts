@@ -477,3 +477,90 @@ describe("packing invariants", () => {
 		expect(result.results[0].boxReference).toBe("light");
 	});
 });
+
+describe("Auto algorithm dispatch", () => {
+	it("fills a residual rectangular void without an algorithm option", async () => {
+		const result = await solve({
+			boxes: [{ reference: "A", width: 10, length: 10, depth: 10 }],
+			items: [
+				{ itemCode: "wide", itemReference: "wide", width: 6, length: 10, depth: 5, weight: 1, rotationPolicy: 0 },
+				{ itemCode: "narrow", itemReference: "narrow", width: 4, length: 10, depth: 5, weight: 1, rotationPolicy: 0 },
+				{ itemCode: "top", itemReference: "top", width: 10, length: 10, depth: 2, weight: 1, rotationPolicy: 0 },
+			],
+		});
+		expect(result.failed).toHaveLength(0);
+		expect(result.results[0].placements).toHaveLength(3);
+		assertLegalPlacements(result);
+	});
+
+	it("keeps flat rotation when Auto selects ExtremePoint", async () => {
+		const result = await solve({
+			algorithm: SolveAlgorithm.Auto,
+			boxes: [{ reference: "A", width: 10, length: 20, depth: 5 }],
+			items: [{ itemCode: "flat", itemReference: "flat", width: 20, length: 10, depth: 5, weight: 1, rotationPolicy: RotationPolicy.KeepFlat }],
+		});
+		expect(result.failed).toHaveLength(0);
+		expect(result.results[0].placements[0]).toMatchObject({ item: { width: 10, depth: 5, length: 20 } });
+	});
+
+	it("enforces declarative constraints when Auto selects ExtremePoint", async () => {
+		const result = await solve({
+			boxes: [{ reference: "rotated-box", width: 4, length: 8, depth: 6 }],
+			items: [
+				{
+					itemCode: "item",
+					itemReference: "item",
+					width: 7,
+					length: 3,
+					depth: 2,
+					weight: 1,
+					rotationPolicy: RotationPolicy.KeepFlat,
+					constraint: { minZ: 1, maxZ: 1 },
+				},
+			],
+		});
+		expect(result.failed).toHaveLength(0);
+		expect(result.results[0].placements[0].z).toBe(1);
+	});
+
+	it("packs equal-volume items when Auto selects Guillotine", async () => {
+		const result = await solve({
+			algorithm: SolveAlgorithm.Auto,
+			boxes: [{ reference: "A", width: 20, length: 10, depth: 10 }],
+			items: [
+				{ itemCode: "light", itemReference: "light", width: 10, length: 10, depth: 10, weight: 1, rotationPolicy: RotationPolicy.Never },
+				{ itemCode: "heavy", itemReference: "heavy", width: 10, length: 10, depth: 10, weight: 2, rotationPolicy: RotationPolicy.Never },
+			],
+		});
+
+		expect(result.failed).toHaveLength(0);
+		expect(result.results[0].placements.map((item) => item.item.itemCode).sort()).toEqual(["heavy", "light"]);
+	});
+
+	it("reports completed-item progress for an unpackable item", async () => {
+		const progress: Array<[number, number]> = [];
+		const result = await solve({
+			boxes: [{ reference: "A", width: 10, length: 10, depth: 10 }],
+			items: [{ itemCode: "oversized", itemReference: "oversized", width: 11, length: 10, depth: 10, weight: 1, rotationPolicy: 0 }],
+			onProgress: (done, total) => progress.push([done, total]),
+		});
+		await new Promise<void>((resolve) => setImmediate(resolve));
+		expect(result.failed).toHaveLength(1);
+		expect(progress.length).toBeGreaterThan(0);
+		expect(progress.every(([done, total]) => done >= 0 && done <= total && total === 1)).toBe(true);
+	});
+
+	it("preserves every item when Auto selects ExtremePoint for a zero timeout", async () => {
+		const result = await solve({
+			algorithm: SolveAlgorithm.Auto,
+			boxes: [{ reference: "A", width: 10, length: 10, depth: 10 }],
+			items: [
+				{ itemCode: "one", itemReference: "one", width: 1, length: 1, depth: 1, weight: 1 },
+				{ itemCode: "two", itemReference: "two", width: 1, length: 1, depth: 1, weight: 1 },
+			],
+			options: { timeoutMs: 0 },
+		});
+		expect(result.results).toEqual([]);
+		expect(result.failed.map((item) => item.itemCode)).toEqual(["one", "two"]);
+	});
+});
