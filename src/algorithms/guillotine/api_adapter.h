@@ -197,35 +197,13 @@ inline ::Options to_pipeline_options(SolveOptions const& options, SolveRequest c
 		if (!algo_opts.allow_rotation) {
 			result.allowRotation = false;
 		}
-		if (algo_opts.min_support.has_value()) {
-			double const support = *algo_opts.min_support;
-			if (!(support >= 0.0 && support <= 1.0)) { // also rejects NaN
-				throw std::invalid_argument("guillotine solver: min_support must be in [0, 1]");
-			}
-			result.minSupport = support;
-		}
+		// Not implemented: reject rather than pack and silently ignore them.
 		// cell_size is ignored: the guillotine is exact in mm (item_placement.h).
-		if (algo_opts.restarts.has_value()) {
-			result.restarts = *algo_opts.restarts;
-		}
-		if (algo_opts.seed.has_value()) {
-			result.seed = *algo_opts.seed;
+		if (algo_opts.min_support.has_value() || algo_opts.restarts.has_value() || algo_opts.seed.has_value()
+			|| algo_opts.heavy_on_bottom.has_value() || algo_opts.combos.has_value() || algo_opts.combo_threshold.has_value()) {
+			throw std::invalid_argument("guillotine solver: min_support, restarts, seed, heavy_on_bottom, combos and combo_threshold are not implemented");
 		}
 		strict_unsupported = algo_opts.strict_unsupported.value_or(true);
-		result.heavyOnBottom = algo_opts.heavy_on_bottom.value_or(true);
-		if (algo_opts.combos.has_value()) {
-			if (*algo_opts.combos > 2) {
-				throw std::invalid_argument("guillotine solver: combos must be 0 (off), 1 (on) or 2 (both)");
-			}
-			result.combos = static_cast<::Options::ComboMode>(*algo_opts.combos);
-		}
-		if (algo_opts.combo_threshold.has_value()) {
-			double const threshold = *algo_opts.combo_threshold;
-			if (!(threshold > 0.0 && threshold <= 1.0)) { // 0 would glue every pair
-				throw std::invalid_argument("guillotine solver: combo_threshold must be in (0, 1]");
-			}
-			result.comboThreshold = threshold;
-		}
 	}
 
 	return result;

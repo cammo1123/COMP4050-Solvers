@@ -420,8 +420,11 @@ struct Engine {
 			} else {
 				++misses;
 				// a type's instances are one contiguous run (see run()), and its twins would miss this unchanged box too
-				if constexpr (Select::skip_twins)
-					k = static_cast<std::size_t>(std::ranges::partition_point(candidates.subspan(k), [&, type_idx = world.inst_type[instance_idx]](u32 twin) { return world.inst_type[twin] == type_idx; }) - candidates.begin()) - 1;
+				if constexpr (Select::skip_twins) {
+					auto const tail = candidates.subspan(k);
+					auto const twins_end = std::ranges::partition_point(tail, [&, type_idx = world.inst_type[instance_idx]](u32 twin) { return world.inst_type[twin] == type_idx; });
+					k += static_cast<std::size_t>(twins_end - tail.begin()) - 1;
+				}
 			}
 			if (++since_sweep >= kSweepStride) {
 				since_sweep = 0;

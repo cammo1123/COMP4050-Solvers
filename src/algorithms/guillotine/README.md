@@ -2,12 +2,12 @@
 
 Packs an order into boxes by **recursion over free spaces**, driven by **lookup tables**.
 Its goals, in order: no failed items, fewest boxes, heaviest items at the bottom.
-Request translation, validation, grouping, the fits pre-check and stock reservation are shared with
-the heightmap solver (`../heightmap_solver/`). The packing is the guillotine solver's own.
+Request translation (`api_adapter.h`), validation (`pre_validation.h`), grouping (`item_grouping.h`)
+and the fits pre-check (`fits_matrix.h`) live in this directory too. The packing is the guillotine
+solver's own.
 
-On the 28-order bench (`tasks/baseline.md`) it uses **420 boxes against the heightmap solver's 464**
-and runs **1.7× faster**, with 0 failed items, 0 heavy-on-light stacks and every stacked item fully
-supported.
+On the 28-order bench (`tasks/baseline.md`) it uses **420 boxes**, with 0 failed items, 0
+heavy-on-light stacks and every stacked item fully supported.
 
 ## Pipeline
 
@@ -15,7 +15,7 @@ supported.
  SolveRequest(algorithm = Guillotine)
    │
    ▼
- to_pipeline_* + preflight + partitionByGroup        ◄── reused (heightmap_solver)
+ to_pipeline_* + preflight + partitionByGroup        ◄── api_adapter.h, pre_validation.h, item_grouping.h
    │
    ▼  each group, most constrained first
  T1 SKU table ─► box loop (box_beam.h) ─► fillBox per box (guillotine_fill.h)

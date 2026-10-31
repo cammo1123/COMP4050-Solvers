@@ -40,6 +40,7 @@ struct StockRules {
 	FitsMatrix const& fits;
 	std::vector<int> forcedType;	// per unit: its only limited type, or -1
 	std::vector<bool> hasUnlimited; // per unit: fits some unlimited-stock type
+	uint32_t maxBoxes;				// global cap over all types
 };
 
 // Per state. Limited boxes are held back twice over:
@@ -53,7 +54,10 @@ struct Stock {
 	bool openable(StockRules const& r, int unit, int t) const
 	{
 		auto const u = size_t(unit), ti = size_t(t);
-		if (!r.fits.fits[u][ti] || (r.hasUnlimited[u] && limitedDemand[ti] > 0))
+		uint64_t total = 0;
+		for (uint32_t n : opened)
+			total += n;
+		if (total >= r.maxBoxes || !r.fits.fits[u][ti] || (r.hasUnlimited[u] && limitedDemand[ti] > 0))
 			return false;
 		uint32_t const held = r.forcedType[u] == t ? 0 : reserved[ti];
 		return uint64_t(opened[ti]) + held < r.types[ti].maximumBoxes;
@@ -80,10 +84,10 @@ struct Stock {
 };
 
 inline std::pair<StockRules, Stock> buildStock(std::vector<int> const& packable,
-	std::vector<ItemSpec> const& items, std::vector<BoxTypeSpec> const& types, FitsMatrix const& fits)
+	std::vector<ItemSpec> const& items, std::vector<BoxTypeSpec> const& types, FitsMatrix const& fits, uint32_t maxBoxes)
 {
 	Reservation res = reserveForForced(packable, items, types, fits);
-	StockRules rules { types, fits, std::move(res.forcedType), std::vector<bool>(items.size(), false) };
+	StockRules rules { types, fits, std::move(res.forcedType), std::vector<bool>(items.size(), false), maxBoxes };
 	Stock s { std::vector<uint32_t>(types.size(), 0), std::move(res.reserved), std::move(res.forcedLeft),
 		std::vector<uint32_t>(types.size(), 0) };
 	for (int i : packable) {
