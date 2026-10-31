@@ -45,14 +45,15 @@ struct ByBaseAreaDesc {
 	static auto less(Type const& type_a, Type const& type_b) noexcept -> bool { return type_a.key_base_area != type_b.key_base_area ? type_a.key_base_area > type_b.key_base_area : type_a.src < type_b.src; }
 };
 
-// tallest first (the item's own depth, volume over base area), wider bases break ties
 struct ByHeightDesc {
+	// the item's own depth, backed out of volume / base area
 	static auto height(Type const& type) noexcept -> u64 { return type.key_base_area == 0 ? 0 : type.volume / type.key_base_area; }
+	// tallest first, wider bases break ties
 	static auto less(Type const& type_a, Type const& type_b) noexcept -> bool { return height(type_a) != height(type_b) ? height(type_a) > height(type_b) : ByBaseAreaDesc::less(type_a, type_b); }
 };
 
-// strong_order is a total order even over NaN, so a junk weight can't break the sort
 struct ByWeightDesc {
+	// heaviest first, then the volume order. strong_order is a total order even over NaN, so a junk weight can't break the sort
 	static auto less(Type const& type_a, Type const& type_b) noexcept -> bool
 	{
 		auto const order = std::strong_order(type_a.weight, type_b.weight);
