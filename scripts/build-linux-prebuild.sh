@@ -120,10 +120,8 @@ docker run --rm \
 		mkdir -p /opt/node
 		tar -xJf /tmp/node.tar.xz -C /opt/node --strip-components=1
 		export PATH="/opt/node/bin:${PATH}"
-		export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 
-		corepack enable
-		corepack prepare "pnpm@${PNPM_VERSION}" --activate
+		npm install -g "pnpm@${PNPM_VERSION}"
 
 		mkdir -p /work
 		cd /src
