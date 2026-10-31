@@ -9,16 +9,17 @@ table ExtremePointOptions {}
 
 table StackBasedOptions {}
 
-table HeightmapSolverOptions {
-  max_boxes: uint = null;
+table GuillotineSolverOptions {
   allow_rotation: bool = true;
-  min_support : double = null;
-  cell_size : uint = null;  // ignored: the heightmap is exact in mm
-  restarts : uint = null;
-  seed : uint = null;
-  strict_unsupported : bool = null;
+  combo_threshold: double = null;
+  combos: ubyte = null;
+  heavy_on_bottom: bool = null;
+  max_boxes: uint = null;
+  min_support: double = null;
+  restarts: uint = null;
+  seed: uint = null;
+  strict_unsupported: bool = null;
 }
-
 
 table PHPSolverOptions {
   balance_weight: bool = null;
@@ -34,14 +35,14 @@ union SolveStrategyOptions {
   ExtremePointOptions,
   StackBasedOptions,
   PHPSolverOptions,
-  HeightmapSolverOptions
+  GuillotineSolverOptions
 }
 
-enum SolveAlgorithm : byte {
+enum SolveAlgorithm: byte {
 	ExtremePoint = 0,
 	StackBased = 1,
   PHPSolver = 2,
-  HeightmapSolver = 3,
+  Guillotine = 3,
 }
 
 table SolveRequest {

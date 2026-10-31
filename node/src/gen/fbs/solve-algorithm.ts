@@ -6,5 +6,5 @@ export enum SolveAlgorithm {
   ExtremePoint = 0,
   StackBased = 1,
   PHPSolver = 2,
-  HeightmapSolver = 3
+  Guillotine = 3
 }

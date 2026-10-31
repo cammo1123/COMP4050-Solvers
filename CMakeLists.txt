@@ -255,7 +255,7 @@ add_library(solver_core OBJECT
     src/algorithms/extreme_point/algo_extreme_point.cpp
     src/algorithms/stack_based/algo_stack_based.cpp
     src/algorithms/php_solver/php_solver.cpp
-    src/algorithms/heightmap_solver/heightmap_solver.cpp
+    src/algorithms/guillotine/guillotine_solver.cpp
     ${GENERATED_HEADERS}
 )
 target_include_directories(solver_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR} ${GENERATED_DIR})

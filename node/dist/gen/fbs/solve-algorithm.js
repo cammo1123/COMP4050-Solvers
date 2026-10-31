@@ -5,6 +5,6 @@ export var SolveAlgorithm;
     SolveAlgorithm[SolveAlgorithm["ExtremePoint"] = 0] = "ExtremePoint";
     SolveAlgorithm[SolveAlgorithm["StackBased"] = 1] = "StackBased";
     SolveAlgorithm[SolveAlgorithm["PHPSolver"] = 2] = "PHPSolver";
-    SolveAlgorithm[SolveAlgorithm["HeightmapSolver"] = 3] = "HeightmapSolver";
+    SolveAlgorithm[SolveAlgorithm["Guillotine"] = 3] = "Guillotine";
 })(SolveAlgorithm || (SolveAlgorithm = {}));
 //# sourceMappingURL=solve-algorithm.js.map
