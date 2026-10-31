@@ -1,5 +1,6 @@
 #include "algorithms/algo_registry.h"
 
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <utility>
@@ -25,7 +26,8 @@ auto solve_php_solver(SolveRequest const& request, SolveOptions const& options, 
 			box.outer_dimensions = packing::Dimensions { *source.outer_width, *source.outer_depth, *source.outer_length };
 		}
 		box.empty_weight = source.box_weight.value_or(0);
-		box.max_weight = source.max_weight.value_or(0);
+		float const max_weight = source.max_weight.value_or(0);
+		box.max_weight = std::isnan(max_weight) ? 0 : max_weight;
 		box.quantity = source.maximum_boxes.value_or(UINT32_MAX);
 		box.active = source.active.value_or(true);
 		boxes.push_back(std::move(box));

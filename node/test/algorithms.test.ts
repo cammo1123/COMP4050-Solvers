@@ -86,6 +86,18 @@ describe("algorithm dispatch", () => {
 		expect(result.results[0].placements[0]).toMatchObject({ x: 0, y: 0, z: 0, item: { itemCode: "item", itemReference: "item", width: 1, length: 1, depth: 1 } });
 	});
 
+	it("treats a NaN maxWeight as unlimited in ExtremePoint and PHPSolver", async () => {
+		for (const algorithm of [SolveAlgorithm.ExtremePoint, SolveAlgorithm.PHPSolver]) {
+			const result = await solve({
+				boxes: [{ reference: "box", width: 10, length: 10, depth: 10, maxWeight: Number.NaN }],
+				items: [{ itemCode: "heavy", itemReference: "heavy", width: 1, length: 1, depth: 1, weight: 1000 }],
+				algorithm,
+			});
+			expect(result.failed).toEqual([]);
+			expect(result.results.map((box) => box.placements.length)).toEqual([1]);
+		}
+	});
+
 	it("rejects unsupported algorithm values", async () => {
 		await expect(solve({ ...request, algorithm: 255 as SolveAlgorithm })).rejects.toThrow("invalid SolveAlgorithm value");
 		await expect(solve({ ...request, algorithm: -1 as SolveAlgorithm })).rejects.toThrow("invalid SolveAlgorithm value");
