@@ -41,4 +41,4 @@ TypeError
 TypeError
 TypeError
 int(1)
-request.algorithm must be one of ExtremePoint, StackBased, PHPSolver, Guillotine
+request.algorithm must be one of ExtremePoint, StackBased, PHPSolver, Guillotine, Auto

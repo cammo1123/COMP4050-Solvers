@@ -3,6 +3,7 @@
 import * as flatbuffers from "flatbuffers";
 
 import {
+	AutoOptionsT as AutoOptionsObject,
 	BoxResultT as BoxResultObject,
 	BoxTypeT as BoxTypeObject,
 	ExtremePointOptionsT as ExtremePointOptionsObject,
@@ -21,6 +22,10 @@ import {
 	SolveResponse as SolveResponseMessage,
 	SolveResponseT as SolveResponseObject,
 } from "./fbs.js";
+
+export type AutoOptionsT = {
+	extremePointThreshold?: number;
+};
 
 export type BoxResultT = {
 	boxReference: string;
@@ -112,6 +117,7 @@ export type SolveOptionsT = {
 	stackBasedOptions?: StackBasedOptionsT | null;
 	phpSolverOptions?: PHPSolverOptionsT | null;
 	guillotineSolverOptions?: GuillotineSolverOptionsT | null;
+	autoOptions?: AutoOptionsT | null;
 };
 
 export type StackBasedOptionsT = {
@@ -137,7 +143,8 @@ export type SolveRequest = {
 	| { algorithm: typeof SolveAlgorithm.StackBased; options?: BaseOptions & { stackBasedOptions?: StackBasedOptionsT } }
 	| { algorithm: typeof SolveAlgorithm.PHPSolver; options?: BaseOptions & { phpSolverOptions?: PHPSolverOptionsT } }
 	| { algorithm?: typeof SolveAlgorithm.Guillotine; options?: BaseOptions }
-	| { algorithm?: undefined; options?: BaseOptions & { extremePointOptions?: ExtremePointOptionsT } }
+	| { algorithm: typeof SolveAlgorithm.Auto; options?: BaseOptions & { autoOptions?: AutoOptionsT } }
+	| { algorithm?: undefined; options?: BaseOptions & { autoOptions?: AutoOptionsT } }
 );
 
 
@@ -158,6 +165,10 @@ function toAlgoOptionsT(options: any): { type: SolveStrategyOptions; value: any 
 		const value = options.guillotineSolverOptions;
 		return { type: SolveStrategyOptions.GuillotineSolverOptions, value: new GuillotineSolverOptionsObject(value.allowRotation ?? true, value.comboThreshold ?? null, value.combos ?? null, value.heavyOnBottom ?? null, value.maxBoxes ?? null, value.minSupport ?? null, value.restarts ?? null, value.seed ?? null, value.strictUnsupported ?? null) };
 	}
+	if (options?.autoOptions) {
+		const value = options.autoOptions;
+		return { type: SolveStrategyOptions.AutoOptions, value: new AutoOptionsObject(value.extremePointThreshold ?? 700) };
+	}
 	return { type: SolveStrategyOptions.NONE, value: null };
 }
 
@@ -173,7 +184,7 @@ export function encodeRequest(request: SolveRequest): Uint8Array {
 	const message = new SolveRequestObject(
 		(request.boxes ?? []).map((item) => new BoxTypeObject(item.reference, item.width, item.length, item.depth, item.maxWeight, item.boxWeight, item.active, item.maximumBoxes, item.outerWidth, item.outerLength, item.outerDepth)),
 		(request.items ?? []).map((item) => new ItemTypeObject(item.itemCode, item.itemReference, item.width, item.length, item.depth, item.weight, item.quantity, item.boxGroup, item.rotationPolicy, item.constraint ? new PlacementConstraintObject(item.constraint.noStacking, item.constraint.requiredVertical, item.constraint.minX, item.constraint.minY, item.constraint.minZ, item.constraint.maxX, item.constraint.maxY, item.constraint.maxZ) : null)),
-		('algorithm' in request && request.algorithm !== undefined && request.algorithm !== null) ? request.algorithm : SolveAlgorithm.ExtremePoint,
+		('algorithm' in request && request.algorithm !== undefined && request.algorithm !== null) ? request.algorithm : SolveAlgorithm.Auto,
 		optionsT
 	);
 

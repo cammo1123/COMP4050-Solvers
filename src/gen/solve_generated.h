@@ -33,6 +33,10 @@ struct PHPSolverOptions;
 struct PHPSolverOptionsBuilder;
 struct PHPSolverOptionsT;
 
+struct AutoOptions;
+struct AutoOptionsBuilder;
+struct AutoOptionsT;
+
 struct SolveRequest;
 struct SolveRequestBuilder;
 struct SolveRequestT;
@@ -59,35 +63,38 @@ enum SolveStrategyOptions : uint8_t {
   SolveStrategyOptions_StackBasedOptions = 2,
   SolveStrategyOptions_PHPSolverOptions = 3,
   SolveStrategyOptions_GuillotineSolverOptions = 4,
+  SolveStrategyOptions_AutoOptions = 5,
   SolveStrategyOptions_MIN = SolveStrategyOptions_NONE,
-  SolveStrategyOptions_MAX = SolveStrategyOptions_GuillotineSolverOptions
+  SolveStrategyOptions_MAX = SolveStrategyOptions_AutoOptions
 };
 
-inline const SolveStrategyOptions (&EnumValuesSolveStrategyOptions())[5] {
+inline const SolveStrategyOptions (&EnumValuesSolveStrategyOptions())[6] {
   static const SolveStrategyOptions values[] = {
     SolveStrategyOptions_NONE,
     SolveStrategyOptions_ExtremePointOptions,
     SolveStrategyOptions_StackBasedOptions,
     SolveStrategyOptions_PHPSolverOptions,
-    SolveStrategyOptions_GuillotineSolverOptions
+    SolveStrategyOptions_GuillotineSolverOptions,
+    SolveStrategyOptions_AutoOptions
   };
   return values;
 }
 
 inline const char * const *EnumNamesSolveStrategyOptions() {
-  static const char * const names[6] = {
+  static const char * const names[7] = {
     "NONE",
     "ExtremePointOptions",
     "StackBasedOptions",
     "PHPSolverOptions",
     "GuillotineSolverOptions",
+    "AutoOptions",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameSolveStrategyOptions(SolveStrategyOptions e) {
-  if (::flatbuffers::IsOutRange(e, SolveStrategyOptions_NONE, SolveStrategyOptions_GuillotineSolverOptions)) return "";
+  if (::flatbuffers::IsOutRange(e, SolveStrategyOptions_NONE, SolveStrategyOptions_AutoOptions)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesSolveStrategyOptions()[index];
 }
@@ -112,6 +119,10 @@ template<> struct SolveStrategyOptionsTraits<fbs::GuillotineSolverOptions> {
   static const SolveStrategyOptions enum_value = SolveStrategyOptions_GuillotineSolverOptions;
 };
 
+template<> struct SolveStrategyOptionsTraits<fbs::AutoOptions> {
+  static const SolveStrategyOptions enum_value = SolveStrategyOptions_AutoOptions;
+};
+
 template<typename T> struct SolveStrategyOptionsUnionTraits {
   static const SolveStrategyOptions enum_value = SolveStrategyOptions_NONE;
 };
@@ -130,6 +141,10 @@ template<> struct SolveStrategyOptionsUnionTraits<fbs::PHPSolverOptionsT> {
 
 template<> struct SolveStrategyOptionsUnionTraits<fbs::GuillotineSolverOptionsT> {
   static const SolveStrategyOptions enum_value = SolveStrategyOptions_GuillotineSolverOptions;
+};
+
+template<> struct SolveStrategyOptionsUnionTraits<fbs::AutoOptionsT> {
+  static const SolveStrategyOptions enum_value = SolveStrategyOptions_AutoOptions;
 };
 
 struct SolveStrategyOptionsUnion {
@@ -194,6 +209,14 @@ struct SolveStrategyOptionsUnion {
     return type == SolveStrategyOptions_GuillotineSolverOptions ?
       reinterpret_cast<const fbs::GuillotineSolverOptionsT *>(value) : nullptr;
   }
+  fbs::AutoOptionsT *AsAutoOptions() {
+    return type == SolveStrategyOptions_AutoOptions ?
+      reinterpret_cast<fbs::AutoOptionsT *>(value) : nullptr;
+  }
+  const fbs::AutoOptionsT *AsAutoOptions() const {
+    return type == SolveStrategyOptions_AutoOptions ?
+      reinterpret_cast<const fbs::AutoOptionsT *>(value) : nullptr;
+  }
 };
 
 template <bool B = false>
@@ -206,33 +229,36 @@ enum SolveAlgorithm : int8_t {
   SolveAlgorithm_StackBased = 1,
   SolveAlgorithm_PHPSolver = 2,
   SolveAlgorithm_Guillotine = 3,
+  SolveAlgorithm_Auto = 4,
   SolveAlgorithm_MIN = SolveAlgorithm_ExtremePoint,
-  SolveAlgorithm_MAX = SolveAlgorithm_Guillotine
+  SolveAlgorithm_MAX = SolveAlgorithm_Auto
 };
 
-inline const SolveAlgorithm (&EnumValuesSolveAlgorithm())[4] {
+inline const SolveAlgorithm (&EnumValuesSolveAlgorithm())[5] {
   static const SolveAlgorithm values[] = {
     SolveAlgorithm_ExtremePoint,
     SolveAlgorithm_StackBased,
     SolveAlgorithm_PHPSolver,
-    SolveAlgorithm_Guillotine
+    SolveAlgorithm_Guillotine,
+    SolveAlgorithm_Auto
   };
   return values;
 }
 
 inline const char * const *EnumNamesSolveAlgorithm() {
-  static const char * const names[5] = {
+  static const char * const names[6] = {
     "ExtremePoint",
     "StackBased",
     "PHPSolver",
     "Guillotine",
+    "Auto",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameSolveAlgorithm(SolveAlgorithm e) {
-  if (::flatbuffers::IsOutRange(e, SolveAlgorithm_ExtremePoint, SolveAlgorithm_Guillotine)) return "";
+  if (::flatbuffers::IsOutRange(e, SolveAlgorithm_ExtremePoint, SolveAlgorithm_Auto)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesSolveAlgorithm()[index];
 }
@@ -577,11 +603,64 @@ inline ::flatbuffers::Offset<PHPSolverOptions> CreatePHPSolverOptions(
 
 ::flatbuffers::Offset<PHPSolverOptions> CreatePHPSolverOptions(::flatbuffers::FlatBufferBuilder &_fbb, const PHPSolverOptionsT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
 
+struct AutoOptionsT : public ::flatbuffers::NativeTable {
+  typedef AutoOptions TableType;
+  uint32_t extreme_point_threshold = 700;
+};
+
+struct AutoOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef AutoOptionsT NativeTableType;
+  typedef AutoOptionsBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_EXTREME_POINT_THRESHOLD = 4
+  };
+  uint32_t extreme_point_threshold() const {
+    return GetField<uint32_t>(VT_EXTREME_POINT_THRESHOLD, 700);
+  }
+  template <bool B = false>
+  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<uint32_t>(verifier, VT_EXTREME_POINT_THRESHOLD, 4) &&
+           verifier.EndTable();
+  }
+  AutoOptionsT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  void UnPackTo(AutoOptionsT *_o, const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
+  static ::flatbuffers::Offset<AutoOptions> Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AutoOptionsT* _o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+};
+
+struct AutoOptionsBuilder {
+  typedef AutoOptions Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_extreme_point_threshold(uint32_t extreme_point_threshold) {
+    fbb_.AddElement<uint32_t>(AutoOptions::VT_EXTREME_POINT_THRESHOLD, extreme_point_threshold, 700);
+  }
+  explicit AutoOptionsBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<AutoOptions> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<AutoOptions>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<AutoOptions> CreateAutoOptions(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    uint32_t extreme_point_threshold = 700) {
+  AutoOptionsBuilder builder_(_fbb);
+  builder_.add_extreme_point_threshold(extreme_point_threshold);
+  return builder_.Finish();
+}
+
+::flatbuffers::Offset<AutoOptions> CreateAutoOptions(::flatbuffers::FlatBufferBuilder &_fbb, const AutoOptionsT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
+
 struct SolveRequestT : public ::flatbuffers::NativeTable {
   typedef SolveRequest TableType;
   std::vector<std::unique_ptr<fbs::BoxTypeT>> boxes{};
   std::vector<std::unique_ptr<fbs::ItemTypeT>> items{};
-  fbs::SolveAlgorithm algorithm = fbs::SolveAlgorithm_ExtremePoint;
+  fbs::SolveAlgorithm algorithm = fbs::SolveAlgorithm_Auto;
   std::unique_ptr<fbs::SolveOptionsT> options{};
   SolveRequestT() = default;
   SolveRequestT(const SolveRequestT &o);
@@ -605,7 +684,7 @@ struct SolveRequest FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<fbs::ItemType>> *>(VT_ITEMS);
   }
   fbs::SolveAlgorithm algorithm() const {
-    return static_cast<fbs::SolveAlgorithm>(GetField<int8_t>(VT_ALGORITHM, 0));
+    return static_cast<fbs::SolveAlgorithm>(GetField<int8_t>(VT_ALGORITHM, 4));
   }
   const fbs::SolveOptions *options() const {
     return GetPointer<const fbs::SolveOptions *>(VT_OPTIONS);
@@ -640,7 +719,7 @@ struct SolveRequestBuilder {
     fbb_.AddOffset(SolveRequest::VT_ITEMS, items);
   }
   void add_algorithm(fbs::SolveAlgorithm algorithm) {
-    fbb_.AddElement<int8_t>(SolveRequest::VT_ALGORITHM, static_cast<int8_t>(algorithm), 0);
+    fbb_.AddElement<int8_t>(SolveRequest::VT_ALGORITHM, static_cast<int8_t>(algorithm), 4);
   }
   void add_options(::flatbuffers::Offset<fbs::SolveOptions> options) {
     fbb_.AddOffset(SolveRequest::VT_OPTIONS, options);
@@ -662,7 +741,7 @@ inline ::flatbuffers::Offset<SolveRequest> CreateSolveRequest(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<fbs::BoxType>>> boxes = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<fbs::ItemType>>> items = 0,
-    fbs::SolveAlgorithm algorithm = fbs::SolveAlgorithm_ExtremePoint,
+    fbs::SolveAlgorithm algorithm = fbs::SolveAlgorithm_Auto,
     ::flatbuffers::Offset<fbs::SolveOptions> options = 0) {
   SolveRequestBuilder builder_(_fbb);
   builder_.add_options(options);
@@ -676,7 +755,7 @@ inline ::flatbuffers::Offset<SolveRequest> CreateSolveRequestDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     const std::vector<::flatbuffers::Offset<fbs::BoxType>> *boxes = nullptr,
     const std::vector<::flatbuffers::Offset<fbs::ItemType>> *items = nullptr,
-    fbs::SolveAlgorithm algorithm = fbs::SolveAlgorithm_ExtremePoint,
+    fbs::SolveAlgorithm algorithm = fbs::SolveAlgorithm_Auto,
     ::flatbuffers::Offset<fbs::SolveOptions> options = 0) {
   auto boxes__ = boxes ? _fbb.CreateVector<::flatbuffers::Offset<fbs::BoxType>>(*boxes) : 0;
   auto items__ = items ? _fbb.CreateVector<::flatbuffers::Offset<fbs::ItemType>>(*items) : 0;
@@ -726,6 +805,9 @@ struct SolveOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const fbs::GuillotineSolverOptions *algo_options_as_GuillotineSolverOptions() const {
     return algo_options_type() == fbs::SolveStrategyOptions_GuillotineSolverOptions ? static_cast<const fbs::GuillotineSolverOptions *>(algo_options()) : nullptr;
   }
+  const fbs::AutoOptions *algo_options_as_AutoOptions() const {
+    return algo_options_type() == fbs::SolveStrategyOptions_AutoOptions ? static_cast<const fbs::AutoOptions *>(algo_options()) : nullptr;
+  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -754,6 +836,10 @@ template<> inline const fbs::PHPSolverOptions *SolveOptions::algo_options_as<fbs
 
 template<> inline const fbs::GuillotineSolverOptions *SolveOptions::algo_options_as<fbs::GuillotineSolverOptions>() const {
   return algo_options_as_GuillotineSolverOptions();
+}
+
+template<> inline const fbs::AutoOptions *SolveOptions::algo_options_as<fbs::AutoOptions>() const {
+  return algo_options_as_AutoOptions();
 }
 
 struct SolveOptionsBuilder {
@@ -1322,6 +1408,32 @@ inline ::flatbuffers::Offset<PHPSolverOptions> PHPSolverOptions::Pack(::flatbuff
       _allow_rotation);
 }
 
+inline AutoOptionsT *AutoOptions::UnPack(const ::flatbuffers::resolver_function_t *_resolver) const {
+  auto _o = std::unique_ptr<AutoOptionsT>(new AutoOptionsT());
+  UnPackTo(_o.get(), _resolver);
+  return _o.release();
+}
+
+inline void AutoOptions::UnPackTo(AutoOptionsT *_o, const ::flatbuffers::resolver_function_t *_resolver) const {
+  (void)_o;
+  (void)_resolver;
+  { auto _e = extreme_point_threshold(); _o->extreme_point_threshold = _e; }
+}
+
+inline ::flatbuffers::Offset<AutoOptions> CreateAutoOptions(::flatbuffers::FlatBufferBuilder &_fbb, const AutoOptionsT *_o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  return AutoOptions::Pack(_fbb, _o, _rehasher);
+}
+
+inline ::flatbuffers::Offset<AutoOptions> AutoOptions::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const AutoOptionsT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
+  (void)_rehasher;
+  (void)_o;
+  struct _VectorArgs { ::flatbuffers::FlatBufferBuilder *__fbb; const AutoOptionsT* __o; const ::flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
+  auto _extreme_point_threshold = _o->extreme_point_threshold;
+  return fbs::CreateAutoOptions(
+      _fbb,
+      _extreme_point_threshold);
+}
+
 inline SolveRequestT::SolveRequestT(const SolveRequestT &o)
       : algorithm(o.algorithm),
         options((o.options) ? new fbs::SolveOptionsT(*o.options) : nullptr) {
@@ -1611,6 +1723,10 @@ inline bool VerifySolveStrategyOptions(::flatbuffers::VerifierTemplate<B> &verif
       auto ptr = reinterpret_cast<const fbs::GuillotineSolverOptions *>(obj);
       return verifier.VerifyTable(ptr);
     }
+    case SolveStrategyOptions_AutoOptions: {
+      auto ptr = reinterpret_cast<const fbs::AutoOptions *>(obj);
+      return verifier.VerifyTable(ptr);
+    }
     default: return true;
   }
 }
@@ -1647,6 +1763,10 @@ inline void *SolveStrategyOptionsUnion::UnPack(const void *obj, SolveStrategyOpt
       auto ptr = reinterpret_cast<const fbs::GuillotineSolverOptions *>(obj);
       return ptr->UnPack(resolver);
     }
+    case SolveStrategyOptions_AutoOptions: {
+      auto ptr = reinterpret_cast<const fbs::AutoOptions *>(obj);
+      return ptr->UnPack(resolver);
+    }
     default: return nullptr;
   }
 }
@@ -1670,6 +1790,10 @@ inline ::flatbuffers::Offset<void> SolveStrategyOptionsUnion::Pack(::flatbuffers
       auto ptr = reinterpret_cast<const fbs::GuillotineSolverOptionsT *>(value);
       return CreateGuillotineSolverOptions(_fbb, ptr, _rehasher).Union();
     }
+    case SolveStrategyOptions_AutoOptions: {
+      auto ptr = reinterpret_cast<const fbs::AutoOptionsT *>(value);
+      return CreateAutoOptions(_fbb, ptr, _rehasher).Union();
+    }
     default: return 0;
   }
 }
@@ -1690,6 +1814,10 @@ inline SolveStrategyOptionsUnion::SolveStrategyOptionsUnion(const SolveStrategyO
     }
     case SolveStrategyOptions_GuillotineSolverOptions: {
       value = new fbs::GuillotineSolverOptionsT(*reinterpret_cast<fbs::GuillotineSolverOptionsT *>(u.value));
+      break;
+    }
+    case SolveStrategyOptions_AutoOptions: {
+      value = new fbs::AutoOptionsT(*reinterpret_cast<fbs::AutoOptionsT *>(u.value));
       break;
     }
     default:
@@ -1716,6 +1844,11 @@ inline void SolveStrategyOptionsUnion::Reset() {
     }
     case SolveStrategyOptions_GuillotineSolverOptions: {
       auto ptr = reinterpret_cast<fbs::GuillotineSolverOptionsT *>(value);
+      delete ptr;
+      break;
+    }
+    case SolveStrategyOptions_AutoOptions: {
+      auto ptr = reinterpret_cast<fbs::AutoOptionsT *>(value);
       delete ptr;
       break;
     }
