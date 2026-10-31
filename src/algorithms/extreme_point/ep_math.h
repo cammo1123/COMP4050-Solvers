@@ -27,6 +27,7 @@ constexpr auto wide_mul(u64 num1, u64 num2) noexcept -> std::pair<u64, u64>
 	return { ah * bh + (lh >> 32) + (hl >> 32) + (mid >> 32), (mid << 32) | (ll & mask) };
 }
 
+// exact num1 * num2 vs num3 * num4 in 128 bit: -1, 0 or 1
 constexpr auto cmp_products(u64 num1, u64 num2, u64 num3, u64 num4) noexcept -> int
 {
 	auto const [lhs_hi, lhs_lo] = wide_mul(num1, num2);

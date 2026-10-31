@@ -53,6 +53,7 @@ struct Progress {
 	std::size_t total = 0, stride = 1, last = 0;
 	bool emitted = false;
 
+	// report done/total, but only when it moved forward, capped at total
 	void emit(std::size_t done)
 	{
 		if (!cb)
@@ -65,6 +66,7 @@ struct Progress {
 		(*cb)(done, total);
 	}
 
+	// only report once another stride of items is done, keeps the callbacks sparse
 	void tick(std::size_t done)
 	{
 		if (cb && done >= last + stride)
@@ -82,6 +84,7 @@ struct Fill {
 	u64 volume = 0;
 	std::int32_t group = -1;
 
+	// empty box with a single point at the origin that can see the whole box
 	void open(Bin const& bin)
 	{
 		placed.clear();
@@ -192,6 +195,7 @@ struct Engine {
 
 	static auto allowed(Type const& item_type, u32 x, u32 y, u32 z) noexcept -> bool { return x >= item_type.min_x && x <= item_type.max_x && y >= item_type.min_y && y <= item_type.max_y && z >= item_type.min_z && z <= item_type.max_z && (!item_type.no_stacking || y == 0); }
 
+	// distinct shapes of everything still left for this box (sorted), their per-axis min and the smallest volume, so sweep() and run_fill() can lowk bail early
 	void rebuild_shapes()
 	{
 		shapes.clear();
@@ -209,7 +213,7 @@ struct Engine {
 		shapes_dirty = false;
 	}
 
-	// cull dead points
+	// kill dead points
 	void sweep()
 	{
 		if (shapes_dirty)
@@ -313,6 +317,7 @@ struct Engine {
 		Shape shape { };
 		bool found = false;
 
+		// LeastWaste ranks waste then y, z, x. LowestFirst ranks y, z, x then waste. the orientation slot breaks the last tie
 		auto beats(u64 w, u32 next_y, u32 next_z, u32 next_x, u32 no) const noexcept -> bool
 		{
 			if constexpr (Place::lowest)
@@ -320,6 +325,7 @@ struct Engine {
 			return !found || std::tie(w, next_y, next_z, next_x, no) < std::tie(waste, y, z, x, ori);
 		}
 
+		// remember this candidate as the best so far, and we can change as we go
 		void set(u64 w, u32 next_y, u32 next_z, u32 next_x, u32 no, Shape shape) { *this = { w, next_y, next_z, next_x, no, shape, true }; }
 	};
 
@@ -365,6 +371,7 @@ struct Engine {
 		return best;
 	}
 
+	// try one instance in the open box: group and weight checks, then search, then commit and bump the box totals
 	auto place(Bin const& bin, u32 instance_idx) -> bool
 	{
 		auto const& item_type = type_of(instance_idx);
@@ -440,6 +447,7 @@ struct Engine {
 		return fill.placed.size();
 	}
 
+	// confirm the box: we seal it. We mark its items placed, copy them into the outcome and use up one of that box type!
 	void close(std::size_t idx)
 	{
 		auto const first = out.placements.size();
@@ -508,6 +516,7 @@ struct Engine {
 		return chosen;
 	}
 
+	// trials only look at the front of the queue whcih is lowk enough volume to fill the biggest live box twice
 	void build_prefix()
 	{
 		auto limit = u64 { 0 };
@@ -525,6 +534,7 @@ struct Engine {
 		prefix.assign(full.begin(), full.begin() + static_cast<std::ptrdiff_t>(m));
 	}
 
+	// one whole strategy: sort by Order, then pick a box type, fill it, close it, repeat until nothing is left, nothing fits, or stock, time or the eval budget runs out
 	auto run() -> Outcome
 	{
 		auto const types = world.types.size();
@@ -593,6 +603,7 @@ struct Engine {
 
 // preprocessing stuff
 
+// box group name to its index in the sorted name list, -1 for no group
 auto intern(std::vector<std::string_view> const& pool, std::optional<std::string> const& value) -> std::int32_t
 {
 	if (!value || value->empty())
@@ -600,6 +611,7 @@ auto intern(std::vector<std::string_view> const& pool, std::optional<std::string
 	return static_cast<std::int32_t>(std::ranges::lower_bound(pool, std::string_view { *value }) - pool.begin());
 }
 
+// request to solver : usable boxes, item types with their orientations, geometry classes and the types that can never fit
 auto build_world(SolveRequest const& request) -> World
 {
 	auto world = World { };
@@ -703,6 +715,7 @@ auto build_world(SolveRequest const& request) -> World
 	return world;
 }
 
+// run a portfolio entry on its own engine
 template<std::size_t I>
 auto run_strategy(World const& world, Clock::time_point deadline, bool timed, u64 evals, Progress* progress) -> Outcome
 {
@@ -723,6 +736,7 @@ auto better(Outcome const& outcome_a, Outcome const& outcome_b) noexcept -> bool
 
 } // namespace
 
+// entry point: build the world, run every strategy (in parallel unless the job is tiny), keep the best and turn it into a SolveResponse. The threading for this program may be an issue on low core systems in terms of latency and throughput.
 auto solve_extreme_point(SolveRequest const& request, SolveOptions const& options, ProgressCallback const& on_progress) -> SolveResponse
 {
 	auto const start = Clock::now();
@@ -766,7 +780,7 @@ auto solve_extreme_point(SolveRequest const& request, SolveOptions const& option
 		} catch (...) {
 			errors[0] = std::current_exception();
 		}
-	} // ~jthread joins every worker, so all strategy state is materialised here
+	} // jthread joins every worker
 
 	for (auto const& error : errors)
 		if (error)
@@ -784,14 +798,16 @@ auto solve_extreme_point(SolveRequest const& request, SolveOptions const& option
 		auto const& box = request.boxes[world.bins[bin.bin].src];
 		auto result = BoxResult { .box_reference = box.reference, .width = box.width, .length = box.length, .depth = box.depth };
 		result.placements.reserve(bin.count);
+		auto content = 0.0; // in double, a saturated u64 sum would make a full giant box look empty
 		for (auto idx = bin.first; idx < bin.first + bin.count; ++idx) {
 			auto const& point = best.placements[idx];
+			content += static_cast<double>(point.width) * point.depth * point.length;
 			auto const& item = request.items[world.types[world.inst_type[point.instance]].src];
 			result.placements.push_back({ point.x, point.y, point.z, { item.item_code, item.item_reference, point.width, point.length, point.depth, item.weight, std::nullopt, item.box_group, item.rotation_policy, item.constraint } });
 		}
 		result.total_weight = static_cast<float>(bin.weight); // content only, matching StackBased
-		// from the dims, a saturated volume would skew it. Zero dims never reach world.bins
-		result.utilization = static_cast<float>(static_cast<double>(bin.volume) / (static_cast<double>(box.width) * box.depth * box.length));
+		// both sides from the dims, so nothing saturates. zero dims never reach world.bins
+		result.utilization = static_cast<float>(content / (static_cast<double>(box.width) * box.depth * box.length));
 		if (box.outer_width && box.outer_length && box.outer_depth) {
 			result.outer_width = box.outer_width;
 			result.outer_length = box.outer_length;
