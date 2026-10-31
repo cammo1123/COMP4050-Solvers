@@ -1,165 +1,124 @@
-# @bionic/solver
+<div align="center">
 
-`@bionic/solver` is a Node.js package backed by a C++ packing engine. The
-TypeScript wrapper serializes requests through FlatBuffers, calls the native
-N-API addon, and decodes the response. The same C++ core can also be built as a
-standalone command-line program.
+# Bionic Solver
 
-## Requirements
+**A fast, deterministic 3D bin-packing engine in C++23, with native bindings for Node.js and PHP.**
 
-- Node.js 22.12 or newer
-- pnpm 11 or newer
-- CMake 3.18 or newer
-- Ninja (recommended)
-- A C++ compiler with C++23 support
-- `flatc` is optional; the build scripts download and cache FlatBuffers 25.12.19
-  under `.flatc/` when it is not available on `PATH`
+[![test](https://github.com/cammo1123/COMP4050-Solvers/actions/workflows/test.yml/badge.svg?branch=dev)](https://github.com/cammo1123/COMP4050-Solvers/actions/workflows/test.yml)
+[![CI](https://github.com/cammo1123/COMP4050-Solvers/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/cammo1123/COMP4050-Solvers/actions/workflows/ci.yml)
+[![php](https://github.com/cammo1123/COMP4050-Solvers/actions/workflows/php.yml/badge.svg?branch=dev)](https://github.com/cammo1123/COMP4050-Solvers/actions/workflows/php.yml)
+[![License: ISC](https://img.shields.io/badge/license-ISC-blue.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/node-%E2%89%A522.12-339933?logo=node.js&logoColor=white)](#requirements)
+[![PHP](https://img.shields.io/badge/php-%E2%89%A58.3-777BB4?logo=php&logoColor=white)](#php)
+[![C++23](https://img.shields.io/badge/C%2B%2B-23-00599C?logo=cplusplus&logoColor=white)](#building-from-source)
 
-Install dependencies with:
+[Features](#features) ·
+[Platforms](#supported-platforms) ·
+[Quick start](#quick-start) ·
+[Algorithms](#algorithms) ·
+[Data model](#data-model) ·
+[Building](#building-from-source) ·
+[Contributing](#contributing)
 
-```sh
-pnpm install
-```
+</div>
 
-### Linux runtime requirements
+---
 
-The prebuilt Linux addon is loaded with `dlopen()`, so the host has to provide
-every symbol version the binary asks for. A binary compiled on a recent
-distro otherwise fails to load on an older one with, for example,
-``version `GLIBCXX_3.4.32' not found``.
+Bionic Solver packs a list of items into a catalogue of box types. You give it
+boxes and items, with optional weight limits, box quotas, grouping, rotation
+rules, and placement constraints. It returns which boxes to use, where each item
+goes, and which items could not be packed.
 
-The Linux prebuild is therefore built inside the `manylinux_2_28` container
-(AlmaLinux 8, glibc 2.28) and links the C++ runtime statically, which gives
-it these guarantees:
+One C++ core serves three front ends:
 
-- it needs glibc 2.28 or newer (Debian 10+, Ubuntu 20.04+, RHEL 8+);
-- it does not need any `GLIBCXX_*` symbol, so the `libstdc++` version of the
-  host is irrelevant;
-- the statically linked C++ symbols are kept local: the addon is linked with
-  a version script that exports the two symbols Node looks up and makes
-  everything else local, so neither the `libstdc++.so.6` that Node itself has
-  loaded nor the `std::` symbols the addon exports on its own can preempt
-  them.
+- **Node.js**: the `@bionic/solver` package, an N-API addon with a typed
+  TypeScript API. Requests cross the boundary as FlatBuffers.
+- **PHP**: the `bionic_solver` extension, which maps PHP arrays directly onto
+  the core's types without FlatBuffers at runtime.
+- **C++**: a standalone command-line program built from the same sources.
 
-`pnpm check:abi` verifies those guarantees against the produced binary and
-the `prebuild` workflow runs it on every Linux build. The check inspects the
-binary with `readelf`, so it needs `binutils`; it fails without it on Linux
-and is skipped on the other platforms.
+## Features
 
-The static C++ runtime is only used for the shipped prebuild. It is opt-in
-through the `COMP4050_STATIC_CXX_RUNTIME` CMake option, because a locally
-built addon is always loaded by a host that has the matching `libstdc++`. The
-option only has an effect on Linux:
+- **Several packing algorithms** behind one API, plus an `Auto` mode that picks
+  one for each request.
+- **Deterministic output.** The same request on the same build gives the same
+  response, unless a timeout fires.
+- **Real-world constraints:** content weight limits, box tare weight, per-type
+  box quotas, inactive box types, `boxGroup` separation, per-item rotation
+  policies, no-stacking, and positional bounds.
+- **Bounded run time.** `timeoutMs` makes a solve return its best valid
+  partial result instead of throwing.
+- **Progress reporting** through an optional `onProgress(done, total)`
+  callback.
+- **Prebuilt binaries** for Windows, macOS, and Linux, with no compiler needed
+  at install time.
+- **Bindings generated from one schema.** The C++, TypeScript, and PHP bindings
+  are all generated from the FlatBuffers schemas in [`fbs/`](fbs), so the
+  languages cannot drift apart.
 
-```sh
-COMP4050_STATIC_CXX_RUNTIME=ON pnpm build
-```
+## Supported platforms
 
-## Package API
+### Node.js prebuilds
 
-The package exposes named exports, a default export, and CommonJS support:
+| OS      | Architecture | Runtime baseline                                         |
+| ------- | ------------ | -------------------------------------------------------- |
+| Windows | x64          | —                                                        |
+| macOS   | arm64        | Apple silicon                                            |
+| Linux   | x64          | glibc 2.28+ (Debian 10+, Ubuntu 20.04+, RHEL 8+)         |
+
+On any other platform, the addon has to be [built from source](#building-from-source).
+
+### PHP extension
+
+The extension is built from source against your PHP installation. CI builds and
+tests it on:
+
+| PHP | Linux | macOS | Windows |
+| --- | :---: | :---: | :-----: |
+| 8.3 |   ✓   |   ✓   |    –    |
+| 8.4 |   ✓   |   ✓   |    ✓    |
+| 8.5 |   ✓   |   ✓   |    ✓    |
+
+PHP 8.3 on Windows is untested because its development package needs the
+VS2019 toolset, which the CI runners do not have. Extension compatibility
+depends on the PHP version, thread safety, and architecture, so each
+combination needs its own build.
+
+## Quick start
+
+### Node.js
 
 ```ts
-import solver, {
-  RotationPolicy,
-  SolveAlgorithm,
-  info,
-  solve,
-} from "@bionic/solver";
-```
+import { solve, SolveAlgorithm } from "@bionic/solver";
 
-`info()` returns build metadata:
-
-```ts
-const metadata = info();
-// projectName, projectVersion, buildType, gitHash, gitBranch,
-// buildTime, platform, arch, compiler
-```
-
-`solve()` is asynchronous and accepts `boxes`, `items`, an optional algorithm,
-options, and an optional progress callback:
-
-```ts
 const response = await solve({
-  boxes,
-  items,
-  algorithm: SolveAlgorithm.PHPSolver,
-  options: {
-    timeoutMs: 1000,
-    phpSolverOptions: {
-      balanceWeight: true,
-      strictItemOrder: false,
-      bestSubset: false,
-    },
-  },
-  onProgress: (done, total) => {
-    console.log(`${done}/${total}`);
-  },
+  boxes: [
+    { reference: "BOX-1", width: 1200, length: 800, depth: 1000, maxWeight: 500 },
+  ],
+  items: [
+    { itemCode: "A", itemReference: "REF-A", width: 400, length: 300, depth: 200, weight: 5.5, quantity: 4 },
+  ],
+  algorithm: SolveAlgorithm.Auto, // the default
+  onProgress: (done, total) => console.log(`${done}/${total}`),
 });
+
+for (const box of response.results) {
+  console.log(box.boxReference, box.placements.length, "items");
+}
+console.log(response.failed.length, "items failed");
 ```
 
-The default algorithm is `SolveAlgorithm.PHPSolver`. The available algorithms
-are ``ExtremePoint`, `StackBased`, and `PHPSolver`. `StackBased` is the
-current stacking implementation and `ExtremePoint` is a full extreme-point
-solver.
+The package supports both ESM and CommonJS and has a default export
+(`solver.solve`, `solver.info`). The enums can also be imported from
+`@bionic/solver/enums`, which does not load the native addon.
 
-### ExtremePoint
+`info()` returns build metadata: `projectName`, `projectVersion`, `buildType`,
+`gitHash`, `gitBranch`, `buildTime`, `platform`, `arch`, and `compiler`.
 
-`SolveAlgorithm.ExtremePoint` is a constructive extreme-point heuristic
-(Crainic, Perboli, and Tadei, 2008). Every placement projects new candidate
-corners from the item just packed; the solver maintains that frontier
-incrementally and takes the candidate with the tightest fit, breaking ties
-towards the bottom, back, and left of the box. A fixed portfolio of three
-deterministic item orderings is evaluated and the best packing is returned.
-
-`ExtremePointOptions` is intentionally empty. Rotation is governed per item by
-`rotationPolicy` rather than by a solver-wide switch, and the only shared option
-`ExtremePoint` honours is `timeoutMs`.
-
-`timeoutMs` never causes a throw. When the deadline passes, `solve()` resolves
-with the best valid partial result found so far and reports every instance that
-was not packed in `failed`. A request is capped at 1 000 000 item instances
-after `quantity` expansion; anything larger throws `std::length_error` in the
-core, which surfaces as a rejected promise.
-
-The solver is deterministic: the same request against the same build produces
-the same response, the one exception being a request in which the timeout
-emergency stop fires, because that depends on wall-clock time.
-
-`ExtremePoint` and `PHPSolver` agree on weight, box-quantity, `boxGroup`,
-box-result, and failed-entry semantics: `maxWeight` is a content-only limit that
-excludes `boxWeight` (the rated tare), `totalWeight` reports content weight,
-`maximumBoxes: 0` means no box of that type may be used while omitting
-`maximumBoxes` means unlimited, a box holds at most one non-empty `boxGroup`,
-`BoxResult.width`, `.length`, and `.depth` are populated, and entries in
-`failed` carry every `ItemType` field except `quantity`. The remaining deliberate
-differences between `ExtremePoint` and `PHPSolver` are:
-
-1. Positional constraints are absolute bounds in the box frame in both solvers.
-   `ExtremePoint` never rotates the box itself, so it never needs to re-interpret
-   the X and Z limits. `PHPSolver` may pack a box in its 90-degree vertical
-   rotation and swaps the limits only to keep them absolute in that frame.
-2. The `intrinsically_stable` aspect-ratio tipping heuristic of `PHPSolver` is
-   not implemented.
-3. Outer box dimensions are propagated to the result when all three are
-   present, which matches `PHPSolver`.
-
-The support rule itself is identical to `PHPSolver`: an item off the floor needs
-the centre of its base covered by the top face of one already placed item.
-Layouts are not expected to match `PHPSolver` placement for placement, because
-the two engines search different candidate sets. A request that `PHPSolver`
-reports as partly failed may be packed completely by `ExtremePoint`, and the
-items in a box may appear in a different order.
-
-## PHP
-
-The same C++ core is exposed to PHP through a native extension. The PHP CMake
-target does not require the Node toolchain: without node (or with
-`-DCOMP4050_CODEGEN=OFF`) it compiles against the committed generated headers.
+### PHP
 
 ```php
 use Bionic\Solver\Algorithm;
-use function Bionic\Solver\info;
 use function Bionic\Solver\solve;
 
 $response = solve([
@@ -179,178 +138,316 @@ $response = solve([
 echo count($response["results"]), " box(es), ", count($response["failed"]), " failed\n";
 ```
 
-`solve()` is **blocking**: it runs on the request thread and returns the
-result. It is intended for CLI, queue workers and batch jobs. Under php-fpm or
-mod_php it blocks the worker for the duration of the solve, which is why the
-core's `timeoutMs` is worth setting — it bounds the work rather than relying on
-`max_execution_time`.
+See [PHP](#php) for how the extension behaves.
 
-The array shape matches the JavaScript package, with one difference: PHP passes
-`onProgress` as a separate second argument to `solve()` rather than including
-it in the request array. Enums accept either the schema name (`"ExtremePoint"`)
-or the ordinal, and are reported back as schema names.
-`Bionic\Solver\Algorithm` and `Bionic\Solver\RotationPolicy` expose the
-ordinals as class constants.
+## Algorithms
 
-Invalid input raises a `ValueError` whose message carries the offending path,
-for example `request.boxes[0].reference is required`. Exceptions raised by the
-C++ core surface as `Bionic\Solver\Exception` and never take the process down.
+Pick an algorithm with `algorithm`. Its options go under the matching key in
+`options`. The TypeScript types only accept the key that matches the chosen
+algorithm. `options.timeoutMs` applies to every algorithm.
 
-`onProgress` is optional. Because the call is synchronous it is invoked directly
-from the solving thread, and an exception thrown by the callback aborts the
-solve and propagates. A value that is not callable is rejected with a
-`TypeError` while the arguments are parsed, before any solving starts.
+| Algorithm      | Options key               | Best for                                                             |
+| -------------- | ------------------------- | -------------------------------------------------------------------- |
+| `Auto`         | `autoOptions`             | **Default.** Picks `Guillotine` or `ExtremePoint` for each request. |
+| `ExtremePoint` | `extremePointOptions`     | Large orders and every constraint; fast and multi-threaded.          |
+| `Guillotine`   | `guillotineSolverOptions` | Small orders without constraints; fewest boxes, fully supported stacks. |
+| `PHPSolver`    | `phpSolverOptions`        | Compatibility with the original PHP packer.                          |
+| `StackBased`   | `stackBasedOptions`       | A minimal baseline that stacks every item in the first box type without checking fit. Not a real packer. |
+
+### Auto
+
+`Auto` runs `Guillotine` when the request is small and only uses features
+`Guillotine` supports. Otherwise it runs `ExtremePoint`. It falls back to
+`ExtremePoint` when any of these is true:
+
+- the request has at least `autoOptions.extremePointThreshold` item instances
+  after `quantity` expansion (default `700`);
+- `timeoutMs` is set;
+- an item has a zero dimension, uses `RotationPolicy.KeepFlat`, has a rotation
+  policy that differs from the first item's, or has an active placement
+  constraint;
+- a box has a negative or non-finite `boxWeight`.
+
+The chosen algorithm runs with its default options. Algorithm-specific options
+other than `autoOptions` are not passed on.
+
+### ExtremePoint
+
+A constructive extreme-point heuristic (Crainic, Perboli, and Tadei, 2008).
+Each placement creates new candidate corners from the item just packed, and the
+solver keeps that set of candidates up to date as it goes. A fixed portfolio of
+eight deterministic strategies (item ordering, box selection, and placement
+rule) is evaluated, in parallel threads unless the job is tiny. The packing
+with the fewest failed items wins, then the one with the fewest boxes.
+[Design notes →](src/algorithms/extreme_point/README.md)
+
+`ExtremePointOptions` is intentionally empty. Rotation is controlled per item
+by `rotationPolicy`. When `timeoutMs` passes, `solve()` resolves with the best
+valid partial result so far and lists every unpacked instance in `failed`. A
+request is capped at 1 000 000 item instances after `quantity` expansion. Larger
+requests are rejected.
+
+### Guillotine
+
+Packs each box by guillotine recursion over free spaces. Units with the same
+weight and allowed orientations share a row in a lookup table, so a whole block
+of them is placed in one step. Its goals, in order, are no failed items, fewest
+boxes, and heaviest items at the bottom. Every stacked item is fully supported.
+[Design notes →](src/algorithms/guillotine/README.md)
+
+`Guillotine` implements `boxGroup`, rotation, weight limits, `maximumBoxes`,
+and `active`. It rejects requests that use placement constraints,
+`RotationPolicy.KeepFlat`, or mixed rotation policies, rather than returning a
+misleading answer. Set `strictUnsupported: false` to pack them anyway with
+those fields ignored.
+
+Of its options, only `allowRotation` (default `true`), `maxBoxes`, and
+`strictUnsupported` are implemented. `minSupport`, `restarts`, `seed`,
+`heavyOnBottom`, `combos`, and `comboThreshold` are reserved in the schema, and
+setting any of them rejects the request. `timeoutMs` (default `1000`) narrows
+the internal search once it passes, but does not stop the solve.
+
+### PHPSolver
+
+A C++ port of the original PHP packer. Options: `balanceWeight`,
+`allPermutations`, `singleBox`, `strictItemOrder`, `bestSubset`, and `maxBoxes`,
+plus `allowRotation` (default `true`). The boolean options default to `false`.
+
+### How the algorithms compare
+
+`ExtremePoint` and `PHPSolver` handle weights, box quantities, `boxGroup`, box
+results, and failed entries the same way (see [Data model](#data-model)). They
+also use the same support rule: an item above the floor needs the centre of its
+base to rest on the top face of an item already placed. They differ in three
+deliberate ways:
+
+1. Positional constraints are absolute bounds in the box frame in both solvers.
+   `ExtremePoint` never rotates the box, so it never re-interprets the X and Z
+   limits. `PHPSolver` may pack a box rotated 90 degrees vertically, and swaps
+   the limits only to keep them absolute in that frame.
+2. `ExtremePoint` does not implement `PHPSolver`'s `intrinsically_stable`
+   aspect-ratio tipping heuristic.
+3. Both solvers copy the outer box dimensions into the result only when all
+   three are present.
+
+The two engines search different candidate positions, so their layouts are not
+expected to match placement for placement. `ExtremePoint` may fully pack a
+request that `PHPSolver` partly fails, and items in a box may appear in a
+different order.
 
 ## Data model
 
-All dimensions use millimetres and weights use kilograms. Box dimensions are the
-usable interior dimensions. `outerWidth`, `outerLength`, and `outerDepth` are
-optional shipping dimensions and do not enlarge the packing area.
+All dimensions are in **millimetres** and all weights in **kilograms**.
+Coordinates are Y-up: width is X, depth is the vertical Y axis, and length is Z.
+A placement coordinate is the item's minimum corner.
 
-Required box fields are `reference`, `width`, `length`, and `depth`. Optional
-box fields are `maxWeight`, `boxWeight`, `active`, `maximumBoxes`, and the outer
-dimensions.
+### Boxes
 
-Required item fields are `itemCode`, `itemReference`, `width`, `length`,
-`depth`, and `weight`. `quantity` expands one item definition into instances;
-omitting it represents one instance, while zero represents none. Optional
-grouping fields are `boxGroup`.
+| Field                                     | Required | Notes                                                                 |
+| ----------------------------------------- | :------: | --------------------------------------------------------------------- |
+| `reference`                               |    ✓     | Identifies the box type.                                              |
+| `width`, `length`, `depth`                |    ✓     | Usable interior dimensions.                                           |
+| `maxWeight`                               |          | Limit on content weight; excludes `boxWeight`.                        |
+| `boxWeight`                               |          | The box's own (tare) weight.                                          |
+| `active`                                  |          | Inactive box types are not used.                                      |
+| `maximumBoxes`                            |          | `0` bans the type; omit the field for unlimited.                      |
+| `outerWidth`, `outerLength`, `outerDepth` |          | Shipping dimensions; they do not enlarge the packing area.            |
 
-`RotationPolicy` values are:
+### Items
 
-- `Never` — do not rotate the item.
-- `KeepFlat` — allow rotations around the vertical axis while preserving depth.
-- `BestFit` — allow supported rotations to find the best fit.
+| Field                                  | Required | Notes                                                       |
+| -------------------------------------- | :------: | ----------------------------------------------------------- |
+| `itemCode`, `itemReference`            |    ✓     | Identify the item.                                          |
+| `width`, `length`, `depth`, `weight`   |    ✓     | Size and weight of one unit.                                |
+| `quantity`                             |          | Number of units. Omitted means one; `0` means none.         |
+| `boxGroup`                             |          | A box holds at most one non-empty group.                    |
+| `rotationPolicy`                       |          | `Never`, `KeepFlat` (rotate about the vertical axis only), or `BestFit`. |
+| `constraint`                           |          | `noStacking`, `requiredVertical`, and `minX`/`maxX`, `minY`/`maxY`, `minZ`/`maxZ`. |
 
-Placement constraints support `noStacking`, `requiredVertical`, and minimum or
-maximum `x`, `y`, and `z` coordinates. Coordinates use the native Y-up model:
-width is X, depth is vertical Y, and length is Z. A placement coordinate is the
-minimum corner of the item.
+### Response
 
-Each response contains `results`, failed item definitions in `failed`, and
-`algorithmUs` and `serverUs` timing values. Box results include placements,
-packed dimensions, and optional `totalWeight`, `utilization`, and outer
-dimensions. A placement carries `x`, `y`, and `z` plus an `item` holding the
-full item definition it was packed from, so weight, group, rotation policy, and
-constraint are reported without rejoining the request by code.
+| Field                     | Description                                                                                       |
+| ------------------------- | ------------------------------------------------------------------------------------------------- |
+| `results`                 | One entry per box used: `boxReference`, interior dimensions, `placements`, and optional `totalWeight` (content only), `utilization`, and outer dimensions. |
+| `results[].placements`    | `x`, `y`, `z`, and the full `item` definition it was packed from, so you do not need to look items up again by code. |
+| `failed`                  | Every unit that could not be packed, with every `ItemType` field except `quantity`.               |
+| `algorithmUs`, `serverUs` | Time spent in the core, and the total time including marshalling, in microseconds.                |
 
-## Build
+## PHP
 
-Build the addon and generated TypeScript output using the default
-`RelWithDebInfo` configuration:
+The PHP extension exposes the same core as the Node.js package:
+
+- **The call is blocking.** `solve()` runs on the request thread, which suits
+  CLI scripts, queue workers, and batch jobs. Under php-fpm or mod_php it holds
+  the worker for the whole solve, so set `timeoutMs` to bound the work instead
+  of relying on `max_execution_time`.
+- **The request has the same shape as in JavaScript**, except that
+  `onProgress` is the second argument of `solve()` rather than a key in the
+  request.
+- **Enums** accept either the schema name (`"ExtremePoint"`) or the number.
+  Responses report the schema name. `Bionic\Solver\Algorithm` and
+  `Bionic\Solver\RotationPolicy` provide the numbers as class constants.
+- **Errors:** invalid input raises a `ValueError` whose message names the
+  offending field, such as `request.boxes[0].reference is required`.
+  Exceptions from the C++ core are raised as `Bionic\Solver\Exception` and never
+  crash the process. A non-callable `onProgress` raises a `TypeError` before
+  solving starts. An exception thrown by the callback stops the solve and is
+  passed on to the caller.
+
+## Building from source
+
+### Requirements
+
+| Tool                | Version                                                               |
+| ------------------- | --------------------------------------------------------------------- |
+| Node.js             | 22.12 or newer                                                        |
+| pnpm                | 12                                                                    |
+| CMake               | 3.18 or newer                                                         |
+| Ninja               | recommended                                                           |
+| C++ compiler        | C++23 support (MSVC, Clang, or GCC)                                   |
+| `flatc`             | optional; FlatBuffers 25.12.19 is downloaded to `.flatc/` if `flatc` is not on `PATH` |
+| PHP dev headers     | only for the PHP extension                                            |
 
 ```sh
+pnpm install
 pnpm build
 ```
 
-Other build commands are:
+### Build targets
 
 ```sh
+pnpm build             # Addon + bindings + TypeScript (RelWithDebInfo)
 pnpm build:debug       # Debug addon build
 pnpm build:optimized   # Release build with LTO
-pnpm build:core        # Standalone CLI, RelWithDebInfo
-pnpm build:core:debug  # Standalone CLI, Debug
-pnpm build:php         # PHP extension, Release with LTO
 pnpm build:ts          # TypeScript output only
+pnpm build:core        # Standalone CLI (RelWithDebInfo)
+pnpm build:core:debug  # Standalone CLI (Debug)
+pnpm run:core          # Build and run the CLI demo
+pnpm run:core:o        # Same, optimized
+pnpm build:php         # PHP extension (Release with LTO)
+pnpm clean             # Remove generated bindings, build outputs, prebuilds, and .flatc/
 ```
 
-The addon is copied to `node/build/Release/addon.node`. The standalone binary
-is written to `build/solver` or `build/solver.exe` on Windows. The PHP extension
-is written to `php/bionic_solver.dll` or `php/bionic_solver.so`.
+| Output             | Location                                       |
+| ------------------ | ---------------------------------------------- |
+| Node.js addon      | `node/build/Release/addon.node`                |
+| Standalone CLI     | `build/solver` (`build/solver.exe` on Windows) |
+| PHP extension      | `php/bionic_solver.so` (`.dll` on Windows)     |
 
-Building the PHP extension needs the PHP development headers. On unix,
-`php-config` is discovered automatically. On Windows there is no `php-config`,
-so unpack the matching development package from
-[php.net/windows](https://www.php.net/downloads.php?os=windows) and point
-`PHP_INCLUDE_DIR` at its `include` directory:
+The standalone CLI (`src/main.cpp`) prints build metadata and solves a fixed
+demo request. It does not read input.
+
+### PHP extension
+
+On Unix, `php-config` is found automatically. Windows has no `php-config`, so
+unpack the matching development package from
+[php.net/windows](https://www.php.net/downloads.php?os=windows) and set
+`PHP_INCLUDE_DIR`:
 
 ```sh
 PHP_INCLUDE_DIR=/c/php-devel/include pnpm build:php
 ```
 
-The PHP CMake target compiles against the committed generated headers when node
-is unavailable (or with `-DCOMP4050_CODEGEN=OFF`), so a schema change needs
-`pnpm build` (or `node scripts/generate.mjs`) first. The target itself is
-node-free, which is what lets the `php` workflow build the extension without the
-Node toolchain.
-Set `PHP_ZTS=1` to build against a thread-safe PHP. Set `PHP_DEBUG=1` to build
-against a debug PHP. Extension compatibility depends on the PHP version,
-thread-safety, and architecture, not only on the platform. Its binary matrix is
-therefore larger than the Node matrix.
+Set `PHP_ZTS=1` for a thread-safe PHP and `PHP_DEBUG=1` for a debug PHP. The
+PHP target does not need Node.js. Without Node (or with
+`-DCOMP4050_CODEGEN=OFF`) it compiles against the committed generated headers,
+so run `pnpm build` (or `node scripts/generate.mjs`) first after changing a
+schema.
 
-To create a platform-specific package prebuild after building the addon:
+### Prebuilds
 
 ```sh
-pnpm prebuild:binaries
+pnpm prebuild:binaries   # Snapshot the built addon into node/prebuilds/<platform>-<arch>
+pnpm prebuild:linux      # Build the portable Linux prebuild in Docker
 ```
 
-The Linux prebuild is built in the `manylinux_2_28` container so that it
-stays loadable on older hosts (see
-[Linux runtime requirements](#linux-runtime-requirements)):
+`prebuild:linux` runs the test suite, builds the optimized addon, checks that
+the stripped binary still loads and that the standalone solver runs, and writes
+`node/prebuilds/linux-x64/addon.node`. It runs on Linux and macOS, and on
+Windows from Git Bash.
+
+<details>
+<summary><strong>Why the Linux prebuild is portable</strong></summary>
+
+A Linux binary built on a recent distribution usually fails to load on an older
+one with errors such as ``version `GLIBCXX_3.4.32' not found``. To avoid this,
+the Linux prebuild is built inside the `manylinux_2_28` container (AlmaLinux 8,
+glibc 2.28) with the C++ runtime linked statically. As a result:
+
+- it needs glibc 2.28 or newer (Debian 10+, Ubuntu 20.04+, RHEL 8+);
+- it needs no `GLIBCXX_*` symbol, so the host's `libstdc++` version does not
+  matter;
+- the statically linked C++ symbols stay local. A version script exports only
+  the two symbols Node looks up, so neither Node's own `libstdc++.so.6` nor the
+  addon's own `std::` symbols can replace them.
+
+`pnpm check:abi` checks these guarantees against the binary with `readelf`
+(from `binutils`), and the `prebuild` workflow runs it on every Linux build.
+The static runtime is opt-in through the `COMP4050_STATIC_CXX_RUNTIME` CMake
+option and only has an effect on Linux:
 
 ```sh
-pnpm prebuild:linux   # requires Docker
+COMP4050_STATIC_CXX_RUNTIME=ON pnpm build
 ```
 
-The script runs the test suite, builds the optimised addon, checks that the
-stripped binary still loads and that the standalone solver still runs, and
-writes the result to `node/prebuilds/linux-x64/addon.node`. It runs on Linux
-and macOS hosts; on Windows it has to be run from Git Bash, which needs the
-path conversion of the MSYS shell to be disabled for the Docker arguments (the
-script does that itself).
+</details>
 
-Generated bindings are produced from `fbs/` and written under `src/gen/`,
-`node/src/gen/`, and `src/php/gen/`. Do not edit generated files manually.
-
-## Testing And Checks
+## Testing
 
 ```sh
-pnpm test          # Build and run the Vitest suite once
-pnpm test:watch    # Build and run Vitest in watch mode
+pnpm test          # Build and run the Vitest suite
+pnpm test:watch    # Vitest in watch mode
 pnpm test:php      # Run the .phpt suite against the built extension
+pnpm bench         # Optimized benchmark suite
 pnpm typecheck     # TypeScript type checking
 pnpm lint:check    # clang-format validation for src/
 pnpm lint:fix      # Apply clang-format to src/
-pnpm check:abi     # Verify the Linux prebuild's glibc/libstdc++ requirements (needs binutils, Linux only)
-pnpm bench         # Optimized benchmark suite
+pnpm check:abi     # Verify the Linux prebuild's runtime requirements (Linux, needs binutils)
 ```
 
-`pnpm test:php` needs `run-tests.php`, which ships with the PHP source tree and
-the Windows SDK rather than with a PHP install, so pass its path or set
-`PHP_RUN_TESTS`. Set `PHP_BINARY` to choose a specific `php`.
+`pnpm test:php` needs `run-tests.php`, which comes with the PHP source tree and
+the Windows SDK but not with a normal PHP install. Pass its path as an argument
+or set `PHP_RUN_TESTS`. Set `PHP_BINARY` to choose which `php` to use.
 
-`pnpm clean` removes generated bindings, build outputs, prebuilds, and the
-local FlatBuffers compiler cache.
+### Continuous integration
 
-## Repository Layout
+| Workflow   | Runs on                                       | What it does                                                                 |
+| ---------- | --------------------------------------------- | ---------------------------------------------------------------------------- |
+| `test`     | PRs into `dev`/`main`, pushes to `dev`        | Optimized build and the Vitest suite on Ubuntu, Windows, and macOS.          |
+| `CI`       | Every push and PR                             | `clang-format`, build and test, and `clang-tidy` with warnings as errors (Ubuntu, Clang 22). |
+| `php`      | PRs into `dev`/`main`, pushes to `dev`        | Builds the extension and runs `.phpt` on PHP 8.3–8.5 on all three OSes, without Node.js. |
+| `prebuild` | PRs, pushes to `dev`, manual                  | Builds and tests the prebuilds; on pushes to `dev`, commits `node/dist` and `node/prebuilds`. |
 
-- `src/` — C++ core, CLI, and native addon boundary.
-- `src/algorithms/` — algorithm registry plus isolated ExtremePoint, StackBased, and PHPSolver implementations.
-- `fbs/` — FlatBuffers schemas shared by the core and addon.
-- `src/gen/` — generated C++ bindings.
-- `src/php/` — PHP extension sources.
-- `src/php/gen/` — generated PHP marshalling; only the runtime header and the module wiring are hand-written.
-- `php/` — Composer metadata, the built extension, and the `.phpt` suite.
-- `node/src/` — TypeScript API and generated TypeScript bindings.
-- `node/test/` — Vitest tests and benchmarks.
-- `scripts/` — generation, build, run, clean, and codegen scripts.
-- `scripts/codegen/targets/` — one module per output language.
-- `docs/` — reference schema examples and supplementary documentation.
-- `build/` — local CMake output; generated and ignored build artifacts.
+## Project layout
 
-## Continuous Integration
+```text
+fbs/                     FlatBuffers schemas (single source of truth for every binding)
+src/                     C++ core, standalone CLI, and N-API addon boundary
+├── algorithms/          Algorithm registry and one directory per algorithm
+├── gen/                 Generated C++ bindings (do not edit)
+└── php/                 PHP extension; php/gen/ holds generated marshalling
+node/
+├── src/                 TypeScript API and generated bindings
+├── test/                Vitest tests, fixtures, and benchmarks
+└── prebuilds/           Prebuilt addons per platform
+php/                     Composer metadata, built extension, and .phpt tests
+scripts/                 Build, codegen, run, and maintenance scripts
+docs/                    Reference box/item data and the upstream OpenAPI schema
+.githooks/               Pre-commit hook (install with pnpm hooks:install)
+```
 
-The `test` workflow builds and tests on Ubuntu, Windows, and macOS for pull
-requests targeting `dev` or `main`, and pushes to `dev`. The `prebuild` workflow
-builds platform prebuilds, runs the tests and standalone smoke test, and commits
-generated distribution files and prebuilds on branch pushes. The Linux prebuild
-is built in the `manylinux_2_28` container and checked against the supported
-runtime baseline before it is uploaded.
+`Auto` dispatch is in `src/solver.cpp`. Generated files under `src/gen/`,
+`src/php/gen/`, and `node/src/gen/` are committed and must not be edited by
+hand. See [scripts/codegen/README.md](scripts/codegen/README.md) to add another
+language.
 
-The `php` workflow builds the PHP extension and runs the `.phpt` suite across
-PHP 8.3, 8.4, and 8.5 on all three operating systems. It builds with CMake
-against the committed generated headers and does not depend on the Node
-toolchain, so a failure there is independent of the Node one.
+## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for branch rules and development
-workflow.
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md)
+before opening a pull request. It covers the branching model (pull requests
+into `dev`, rebase only), the pre-commit hook (`pnpm hooks:install`), code
+generation, and the pull request checklist.
+
+## License
+
+Released under the [ISC License](LICENSE).

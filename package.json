@@ -1,6 +1,6 @@
 {
 	"name": "@bionic/solver",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Node.js packing engine with a C++ core via N-API and FlatBuffers",
 	"main": "node/dist/addon.js",
 	"types": "node/dist/addon.d.ts",
@@ -62,13 +62,13 @@
 	},
 	"dependencies": {
 		"flatbuffers": "25.9.23",
-		"node-gyp-build": "^4.8.1"
+		"node-gyp-build": "^4.8.4"
 	},
 	"devDependencies": {
-		"@types/node": "^26.1.2",
-		"@vitest/coverage-v8": "^4.1.10",
-		"tsx": "^4.23.5",
+		"@types/node": "^26.6.6",
+		"@vitest/coverage-v8": "^4.1.12",
+		"tsx": "^4.23.15",
 		"typescript": "^7.0.2",
-		"vitest": "^4.1.10"
+		"vitest": "^4.1.12"
 	}
 }
