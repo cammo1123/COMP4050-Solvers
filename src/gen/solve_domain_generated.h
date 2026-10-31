@@ -19,7 +19,8 @@ enum class SolveAlgorithm : int8_t {
 	ExtremePoint = 0,
 	StackBased = 1,
 	PHPSolver = 2,
-	Guillotine = 3
+	Guillotine = 3,
+	Auto = 4
 };
 
 inline SolveAlgorithm toDomain(::fbs::SolveAlgorithm value)
@@ -29,6 +30,7 @@ inline SolveAlgorithm toDomain(::fbs::SolveAlgorithm value)
 	case ::fbs::SolveAlgorithm_StackBased: return SolveAlgorithm::StackBased;
 	case ::fbs::SolveAlgorithm_PHPSolver: return SolveAlgorithm::PHPSolver;
 	case ::fbs::SolveAlgorithm_Guillotine: return SolveAlgorithm::Guillotine;
+	case ::fbs::SolveAlgorithm_Auto: return SolveAlgorithm::Auto;
 	default: throw std::invalid_argument("invalid SolveAlgorithm value");
 	}
 }
@@ -40,6 +42,7 @@ inline ::fbs::SolveAlgorithm fromDomain(SolveAlgorithm value)
 	case SolveAlgorithm::StackBased: return ::fbs::SolveAlgorithm_StackBased;
 	case SolveAlgorithm::PHPSolver: return ::fbs::SolveAlgorithm_PHPSolver;
 	case SolveAlgorithm::Guillotine: return ::fbs::SolveAlgorithm_Guillotine;
+	case SolveAlgorithm::Auto: return ::fbs::SolveAlgorithm_Auto;
 	default: throw std::invalid_argument("invalid SolveAlgorithm value");
 	}
 }
@@ -74,18 +77,23 @@ struct PHPSolverOptions {
 	bool allow_rotation = true;
 };
 
+struct AutoOptions {
+	uint32_t extreme_point_threshold = 700;
+};
+
 struct SolveOptions {
 	std::optional<uint32_t> timeout_ms = std::nullopt;
 	std::optional<ExtremePointOptions> extreme_point_options = std::nullopt;
 	std::optional<StackBasedOptions> stack_based_options = std::nullopt;
 	std::optional<PHPSolverOptions> php_solver_options = std::nullopt;
 	std::optional<GuillotineSolverOptions> guillotine_solver_options = std::nullopt;
+	std::optional<AutoOptions> auto_options = std::nullopt;
 };
 
 struct SolveRequest {
 	std::vector<BoxType> boxes{};
 	std::vector<ItemType> items{};
-	SolveAlgorithm algorithm = SolveAlgorithm::ExtremePoint;
+	SolveAlgorithm algorithm = SolveAlgorithm::Auto;
 	std::optional<SolveOptions> options = std::nullopt;
 };
 
@@ -292,6 +300,24 @@ inline fbs::PHPSolverOptionsT fromDomain([[maybe_unused]] PHPSolverOptions const
 	return out;
 }
 
+inline AutoOptions toDomain([[maybe_unused]] fbs::AutoOptionsT const& value)
+{
+	AutoOptions out;
+
+	out.extreme_point_threshold = value.extreme_point_threshold;
+
+	return out;
+}
+
+inline fbs::AutoOptionsT fromDomain([[maybe_unused]] AutoOptions const& value)
+{
+	fbs::AutoOptionsT out;
+
+	out.extreme_point_threshold = value.extreme_point_threshold;
+
+	return out;
+}
+
 inline SolveOptions toDomain([[maybe_unused]] fbs::SolveOptionsT const& value)
 {
 	SolveOptions out;
@@ -314,6 +340,10 @@ inline SolveOptions toDomain([[maybe_unused]] fbs::SolveOptionsT const& value)
 
 	if (value.algo_options.type == ::fbs::SolveStrategyOptions_GuillotineSolverOptions) {
 		out.guillotine_solver_options = toDomain(*value.algo_options.AsGuillotineSolverOptions());
+	}
+
+	if (value.algo_options.type == ::fbs::SolveStrategyOptions_AutoOptions) {
+		out.auto_options = toDomain(*value.algo_options.AsAutoOptions());
 	}
 
 	return out;
@@ -341,6 +371,10 @@ inline fbs::SolveOptionsT fromDomain([[maybe_unused]] SolveOptions const& value)
 
 	if (value.guillotine_solver_options.has_value()) {
 		out.algo_options.Set(fromDomain(*value.guillotine_solver_options));
+	}
+
+	if (value.auto_options.has_value()) {
+		out.algo_options.Set(fromDomain(*value.auto_options));
 	}
 
 	return out;

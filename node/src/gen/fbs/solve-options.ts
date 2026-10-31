@@ -4,6 +4,7 @@
 
 import * as flatbuffers from 'flatbuffers';
 
+import { AutoOptions, AutoOptionsT } from '../fbs/auto-options.js';
 import { ExtremePointOptions, ExtremePointOptionsT } from '../fbs/extreme-point-options.js';
 import { GuillotineSolverOptions, GuillotineSolverOptionsT } from '../fbs/guillotine-solver-options.js';
 import { PHPSolverOptions, PHPSolverOptionsT } from '../fbs/phpsolver-options.js';
@@ -102,7 +103,7 @@ export class SolveOptionsT implements flatbuffers.IGeneratedObject {
 constructor(
   public timeoutMs: number|null = null,
   public algoOptionsType: SolveStrategyOptions = SolveStrategyOptions.NONE,
-  public algoOptions: ExtremePointOptionsT|GuillotineSolverOptionsT|PHPSolverOptionsT|StackBasedOptionsT|null = null
+  public algoOptions: AutoOptionsT|ExtremePointOptionsT|GuillotineSolverOptionsT|PHPSolverOptionsT|StackBasedOptionsT|null = null
 ){}
 
 

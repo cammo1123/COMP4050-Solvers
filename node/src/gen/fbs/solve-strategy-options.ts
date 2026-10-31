@@ -2,6 +2,7 @@
 
 /* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
 
+import { AutoOptions, AutoOptionsT } from '../fbs/auto-options.js';
 import { ExtremePointOptions, ExtremePointOptionsT } from '../fbs/extreme-point-options.js';
 import { GuillotineSolverOptions, GuillotineSolverOptionsT } from '../fbs/guillotine-solver-options.js';
 import { PHPSolverOptions, PHPSolverOptionsT } from '../fbs/phpsolver-options.js';
@@ -13,34 +14,37 @@ export enum SolveStrategyOptions {
   ExtremePointOptions = 1,
   StackBasedOptions = 2,
   PHPSolverOptions = 3,
-  GuillotineSolverOptions = 4
+  GuillotineSolverOptions = 4,
+  AutoOptions = 5
 }
 
 export function unionToSolveStrategyOptions(
   type: SolveStrategyOptions,
-  accessor: (obj:ExtremePointOptions|GuillotineSolverOptions|PHPSolverOptions|StackBasedOptions) => ExtremePointOptions|GuillotineSolverOptions|PHPSolverOptions|StackBasedOptions|null
-): ExtremePointOptions|GuillotineSolverOptions|PHPSolverOptions|StackBasedOptions|null {
+  accessor: (obj:AutoOptions|ExtremePointOptions|GuillotineSolverOptions|PHPSolverOptions|StackBasedOptions) => AutoOptions|ExtremePointOptions|GuillotineSolverOptions|PHPSolverOptions|StackBasedOptions|null
+): AutoOptions|ExtremePointOptions|GuillotineSolverOptions|PHPSolverOptions|StackBasedOptions|null {
   switch(SolveStrategyOptions[type]) {
     case 'NONE': return null; 
     case 'ExtremePointOptions': return accessor(new ExtremePointOptions())! as ExtremePointOptions;
     case 'StackBasedOptions': return accessor(new StackBasedOptions())! as StackBasedOptions;
     case 'PHPSolverOptions': return accessor(new PHPSolverOptions())! as PHPSolverOptions;
     case 'GuillotineSolverOptions': return accessor(new GuillotineSolverOptions())! as GuillotineSolverOptions;
+    case 'AutoOptions': return accessor(new AutoOptions())! as AutoOptions;
     default: return null;
   }
 }
 
 export function unionListToSolveStrategyOptions(
   type: SolveStrategyOptions, 
-  accessor: (index: number, obj:ExtremePointOptions|GuillotineSolverOptions|PHPSolverOptions|StackBasedOptions) => ExtremePointOptions|GuillotineSolverOptions|PHPSolverOptions|StackBasedOptions|null, 
+  accessor: (index: number, obj:AutoOptions|ExtremePointOptions|GuillotineSolverOptions|PHPSolverOptions|StackBasedOptions) => AutoOptions|ExtremePointOptions|GuillotineSolverOptions|PHPSolverOptions|StackBasedOptions|null, 
   index: number
-): ExtremePointOptions|GuillotineSolverOptions|PHPSolverOptions|StackBasedOptions|null {
+): AutoOptions|ExtremePointOptions|GuillotineSolverOptions|PHPSolverOptions|StackBasedOptions|null {
   switch(SolveStrategyOptions[type]) {
     case 'NONE': return null; 
     case 'ExtremePointOptions': return accessor(index, new ExtremePointOptions())! as ExtremePointOptions;
     case 'StackBasedOptions': return accessor(index, new StackBasedOptions())! as StackBasedOptions;
     case 'PHPSolverOptions': return accessor(index, new PHPSolverOptions())! as PHPSolverOptions;
     case 'GuillotineSolverOptions': return accessor(index, new GuillotineSolverOptions())! as GuillotineSolverOptions;
+    case 'AutoOptions': return accessor(index, new AutoOptions())! as AutoOptions;
     default: return null;
   }
 }

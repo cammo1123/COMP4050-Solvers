@@ -31,6 +31,7 @@ inline char const* solveAlgorithmName(fbs::domain::SolveAlgorithm value)
 	case fbs::domain::SolveAlgorithm::StackBased: return "StackBased";
 	case fbs::domain::SolveAlgorithm::PHPSolver: return "PHPSolver";
 	case fbs::domain::SolveAlgorithm::Guillotine: return "Guillotine";
+	case fbs::domain::SolveAlgorithm::Auto: return "Auto";
 	default: return "ExtremePoint";
 	}
 }
@@ -51,7 +52,9 @@ inline fbs::domain::SolveAlgorithm readSolveAlgorithm(zval* value, std::string c
 			return fbs::domain::SolveAlgorithm::PHPSolver;
 		if (length == sizeof("Guillotine") - 1 && std::memcmp(text, "Guillotine", length) == 0)
 			return fbs::domain::SolveAlgorithm::Guillotine;
-		fail(path + " must be one of ExtremePoint, StackBased, PHPSolver, Guillotine");
+		if (length == sizeof("Auto") - 1 && std::memcmp(text, "Auto", length) == 0)
+			return fbs::domain::SolveAlgorithm::Auto;
+		fail(path + " must be one of ExtremePoint, StackBased, PHPSolver, Guillotine, Auto");
 	}
 
 	if (Z_TYPE_P(value) != IS_LONG)
@@ -62,6 +65,7 @@ inline fbs::domain::SolveAlgorithm readSolveAlgorithm(zval* value, std::string c
 	case 1: return fbs::domain::SolveAlgorithm::StackBased;
 	case 2: return fbs::domain::SolveAlgorithm::PHPSolver;
 	case 3: return fbs::domain::SolveAlgorithm::Guillotine;
+	case 4: return fbs::domain::SolveAlgorithm::Auto;
 	default: fail(path + " is not a valid SolveAlgorithm");
 	}
 }
@@ -73,6 +77,7 @@ inline std::vector<SolveAlgorithmConstant> solveAlgorithmConstants()
 		{ "STACK_BASED", sizeof("STACK_BASED") - 1, 1 },
 		{ "PHP_SOLVER", sizeof("PHP_SOLVER") - 1, 2 },
 		{ "GUILLOTINE", sizeof("GUILLOTINE") - 1, 3 },
+		{ "AUTO", sizeof("AUTO") - 1, 4 },
 	};
 }
 
@@ -193,6 +198,25 @@ inline fbs::domain::PHPSolverOptions readPHPSolverOptions(HashTable* table, std:
 	return out;
 }
 
+inline void writeAutoOptions(zval* out, fbs::domain::AutoOptions const& value)
+{
+	put_int(out, "extremePointThreshold", value.extreme_point_threshold);
+}
+
+inline fbs::domain::AutoOptions readAutoOptions(HashTable* table, std::string const& path)
+{
+	fbs::domain::AutoOptions out;
+	if (auto* _zval = find_key(table, "extremePointThreshold"))
+	{
+		int64_t _value = required_int(_zval, path + ".extremePointThreshold");
+		if (_value < 0 || _value > 4294967295)
+			fail(path + ".extremePointThreshold" + " is out of uint32 range");
+		out.extreme_point_threshold = _value;
+	}
+
+	return out;
+}
+
 inline void writeSolveOptions(zval* out, fbs::domain::SolveOptions const& value)
 {
 	if (value.timeout_ms)
@@ -225,6 +249,13 @@ inline void writeSolveOptions(zval* out, fbs::domain::SolveOptions const& value)
 	writeGuillotineSolverOptions(&nested, *value.guillotine_solver_options);
 	attach(out, "guillotineSolverOptions", &nested);
 	}
+	if (value.auto_options)
+		{
+	zval nested;
+	array_init(&nested);
+	writeAutoOptions(&nested, *value.auto_options);
+	attach(out, "autoOptions", &nested);
+	}
 }
 
 inline fbs::domain::SolveOptions readSolveOptions(HashTable* table, std::string const& path)
@@ -244,6 +275,8 @@ inline fbs::domain::SolveOptions readSolveOptions(HashTable* table, std::string 
 		out.php_solver_options = readPHPSolverOptions(nested, path + ".phpSolverOptions");
 	if (HashTable* nested = optional_array(table, "guillotineSolverOptions", path))
 		out.guillotine_solver_options = readGuillotineSolverOptions(nested, path + ".guillotineSolverOptions");
+	if (HashTable* nested = optional_array(table, "autoOptions", path))
+		out.auto_options = readAutoOptions(nested, path + ".autoOptions");
 
 	return out;
 }
