@@ -18,13 +18,13 @@ export class AutoOptions {
     }
     extremePointThreshold() {
         const offset = this.bb.__offset(this.bb_pos, 4);
-        return offset ? this.bb.readUint32(this.bb_pos + offset) : 700;
+        return offset ? this.bb.readUint32(this.bb_pos + offset) : 1000;
     }
     static startAutoOptions(builder) {
         builder.startObject(1);
     }
     static addExtremePointThreshold(builder, extremePointThreshold) {
-        builder.addFieldInt32(0, extremePointThreshold, 700);
+        builder.addFieldInt32(0, extremePointThreshold, 1000);
     }
     static endAutoOptions(builder) {
         const offset = builder.endObject();
@@ -44,7 +44,7 @@ export class AutoOptions {
 }
 export class AutoOptionsT {
     extremePointThreshold;
-    constructor(extremePointThreshold = 700) {
+    constructor(extremePointThreshold = 1000) {
         this.extremePointThreshold = extremePointThreshold;
     }
     pack(builder) {

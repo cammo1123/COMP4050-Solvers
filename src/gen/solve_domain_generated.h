@@ -78,7 +78,7 @@ struct PHPSolverOptions {
 };
 
 struct AutoOptions {
-	uint32_t extreme_point_threshold = 700;
+	uint32_t extreme_point_threshold = 1000;
 };
 
 struct SolveOptions {

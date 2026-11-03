@@ -605,7 +605,7 @@ inline ::flatbuffers::Offset<PHPSolverOptions> CreatePHPSolverOptions(
 
 struct AutoOptionsT : public ::flatbuffers::NativeTable {
   typedef AutoOptions TableType;
-  uint32_t extreme_point_threshold = 700;
+  uint32_t extreme_point_threshold = 1000;
 };
 
 struct AutoOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
@@ -615,7 +615,7 @@ struct AutoOptions FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_EXTREME_POINT_THRESHOLD = 4
   };
   uint32_t extreme_point_threshold() const {
-    return GetField<uint32_t>(VT_EXTREME_POINT_THRESHOLD, 700);
+    return GetField<uint32_t>(VT_EXTREME_POINT_THRESHOLD, 1000);
   }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
@@ -633,7 +633,7 @@ struct AutoOptionsBuilder {
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
   void add_extreme_point_threshold(uint32_t extreme_point_threshold) {
-    fbb_.AddElement<uint32_t>(AutoOptions::VT_EXTREME_POINT_THRESHOLD, extreme_point_threshold, 700);
+    fbb_.AddElement<uint32_t>(AutoOptions::VT_EXTREME_POINT_THRESHOLD, extreme_point_threshold, 1000);
   }
   explicit AutoOptionsBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -648,7 +648,7 @@ struct AutoOptionsBuilder {
 
 inline ::flatbuffers::Offset<AutoOptions> CreateAutoOptions(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    uint32_t extreme_point_threshold = 700) {
+    uint32_t extreme_point_threshold = 1000) {
   AutoOptionsBuilder builder_(_fbb);
   builder_.add_extreme_point_threshold(extreme_point_threshold);
   return builder_.Finish();

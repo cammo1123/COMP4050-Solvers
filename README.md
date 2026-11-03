@@ -163,7 +163,7 @@ which ignores it and never returns a partial result.
 `ExtremePoint` when any of these is true:
 
 - the request has at least `autoOptions.extremePointThreshold` item instances
-  after `quantity` expansion (default `700`);
+  after `quantity` expansion (default `1000`);
 - `timeoutMs` is set;
 - an item has a zero dimension, uses `RotationPolicy.KeepFlat`, has a rotation
   policy that differs from the first item's, or has an active placement
