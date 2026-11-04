@@ -26,7 +26,7 @@ static getSizePrefixedRootAsAutoOptions(bb:flatbuffers.ByteBuffer, obj?:AutoOpti
 
 extremePointThreshold():number {
   const offset = this.bb!.__offset(this.bb_pos, 4);
-  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 700;
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 1000;
 }
 
 static startAutoOptions(builder:flatbuffers.Builder) {
@@ -34,7 +34,7 @@ static startAutoOptions(builder:flatbuffers.Builder) {
 }
 
 static addExtremePointThreshold(builder:flatbuffers.Builder, extremePointThreshold:number) {
-  builder.addFieldInt32(0, extremePointThreshold, 700);
+  builder.addFieldInt32(0, extremePointThreshold, 1000);
 }
 
 static endAutoOptions(builder:flatbuffers.Builder):flatbuffers.Offset {
@@ -62,7 +62,7 @@ unpackTo(_o: AutoOptionsT): void {
 
 export class AutoOptionsT implements flatbuffers.IGeneratedObject {
 constructor(
-  public extremePointThreshold: number = 700
+  public extremePointThreshold: number = 1000
 ){}
 
 

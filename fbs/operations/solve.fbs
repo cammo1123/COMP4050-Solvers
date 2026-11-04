@@ -32,7 +32,7 @@ table PHPSolverOptions {
 }
 
 table AutoOptions {
-  extreme_point_threshold: uint = 700;
+  extreme_point_threshold: uint = 1000;
 }
 
 union SolveStrategyOptions {

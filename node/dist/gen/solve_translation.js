@@ -20,7 +20,7 @@ function toAlgoOptionsT(options) {
     }
     if (options?.autoOptions) {
         const value = options.autoOptions;
-        return { type: SolveStrategyOptions.AutoOptions, value: new AutoOptionsObject(value.extremePointThreshold ?? 700) };
+        return { type: SolveStrategyOptions.AutoOptions, value: new AutoOptionsObject(value.extremePointThreshold ?? 1000) };
     }
     return { type: SolveStrategyOptions.NONE, value: null };
 }

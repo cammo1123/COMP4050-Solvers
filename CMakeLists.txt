@@ -95,14 +95,27 @@ function(comp4050_fetch_archive url dest)
 
     if(download_archive)
         set(download "${archive}.download")
-        file(DOWNLOAD "${url}" "${download}" STATUS download_status TLS_VERIFY ON)
-        list(GET download_status 0 status_code)
+        set(max_attempts 5)
 
-        if(NOT status_code EQUAL 0)
+        foreach(attempt RANGE 1 ${max_attempts})
+            file(DOWNLOAD "${url}" "${download}" STATUS download_status TLS_VERIFY ON)
+            list(GET download_status 0 status_code)
+
+            if(status_code EQUAL 0)
+                break()
+            endif()
+
             list(GET download_status 1 error_msg)
             file(REMOVE "${download}")
-            message(FATAL_ERROR "Failed to download ${url}: ${error_msg}")
-        endif()
+
+            if(attempt EQUAL max_attempts)
+                message(FATAL_ERROR "Failed to download ${url} after ${max_attempts} attempts: ${error_msg}")
+            endif()
+
+            math(EXPR delay "${attempt} * 5")
+            message(STATUS "Download of ${url} failed (${error_msg}); retrying in ${delay}s (attempt ${attempt}/${max_attempts})")
+            execute_process(COMMAND "${CMAKE_COMMAND}" -E sleep ${delay})
+        endforeach()
 
         execute_process(
             COMMAND "${CMAKE_COMMAND}" -E tar tzf "${download}"
